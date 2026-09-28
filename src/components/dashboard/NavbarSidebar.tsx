@@ -175,6 +175,19 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             <span>DLL</span>
           </button>
         </nav>
+
+        {/* Sidebar Footer User Info */}
+        <div className="p-4 border-t border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-xs">
+              UA
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="font-bold text-xs text-slate-900 block truncate">Ust. Abdullah</span>
+              <span className="text-[11px] text-slate-500 block truncate">Musyrif Halaqoh 1</span>
+            </div>
+          </div>
+        </div>
       </aside>
     </>
   );
