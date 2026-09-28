@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Search } from 'lucide-react';
 import type { Santri } from './types';
 import { SantriCard } from './SantriCard';
 
@@ -13,16 +14,47 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
   onSetor,
   onDetail,
 }) => {
+  const [search, setSearch] = useState('');
+
+  const filtered = santriList.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    s.juzAchieved.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="space-y-3">
+    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] space-y-4">
+      {/* Section Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <h3 className="font-bold text-base text-slate-900">
+            Daftar Santri
+          </h3>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+            {santriList.length} Santri
+          </span>
+        </div>
+
+        {/* Clean Search Input */}
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari santri..."
+            className="w-48 sm:w-56 text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+          />
+        </div>
+      </div>
+
       {/* Scrollable grid container for santri cards */}
       <div 
-        className="max-h-[380px] overflow-y-auto pr-1"
+        className="max-h-[440px] overflow-y-auto pr-1"
         tabIndex={0}
-        aria-label="Daftar Santri"
+        aria-label="Daftar Santri yang dapat digulir ke bawah"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {santriList.map((santri) => (
+          {filtered.map((santri) => (
             <SantriCard
               key={santri.id}
               santri={santri}
