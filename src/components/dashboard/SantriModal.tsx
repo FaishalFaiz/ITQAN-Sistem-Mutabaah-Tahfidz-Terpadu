@@ -35,8 +35,17 @@ export const SantriModal: React.FC<SantriModalProps> = ({
           { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: 'power3.out' }
         );
       }
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
     }
-  }, [type, santri]);
+  }, [type, santri, onClose]);
 
   if (!type || !santri) return null;
 

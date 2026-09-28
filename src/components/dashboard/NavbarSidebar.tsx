@@ -27,6 +27,18 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
 }) => {
   const [isSetoranOpen, setIsSetoranOpen] = useState(true);
 
+  React.useEffect(() => {
+    if (isOpen) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, onClose]);
+
   const handleNavClick = (key: NavItemKey) => {
     onSelectItem(key);
     onClose();
