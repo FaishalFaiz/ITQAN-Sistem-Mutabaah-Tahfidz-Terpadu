@@ -7,6 +7,7 @@ import { TrendChart } from './components/dashboard/TrendChart';
 import { SantriListSection } from './components/dashboard/SantriListSection';
 import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
 import { SantriModal } from './components/dashboard/SantriModal';
+import { AddSantriModal } from './components/dashboard/AddSantriModal';
 import { OtherView } from './components/dashboard/OtherViews';
 
 export function App() {
@@ -17,7 +18,10 @@ export function App() {
   const [modalType, setModalType] = useState<'setor' | 'detail' | null>(null);
   const [selectedSantri, setSelectedSantri] = useState<Santri | null>(null);
 
-  const [santriList] = useState<Santri[]>(INITIAL_SANTRI_LIST);
+  // Modal state for Add Santri
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const [santriList, setSantriList] = useState<Santri[]>(INITIAL_SANTRI_LIST);
 
   const handleOpenSetor = (santri: Santri) => {
     setSelectedSantri(santri);
@@ -33,6 +37,15 @@ export function App() {
     setModalType(null);
     setSelectedSantri(null);
   };
+
+  const handleAddSantri = (newSantri: Santri) => {
+    setSantriList((prev) => [newSantri, ...prev]);
+  };
+
+  // Recalculate dynamic stats from santriList
+  const tercapaiCount = santriList.filter((s) => s.status === 'tercapai').length;
+  const tidakTercapaiCount = santriList.filter((s) => s.status === 'tidak_tercapai').length;
+  const belumSetorCount = santriList.filter((s) => s.status === 'belum_setor').length;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex font-sans antialiased">
@@ -73,11 +86,11 @@ export function App() {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
           {activeNav === 'beranda' ? (
             <div className="space-y-6">
-              {/* Top 3 KPI Cards: [ 10 Tercapai ] [ 01 Tidak Tercapai ] [ 01 Apa ya? ] */}
+              {/* Top 3 KPI Cards: [ Tercapai ] [ Tidak Tercapai ] [ Belum Setor ] */}
               <StatCards
-                tercapaiCount={10}
-                tidakTercapaiCount={1}
-                belumSetorCount={1}
+                tercapaiCount={tercapaiCount}
+                tidakTercapaiCount={tidakTercapaiCount}
+                belumSetorCount={belumSetorCount}
               />
 
               {/* Middle Section: Line Chart Trend */}
@@ -88,12 +101,17 @@ export function App() {
                 santriList={santriList}
                 onSetor={handleOpenSetor}
                 onDetail={handleOpenDetail}
+                onOpenAddModal={() => setIsAddModalOpen(true)}
               />
             </div>
           ) : (
             <OtherView
               currentView={activeNav}
               onBackToBeranda={() => setActiveNav('beranda')}
+              santriList={santriList}
+              onSetor={handleOpenSetor}
+              onDetail={handleOpenDetail}
+              onOpenAddModal={() => setIsAddModalOpen(true)}
             />
           )}
         </main>
@@ -104,6 +122,13 @@ export function App() {
         type={modalType}
         santri={selectedSantri}
         onClose={handleCloseModal}
+      />
+
+      {/* Add Santri Modal */}
+      <AddSantriModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAddSantri={handleAddSantri}
       />
     </div>
   );

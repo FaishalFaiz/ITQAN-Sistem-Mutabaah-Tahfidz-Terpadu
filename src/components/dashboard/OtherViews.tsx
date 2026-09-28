@@ -1,22 +1,38 @@
-import React from 'react';
-import { Users, ArrowLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, UserPlus, Search } from 'lucide-react';
 import { FastSetoranForm } from '../halaqah/FastSetoranForm';
 import { TapCounterExam } from '../halaqah/TapCounterExam';
 import { MushafHeatmap } from '../visualization/MushafHeatmap';
 import { PacingCard } from '../visualization/PacingCard';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import type { NavItemKey } from './types';
+import type { NavItemKey, Santri } from './types';
 
 interface OtherViewProps {
   currentView: NavItemKey;
   onBackToBeranda: () => void;
+  santriList: Santri[];
+  onSetor: (santri: Santri) => void;
+  onDetail: (santri: Santri) => void;
+  onOpenAddModal: () => void;
 }
 
 export const OtherView: React.FC<OtherViewProps> = ({
   currentView,
   onBackToBeranda,
+  santriList,
+  onSetor,
+  onDetail,
+  onOpenAddModal,
 }) => {
+  const [santriSearch, setSantriSearch] = useState('');
+
+  const filteredSantri = santriList.filter((s) =>
+    s.name.toLowerCase().includes(santriSearch.toLowerCase()) ||
+    s.nis.includes(santriSearch) ||
+    s.lastSurah.toLowerCase().includes(santriSearch.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       {/* Return button */}
@@ -55,13 +71,102 @@ export const OtherView: React.FC<OtherViewProps> = ({
       )}
 
       {currentView === 'santri' && (
-        <Card title="Manajemen Data Santri Halaqoh" subtitle="Daftar lengkap profil dan kontak santri">
-          <div className="p-4 text-center text-slate-500 text-sm">
-            <Users className="w-8 h-8 mx-auto text-slate-400 mb-2" />
-            <p className="font-semibold text-slate-700">12 Santri Terdaftar di Halaqoh 1</p>
-            <p className="text-xs text-slate-500 mt-1">Seluruh data santri dapat dikelola melalui menu ini atau langsung dari kartu santri di Beranda.</p>
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div>
+              <h3 className="font-bold text-base text-slate-900">Data Santri Halaqoh</h3>
+              <p className="text-xs text-slate-500">Total {santriList.length} santri terdaftar aktif</p>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={santriSearch}
+                  onChange={(e) => setSantriSearch(e.target.value)}
+                  placeholder="Cari santri / NIS..."
+                  className="w-48 sm:w-56 text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={onOpenAddModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] text-xs font-semibold transition-colors shadow-2xs"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Tambah Santri</span>
+              </button>
+            </div>
           </div>
-        </Card>
+
+          {/* Santri Data Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
+                <tr>
+                  <th className="py-3 px-4">Nama Santri</th>
+                  <th className="py-3 px-4">NIS</th>
+                  <th className="py-3 px-4">Capaian Juz</th>
+                  <th className="py-3 px-4">Target / Hari</th>
+                  <th className="py-3 px-4">Terakhir Setor</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredSantri.map((santri) => (
+                  <tr key={santri.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-3 px-4 font-semibold text-slate-900 flex items-center gap-2.5">
+                      <span className="w-7 h-7 rounded-full bg-[#EBF5FB] text-[#0070BA] font-bold text-[11px] flex items-center justify-center shrink-0">
+                        {santri.avatarInitials}
+                      </span>
+                      <span>{santri.name}</span>
+                    </td>
+                    <td className="py-3 px-4 font-mono text-slate-500">{santri.nis}</td>
+                    <td className="py-3 px-4 font-bold text-[#0070BA]">{santri.juzAchieved}</td>
+                    <td className="py-3 px-4">{santri.dailyTargetLines} Baris</td>
+                    <td className="py-3 px-4 text-slate-600">{santri.lastSurah}</td>
+                    <td className="py-3 px-4">
+                      {santri.status === 'tercapai' && (
+                        <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Tercapai
+                        </span>
+                      )}
+                      {santri.status === 'tidak_tercapai' && (
+                        <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
+                          Tidak Tercapai
+                        </span>
+                      )}
+                      {santri.status === 'belum_setor' && (
+                        <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          Belum Setor
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => onSetor(santri)}
+                        className="px-2.5 py-1 text-xs font-semibold rounded bg-[#0070BA] text-white hover:bg-[#005C9E]"
+                      >
+                        Setor
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDetail(santri)}
+                        className="px-2.5 py-1 text-xs font-semibold rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                      >
+                        Detail
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {currentView === 'pengaturan' && (

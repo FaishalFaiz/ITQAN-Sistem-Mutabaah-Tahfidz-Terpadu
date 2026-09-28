@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, UserPlus } from 'lucide-react';
 import type { Santri } from './types';
 import { SantriCard } from './SantriCard';
 
@@ -7,12 +7,14 @@ interface SantriListSectionProps {
   santriList: Santri[];
   onSetor: (santri: Santri) => void;
   onDetail: (santri: Santri) => void;
+  onOpenAddModal: () => void;
 }
 
 export const SantriListSection: React.FC<SantriListSectionProps> = ({
   santriList,
   onSetor,
   onDetail,
+  onOpenAddModal,
 }) => {
   const [search, setSearch] = useState('');
 
@@ -34,16 +36,27 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
           </span>
         </div>
 
-        {/* Clean Search Input */}
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari santri..."
-            className="w-48 sm:w-56 text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
-          />
+        {/* Controls: Search & Add Santri */}
+        <div className="flex items-center gap-2.5">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari santri..."
+              className="w-40 sm:w-52 text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={onOpenAddModal}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] text-xs font-semibold transition-colors shadow-2xs"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Tambah Santri</span>
+          </button>
         </div>
       </div>
 
