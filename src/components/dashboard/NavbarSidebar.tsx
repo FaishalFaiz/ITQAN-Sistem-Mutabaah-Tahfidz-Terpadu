@@ -7,11 +7,7 @@ import {
   BookOpen, 
   ChevronDown, 
   ChevronRight, 
-  X, 
-  Award, 
-  Layers, 
-  BarChart3, 
-  Sparkles
+  MoreHorizontal
 } from 'lucide-react';
 import type { NavItemKey } from './types';
 
@@ -28,14 +24,10 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
   activeItem,
   onSelectItem,
 }) => {
-  // Setoran sub-menu expansion state
   const [isSetoranOpen, setIsSetoranOpen] = useState(true);
-  // DLL sub-menu expansion state
-  const [isDllOpen, setIsDllOpen] = useState(true);
 
   const handleNavClick = (key: NavItemKey) => {
     onSelectItem(key);
-    // On mobile screen, close sidebar on select
     if (window.innerWidth < 1024) {
       onClose();
     }
@@ -43,111 +35,95 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
 
   return (
     <>
-      {/* Backdrop overlay for mobile */}
+      {/* Mobile backdrop */}
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-slate-900/30 z-30 lg:hidden"
         />
       )}
 
-      {/* Sidebar Panel - Matches "Navbar" in wireframe */}
+      {/* Left Sidebar */}
       <aside
-        className={`fixed top-0 right-0 h-full w-72 bg-white border-l border-slate-200 z-50 flex flex-col shadow-xl transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white border-r border-slate-200 z-40 flex flex-col transition-transform duration-200 ease-in-out shrink-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        {/* Sidebar Header */}
-        <div className="h-16 px-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm">
-              IT
-            </div>
-            <div>
-              <span className="font-bold text-sm text-slate-900 block leading-tight">ITQAN Menu</span>
-              <span className="text-[11px] text-slate-500">Navigasi Sistem</span>
-            </div>
+        {/* Sidebar Header: ITQAN Logo */}
+        <div className="h-16 px-6 border-b border-slate-200 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm">
+            IT
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Tutup Menu"
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <span className="font-bold text-base text-slate-900">ITQAN</span>
         </div>
 
-        {/* Menu Items List - Exactly matching user wireframe */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-1 text-sm font-medium">
-          {/* 1. Beranda */}
+        {/* Menu Items matching wireframe */}
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1 text-sm font-medium text-slate-700">
+          {/* Beranda */}
           <button
             type="button"
             onClick={() => handleNavClick('beranda')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors text-left ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
               activeItem === 'beranda'
-                ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
-                : 'text-slate-700 hover:bg-slate-100'
+                ? 'bg-[#0070BA] text-white font-semibold'
+                : 'hover:bg-slate-100'
             }`}
           >
             <Home className="w-4 h-4 shrink-0" />
-            <span className="flex-1">Beranda</span>
+            <span>Beranda</span>
           </button>
 
-          {/* 2. Laporan/ringkasan */}
+          {/* Laporan/ringkasan */}
           <button
             type="button"
             onClick={() => handleNavClick('laporan')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors text-left ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
               activeItem === 'laporan'
-                ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
-                : 'text-slate-700 hover:bg-slate-100'
+                ? 'bg-[#0070BA] text-white font-semibold'
+                : 'hover:bg-slate-100'
             }`}
           >
             <FileText className="w-4 h-4 shrink-0" />
-            <span className="flex-1">Laporan/ringkasan</span>
+            <span>Laporan/ringkasan</span>
           </button>
 
-          {/* 3. Santri */}
+          {/* Santri */}
           <button
             type="button"
             onClick={() => handleNavClick('santri')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors text-left ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
               activeItem === 'santri'
-                ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
-                : 'text-slate-700 hover:bg-slate-100'
+                ? 'bg-[#0070BA] text-white font-semibold'
+                : 'hover:bg-slate-100'
             }`}
           >
             <Users className="w-4 h-4 shrink-0" />
-            <span className="flex-1">Santri</span>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200">
-              12
-            </span>
+            <span>Santri</span>
           </button>
 
-          {/* 4. Pengaturan */}
+          {/* Pengaturan */}
           <button
             type="button"
             onClick={() => handleNavClick('pengaturan')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition-colors text-left ${
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
               activeItem === 'pengaturan'
-                ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
-                : 'text-slate-700 hover:bg-slate-100'
+                ? 'bg-[#0070BA] text-white font-semibold'
+                : 'hover:bg-slate-100'
             }`}
           >
             <Settings className="w-4 h-4 shrink-0" />
-            <span className="flex-1">Pengaturan</span>
+            <span>Pengaturan</span>
           </button>
 
-          {/* 5. Setoran (Collapsible Group as sketched: -Ziyadah, -Murajaah) */}
-          <div className="pt-2">
+          {/* Setoran (Ziyadah & Murajaah) */}
+          <div className="pt-1">
             <button
               type="button"
               onClick={() => setIsSetoranOpen(!isSetoranOpen)}
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-lg text-slate-700 hover:bg-slate-100 font-semibold transition-colors"
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left hover:bg-slate-100 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <BookOpen className="w-4 h-4 shrink-0 text-[#0070BA]" />
+                <BookOpen className="w-4 h-4 shrink-0" />
                 <span>Setoran</span>
               </div>
               {isSetoranOpen ? (
@@ -158,110 +134,47 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             </button>
 
             {isSetoranOpen && (
-              <div className="pl-6 pr-1 py-1 space-y-1">
+              <div className="pl-7 pr-1 py-1 space-y-1 text-xs">
                 <button
                   type="button"
                   onClick={() => handleNavClick('setoran-ziyadah')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors text-left ${
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
                     activeItem === 'setoran-ziyadah'
-                      ? 'bg-[#EBF5FB] text-[#0070BA] font-bold border border-[#D6EAF8]'
+                      ? 'bg-[#EBF5FB] text-[#0070BA] font-bold'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0070BA]" />
-                  <span>- Ziyadah (Hafalan Baru)</span>
+                  <span>- Ziyadah</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleNavClick('setoran-murajaah')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors text-left ${
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
                     activeItem === 'setoran-murajaah'
-                      ? 'bg-[#EBF5FB] text-[#0070BA] font-bold border border-[#D6EAF8]'
+                      ? 'bg-[#EBF5FB] text-[#0070BA] font-bold'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>- Muraja'ah (Pengulangan)</span>
+                  <span>- Murajaah</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* 6. DLL (Dan Lain-Lain: Ujian Tasmi, Heatmap, Pacing) */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => setIsDllOpen(!isDllOpen)}
-              className="w-full flex items-center justify-between px-3.5 py-2 rounded-lg text-slate-700 hover:bg-slate-100 font-semibold transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-4 h-4 shrink-0 text-slate-600" />
-                <span>DLL (Fitur Tambahan)</span>
-              </div>
-              {isDllOpen ? (
-                <ChevronDown className="w-4 h-4 text-slate-400" />
-              ) : (
-                <ChevronRight className="w-4 h-4 text-slate-400" />
-              )}
-            </button>
-
-            {isDllOpen && (
-              <div className="pl-6 pr-1 py-1 space-y-1">
-                <button
-                  type="button"
-                  onClick={() => handleNavClick('dll-ujian')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors text-left ${
-                    activeItem === 'dll-ujian'
-                      ? 'bg-[#EBF5FB] text-[#0070BA] font-bold border border-[#D6EAF8]'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Award className="w-3.5 h-3.5" />
-                  <span>Ujian Tasmi' (Tap Counter)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleNavClick('dll-pacing')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors text-left ${
-                    activeItem === 'dll-pacing'
-                      ? 'bg-[#EBF5FB] text-[#0070BA] font-bold border border-[#D6EAF8]'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <BarChart3 className="w-3.5 h-3.5" />
-                  <span>Target Pacing 3-Tahun</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleNavClick('dll-heatmap')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors text-left ${
-                    activeItem === 'dll-heatmap'
-                      ? 'bg-[#EBF5FB] text-[#0070BA] font-bold border border-[#D6EAF8]'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Heatmap 604 Halaman</span>
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Sidebar Footer User Info */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50/50">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center font-bold text-xs">
-              UA
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="font-bold text-xs text-slate-900 block truncate">Ust. Abdullah</span>
-              <span className="text-[11px] text-slate-500 block truncate">Musyrif Halaqoh 1</span>
-            </div>
-          </div>
-        </div>
+          {/* DLL */}
+          <button
+            type="button"
+            onClick={() => handleNavClick('dll-ujian')}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+              activeItem.startsWith('dll')
+                ? 'bg-[#0070BA] text-white font-semibold'
+                : 'hover:bg-slate-100'
+            }`}
+          >
+            <MoreHorizontal className="w-4 h-4 shrink-0" />
+            <span>DLL</span>
+          </button>
+        </nav>
       </aside>
     </>
   );
