@@ -7,7 +7,8 @@ import {
   BookOpen, 
   ChevronDown, 
   ChevronRight, 
-  MoreHorizontal
+  MoreHorizontal,
+  X
 } from 'lucide-react';
 import type { NavItemKey } from './types';
 
@@ -28,33 +29,46 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
 
   const handleNavClick = (key: NavItemKey) => {
     onSelectItem(key);
-    if (window.innerWidth < 1024) {
-      onClose();
-    }
+    onClose();
   };
 
   return (
     <>
-      {/* Mobile backdrop */}
+      {/* Backdrop overlay (all screens) - closes drawer on outside click */}
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 bg-slate-900/30 z-30 lg:hidden"
+          className="fixed inset-0 bg-slate-900/40 z-40 transition-opacity backdrop-blur-[1px]"
+          aria-hidden="true"
         />
       )}
 
-      {/* Left Sidebar */}
+      {/* Left Sidebar Drawer - Only opens when clicked */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-white border-r border-slate-200 z-40 flex flex-col transition-transform duration-200 ease-in-out shrink-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        className={`fixed top-0 left-0 h-screen w-72 bg-white border-r border-slate-200 z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Sidebar Header: ITQAN Logo */}
-        <div className="h-16 px-6 border-b border-slate-200 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm">
-            IT
+        {/* Sidebar Header: ITQAN Logo & Close Button */}
+        <div className="h-16 px-5 border-b border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm">
+              IT
+            </div>
+            <div>
+              <span className="font-bold text-base text-slate-900 block leading-tight">ITQAN</span>
+              <span className="text-[11px] text-slate-500">Sistem Mutabaah</span>
+            </div>
           </div>
-          <span className="font-bold text-base text-slate-900">ITQAN</span>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            aria-label="Tutup Navbar"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Menu Items matching wireframe */}
@@ -65,7 +79,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             onClick={() => handleNavClick('beranda')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
               activeItem === 'beranda'
-                ? 'bg-[#0070BA] text-white font-semibold'
+                ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
           >
@@ -79,7 +93,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             onClick={() => handleNavClick('laporan')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
               activeItem === 'laporan'
-                ? 'bg-[#0070BA] text-white font-semibold'
+                ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
           >
@@ -93,7 +107,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             onClick={() => handleNavClick('santri')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
               activeItem === 'santri'
-                ? 'bg-[#0070BA] text-white font-semibold'
+                ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
           >
@@ -107,7 +121,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             onClick={() => handleNavClick('pengaturan')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
               activeItem === 'pengaturan'
-                ? 'bg-[#0070BA] text-white font-semibold'
+                ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
           >
@@ -120,10 +134,10 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             <button
               type="button"
               onClick={() => setIsSetoranOpen(!isSetoranOpen)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left hover:bg-slate-100 transition-colors"
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left hover:bg-slate-100 transition-colors font-medium text-slate-700"
             >
               <div className="flex items-center gap-3">
-                <BookOpen className="w-4 h-4 shrink-0" />
+                <BookOpen className="w-4 h-4 shrink-0 text-[#0070BA]" />
                 <span>Setoran</span>
               </div>
               {isSetoranOpen ? (
@@ -144,6 +158,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0070BA]" />
                   <span>- Ziyadah</span>
                 </button>
                 <button
@@ -155,6 +170,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                   <span>- Murajaah</span>
                 </button>
               </div>
@@ -167,7 +183,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             onClick={() => handleNavClick('dll-ujian')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
               activeItem.startsWith('dll')
-                ? 'bg-[#0070BA] text-white font-semibold'
+                ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
           >

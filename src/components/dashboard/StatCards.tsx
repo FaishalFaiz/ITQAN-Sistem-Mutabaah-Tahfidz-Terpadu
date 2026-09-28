@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
 interface StatCardsProps {
   tercapaiCount?: number;
@@ -17,65 +17,47 @@ export const StatCards: React.FC<StatCardsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
       {/* Card 1: 10 Tercapai */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-emerald-300 transition-all flex items-center justify-between">
-        <div className="flex items-baseline gap-3.5">
-          <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-emerald-300 transition-all flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight font-sans">
             {formatNum(tercapaiCount)}
           </span>
-          <div>
-            <span className="text-base font-bold text-slate-900 block leading-tight">
-              Tercapai
-            </span>
-            <span className="text-xs font-medium text-emerald-700 flex items-center gap-1 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-              Target terpenuhi
-            </span>
-          </div>
+          <span className="text-xl sm:text-2xl font-bold text-slate-900">
+            Tercapai
+          </span>
         </div>
-        <div className="w-11 h-11 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
-          <CheckCircle2 className="w-5 h-5" />
+        <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+          <CheckCircle2 className="w-6 h-6" />
         </div>
       </div>
 
       {/* Card 2: 01 Tidak Tercapai */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-red-300 transition-all flex items-center justify-between">
-        <div className="flex items-baseline gap-3.5">
-          <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-red-300 transition-all flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight font-sans">
             {formatNum(tidakTercapaiCount)}
           </span>
-          <div>
-            <span className="text-base font-bold text-slate-900 block leading-tight">
-              Tidak Tercapai
-            </span>
-            <span className="text-xs font-medium text-red-700 flex items-center gap-1 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-              Di bawah target
-            </span>
-          </div>
+          <span className="text-xl sm:text-2xl font-bold text-slate-900">
+            Tidak Tercapai
+          </span>
         </div>
-        <div className="w-11 h-11 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-red-600 shrink-0">
-          <AlertCircle className="w-5 h-5" />
+        <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-200 flex items-center justify-center text-red-600 shrink-0">
+          <AlertCircle className="w-6 h-6" />
         </div>
       </div>
 
-      {/* Card 3: 01 Apa ya? */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-amber-300 transition-all flex items-center justify-between">
-        <div className="flex items-baseline gap-3.5">
-          <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+      {/* Card 3: 01 Belum Setor ('Apa ya?' completely removed, single clear label) */}
+      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-amber-300 transition-all flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight font-sans">
             {formatNum(belumSetorCount)}
           </span>
-          <div>
-            <span className="text-base font-bold text-slate-900 block leading-tight">
-              Apa ya?
-            </span>
-            <span className="text-xs font-medium text-amber-700 flex items-center gap-1 mt-0.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-              Belum setor hari ini
-            </span>
-          </div>
+          <span className="text-xl sm:text-2xl font-bold text-slate-900">
+            Belum Setor
+          </span>
         </div>
-        <div className="w-11 h-11 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
-          <HelpCircle className="w-5 h-5" />
+        <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
+          <Clock className="w-6 h-6" />
         </div>
       </div>
     </div>
