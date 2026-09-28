@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, UserPlus, ArrowDown } from 'lucide-react';
+import { Search, UserPlus } from 'lucide-react';
 import gsap from 'gsap';
 import type { Santri } from './types';
 import { SantriCard } from './SantriCard';
@@ -57,34 +57,25 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
 
   return (
     <div ref={sectionRef} className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
-      {/* Section Header with Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h3 className="font-bold text-base text-slate-900">
-              Daftar Santri Halaqoh
-            </h3>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-              {filtered.length} dari {santriList.length} Santri
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-            <span>Klik <b>Simak Setor</b> untuk input hafalan atau <b>Detail</b> untuk analisa personal</span>
-            <span className="text-slate-300">•</span>
-            <span className="text-[#0070BA] font-medium flex items-center gap-0.5">
-              <ArrowDown className="w-3 h-3" /> Gulir ke bawah
-            </span>
-          </p>
+      {/* Section Header with Tabs & Controls */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <h3 className="font-bold text-base text-slate-900">
+            Daftar Santri Halaqoh
+          </h3>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+            {filtered.length} dari {santriList.length} Santri
+          </span>
         </div>
 
-        {/* Filter Pills + Search + Add Button */}
+        {/* Filter Tabs + Search + Add Button */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Status Tabs */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
+          <div className="inline-flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs">
             <button
               type="button"
               onClick={() => onFilterChange('all')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all ${
+              className={`px-3 py-1 rounded-md font-medium transition-colors ${
                 activeFilter === 'all'
                   ? 'bg-white text-slate-900 font-semibold shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -95,7 +86,7 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
             <button
               type="button"
               onClick={() => onFilterChange('tercapai')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all ${
+              className={`px-3 py-1 rounded-md font-medium transition-colors ${
                 activeFilter === 'tercapai'
                   ? 'bg-white text-emerald-700 font-semibold shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -106,24 +97,24 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
             <button
               type="button"
               onClick={() => onFilterChange('tidak_tercapai')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all ${
+              className={`px-3 py-1 rounded-md font-medium transition-colors ${
                 activeFilter === 'tidak_tercapai'
                   ? 'bg-white text-red-700 font-semibold shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Tidak ({countTidak})
+              Tidak Tercapai ({countTidak})
             </button>
             <button
               type="button"
               onClick={() => onFilterChange('belum_setor')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-all ${
+              className={`px-3 py-1 rounded-md font-medium transition-colors ${
                 activeFilter === 'belum_setor'
                   ? 'bg-white text-amber-700 font-semibold shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Belum ({countBelum})
+              Belum Setor ({countBelum})
             </button>
           </div>
 
@@ -135,7 +126,7 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari nama / NIS..."
-              className="w-36 sm:w-44 text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+              className="w-40 sm:w-48 text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
             />
           </div>
 
@@ -146,17 +137,13 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] text-xs font-semibold transition-colors shadow-2xs active:scale-95"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Tambah Santri</span>
+            <span>Tambah Santri</span>
           </button>
         </div>
       </div>
 
-      {/* Scrollable grid container for santri cards */}
-      <div 
-        className="max-h-[460px] overflow-y-auto pr-1"
-        tabIndex={0}
-        aria-label="Daftar Santri yang dapat digulir ke bawah"
-      >
+      {/* Grid container for santri cards - natural full display */}
+      <div>
         {filtered.length === 0 ? (
           <div className="py-12 text-center text-slate-400 text-xs">
             Tidak ada santri yang sesuai kriteria pencarian atau filter status.
