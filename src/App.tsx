@@ -83,9 +83,9 @@ export function App() {
         </header>
 
         {/* Dashboard Main View */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
           {activeNav === 'beranda' ? (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Top 3 KPI Cards: [ Tercapai ] [ Tidak Tercapai ] [ Belum Setor ] */}
               <StatCards
                 tercapaiCount={tercapaiCount}
