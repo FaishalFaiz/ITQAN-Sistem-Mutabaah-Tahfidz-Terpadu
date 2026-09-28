@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Search, UserPlus } from 'lucide-react';
+import gsap from 'gsap';
 import type { Santri } from './types';
 import { SantriCard } from './SantriCard';
 
@@ -17,14 +18,33 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
   onOpenAddModal,
 }) => {
   const [search, setSearch] = useState('');
+  const sectionRef = useRef<HTMLDivElement>(null);
 
   const filtered = santriList.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.juzAchieved.toLowerCase().includes(search.toLowerCase())
   );
 
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        '.santri-card-item',
+        { opacity: 0, y: 14 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.4,
+          stagger: 0.03,
+          ease: 'power3.out',
+        }
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, [filtered.length, search]);
+
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_1px_2px_rgba(0,0,0,0.05)] space-y-4">
+    <div ref={sectionRef} className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2.5">
@@ -52,7 +72,7 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
           <button
             type="button"
             onClick={onOpenAddModal}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] text-xs font-semibold transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] text-xs font-semibold transition-colors shadow-2xs active:scale-95"
           >
             <UserPlus className="w-3.5 h-3.5" />
             <span>Tambah Santri</span>
@@ -68,12 +88,13 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {filtered.map((santri) => (
-            <SantriCard
-              key={santri.id}
-              santri={santri}
-              onSetor={onSetor}
-              onDetail={onDetail}
-            />
+            <div key={santri.id} className="santri-card-item">
+              <SantriCard
+                santri={santri}
+                onSetor={onSetor}
+                onDetail={onDetail}
+              />
+            </div>
           ))}
         </div>
       </div>

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { TrendingUp } from 'lucide-react';
+import gsap from 'gsap';
 
 interface DataPoint {
   day: string;
@@ -19,6 +20,7 @@ const CHART_DATA: DataPoint[] = [
 export const TrendChart: React.FC = () => {
   const [activeRange, setActiveRange] = useState<'pekan' | 'bulan'>('pekan');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const chartCardRef = useRef<HTMLDivElement>(null);
 
   const width = 800;
   const height = 120;
@@ -54,8 +56,35 @@ export const TrendChart: React.FC = () => {
   const arrowEndX = lastPoint.x + (dx / len) * 16;
   const arrowEndY = lastPoint.y + (dy / len) * 16;
 
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Entrance container
+      gsap.fromTo(
+        chartCardRef.current,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out', delay: 0.15 }
+      );
+
+      // Area fade in
+      gsap.fromTo(
+        '.chart-area-fill',
+        { opacity: 0 },
+        { opacity: 1, duration: 0.8, ease: 'power2.out', delay: 0.3 }
+      );
+
+      // Dots staggered pop
+      gsap.fromTo(
+        '.chart-node',
+        { scale: 0, transformOrigin: 'center' },
+        { scale: 1, duration: 0.45, stagger: 0.05, ease: 'power3.out', delay: 0.35 }
+      );
+    }, chartCardRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+    <div ref={chartCardRef} className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
       {/* Header compact */}
       <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
         <div className="flex items-center gap-2">
@@ -148,7 +177,11 @@ export const TrendChart: React.FC = () => {
           })}
 
           {/* Area fill */}
-          <polygon points={areaPoints} fill="url(#areaGradientCompact)" />
+          <polygon
+            points={areaPoints}
+            fill="url(#areaGradientCompact)"
+            className="chart-area-fill"
+          />
 
           {/* Line */}
           <polyline
@@ -196,7 +229,7 @@ export const TrendChart: React.FC = () => {
                   fill="#FFFFFF"
                   stroke="#0070BA"
                   strokeWidth="2"
-                  className="transition-all pointer-events-none"
+                  className="chart-node transition-all pointer-events-none"
                 />
 
                 <text

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import gsap from 'gsap';
 
 interface StatCardsProps {
   tercapaiCount?: number;
@@ -12,12 +13,32 @@ export const StatCards: React.FC<StatCardsProps> = ({
   tidakTercapaiCount = 1,
   belumSetorCount = 1,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const formatNum = (num: number) => (num < 10 ? `0${num}` : `${num}`);
 
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        '.stat-box',
+        { opacity: 0, y: 16, scale: 0.98 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.55,
+          stagger: 0.08,
+          ease: 'power3.out',
+        }
+      );
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+    <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-3 gap-5">
       {/* Box 1: Tercapai (Emerald) */}
-      <div className="bg-emerald-50/40 border border-emerald-200 rounded-xl p-6 shadow-xs hover:border-emerald-300 transition-all flex items-center justify-between">
+      <div className="stat-box bg-emerald-50/40 border border-emerald-200 rounded-xl p-6 shadow-xs hover:border-emerald-300 transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-4xl sm:text-5xl font-bold text-emerald-700 tracking-tight font-sans">
             {formatNum(tercapaiCount)}
@@ -32,7 +53,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
       </div>
 
       {/* Box 2: Tidak Tercapai (Red) */}
-      <div className="bg-red-50/40 border border-red-200 rounded-xl p-6 shadow-xs hover:border-red-300 transition-all flex items-center justify-between">
+      <div className="stat-box bg-red-50/40 border border-red-200 rounded-xl p-6 shadow-xs hover:border-red-300 transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-4xl sm:text-5xl font-bold text-red-700 tracking-tight font-sans">
             {formatNum(tidakTercapaiCount)}
@@ -47,7 +68,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
       </div>
 
       {/* Box 3: Belum Setor (Amber) */}
-      <div className="bg-amber-50/40 border border-amber-200 rounded-xl p-6 shadow-xs hover:border-amber-300 transition-all flex items-center justify-between">
+      <div className="stat-box bg-amber-50/40 border border-amber-200 rounded-xl p-6 shadow-xs hover:border-amber-300 transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-4xl sm:text-5xl font-bold text-amber-700 tracking-tight font-sans">
             {formatNum(belumSetorCount)}
