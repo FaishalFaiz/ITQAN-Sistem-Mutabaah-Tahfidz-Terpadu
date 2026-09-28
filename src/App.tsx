@@ -8,15 +8,19 @@ import { SantriListSection } from './components/dashboard/SantriListSection';
 import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
 import { SantriModal } from './components/dashboard/SantriModal';
 import { AddSantriModal } from './components/dashboard/AddSantriModal';
+import { SantriDetailPage } from './components/dashboard/SantriDetailPage';
 import { OtherView } from './components/dashboard/OtherViews';
 
 export function App() {
   const [activeNav, setActiveNav] = useState<NavItemKey>('beranda');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Modal state for Setor & Detail
-  const [modalType, setModalType] = useState<'setor' | 'detail' | null>(null);
-  const [selectedSantri, setSelectedSantri] = useState<Santri | null>(null);
+  // Dedicated page view for selected santri
+  const [activeSantriPage, setActiveSantriPage] = useState<Santri | null>(null);
+
+  // Modal state for Setor
+  const [modalType, setModalType] = useState<'setor' | null>(null);
+  const [selectedSantriForSetor, setSelectedSantriForSetor] = useState<Santri | null>(null);
 
   // Modal state for Add Santri
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -24,18 +28,17 @@ export function App() {
   const [santriList, setSantriList] = useState<Santri[]>(INITIAL_SANTRI_LIST);
 
   const handleOpenSetor = (santri: Santri) => {
-    setSelectedSantri(santri);
+    setSelectedSantriForSetor(santri);
     setModalType('setor');
   };
 
   const handleOpenDetail = (santri: Santri) => {
-    setSelectedSantri(santri);
-    setModalType('detail');
+    setActiveSantriPage(santri);
   };
 
   const handleCloseModal = () => {
     setModalType(null);
-    setSelectedSantri(null);
+    setSelectedSantriForSetor(null);
   };
 
   const handleAddSantri = (newSantri: Santri) => {
@@ -54,12 +57,15 @@ export function App() {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         activeItem={activeNav}
-        onSelectItem={(item) => setActiveNav(item)}
+        onSelectItem={(item) => {
+          setActiveNav(item);
+          setActiveSantriPage(null); // Reset detail page when switching main nav
+        }}
       />
 
       {/* 2. Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Clean Header Bar with Hamburger Button ☰ */}
+        {/* Header Bar */}
         <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <button
@@ -71,7 +77,11 @@ export function App() {
               <Menu className="w-6 h-6" />
             </button>
             <span className="font-bold text-lg text-slate-900">
-              {activeNav === 'beranda' ? 'Beranda' : activeNav.toUpperCase()}
+              {activeSantriPage
+                ? `Santri: ${activeSantriPage.name}`
+                : activeNav === 'beranda'
+                ? 'Beranda'
+                : activeNav.toUpperCase()}
             </span>
           </div>
 
@@ -82,11 +92,18 @@ export function App() {
           </div>
         </header>
 
-        {/* Dashboard Main View */}
+        {/* Dynamic Content Views */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
-          {activeNav === 'beranda' ? (
+          {activeSantriPage ? (
+            /* Dedicated Santri Page */
+            <SantriDetailPage
+              santri={activeSantriPage}
+              onBack={() => setActiveSantriPage(null)}
+              onSetor={handleOpenSetor}
+            />
+          ) : activeNav === 'beranda' ? (
             <div className="space-y-4">
-              {/* Top 3 KPI Cards: [ Tercapai ] [ Tidak Tercapai ] [ Belum Setor ] */}
+              {/* Top 3 KPI Cards */}
               <StatCards
                 tercapaiCount={tercapaiCount}
                 tidakTercapaiCount={tidakTercapaiCount}
@@ -117,10 +134,10 @@ export function App() {
         </main>
       </div>
 
-      {/* Santri Action Modal (Setor & Detail) */}
+      {/* Setor Modal */}
       <SantriModal
         type={modalType}
-        santri={selectedSantri}
+        santri={selectedSantriForSetor}
         onClose={handleCloseModal}
       />
 
