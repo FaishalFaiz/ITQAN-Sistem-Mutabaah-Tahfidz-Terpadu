@@ -61,6 +61,12 @@ export function App() {
               {activeNav === 'beranda' ? 'Beranda' : activeNav.toUpperCase()}
             </span>
           </div>
+
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="hidden sm:inline font-medium text-slate-700">Halaqoh Abu Bakar</span>
+            <span className="hidden sm:inline text-slate-300">•</span>
+            <span>Ahad, 28 Sep 2026</span>
+          </div>
         </header>
 
         {/* Dashboard Main View */}
