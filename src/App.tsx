@@ -97,7 +97,7 @@ export function App() {
         </header>
 
         {/* Dynamic Content Views */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 max-w-7xl w-full mx-auto">
           {activeSantriPage ? (
             /* Dedicated Santri Page */
             <SantriDetailPage

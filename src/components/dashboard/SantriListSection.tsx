@@ -56,7 +56,7 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
   const countBelum = santriList.filter((s) => s.status === 'belum_setor').length;
 
   return (
-    <div ref={sectionRef} className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
+    <div ref={sectionRef} className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-xs space-y-4">
       {/* Section Header with Tabs & Controls */}
       <div className="flex flex-col gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center justify-between">
