@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, UserPlus } from 'lucide-react';
+import gsap from 'gsap';
 import type { Santri } from './types';
 
 interface AddSantriModalProps {
@@ -18,6 +19,28 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
   const [juzAchieved, setJuzAchieved] = useState('1.0 Juz');
   const [dailyTargetLines, setDailyTargetLines] = useState(15);
   const [lastSurah, setLastSurah] = useState('An-Naba 1-15');
+
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (backdropRef.current) {
+        gsap.fromTo(
+          backdropRef.current,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.25, ease: 'power2.out' }
+        );
+      }
+      if (cardRef.current) {
+        gsap.fromTo(
+          cardRef.current,
+          { opacity: 0, scale: 0.95, y: 16 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: 'power3.out' }
+        );
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -54,8 +77,14 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[1px]">
-      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden">
+    <div
+      ref={backdropRef}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[1px]"
+    >
+      <div
+        ref={cardRef}
+        className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden"
+      >
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -70,7 +99,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors active:scale-95"
           >
             <X className="w-5 h-5" />
           </button>
