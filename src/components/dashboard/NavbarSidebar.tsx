@@ -67,10 +67,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             <div className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm shadow-xs">
               IT
             </div>
-            <div>
-              <span className="font-bold text-base text-slate-900 block leading-tight">ITQAN</span>
-              <span className="text-[11px] text-slate-500">Sistem Mutabaah</span>
-            </div>
+            <span className="font-bold text-base text-slate-900 leading-tight">Menu Navigasi</span>
           </div>
 
           <button

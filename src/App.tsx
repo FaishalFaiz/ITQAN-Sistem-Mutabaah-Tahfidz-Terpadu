@@ -103,6 +103,43 @@ export function App() {
             />
           ) : activeNav === 'beranda' ? (
             <div className="space-y-4">
+              {/* Dashboard Banner: ITQAN Sistem Muroja'ah + Assalamualaikum + Sesi Halaqoh + Jam & Hari/Tgl */}
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-[#0070BA] text-white flex items-center justify-center font-bold text-lg shadow-xs shrink-0">
+                    IT
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">ITQAN</h1>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#EBF5FB] text-[#0070BA] border border-[#D6EAF8]">
+                        Sistem Muroja'ah & Mutabaah Tahfidz
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold text-slate-800 mt-0.5">
+                      Assalamu'alaikum, <span className="text-[#0070BA]">Ust. Abdullah</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2">
+                    <span className="text-[11px] text-slate-500 block">Sesi Halaqoh</span>
+                    <span className="font-bold text-slate-900">Pagi (Ba'da Shubuh)</span>
+                  </div>
+
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2">
+                    <span className="text-[11px] text-slate-500 block">Waktu Sesi</span>
+                    <span className="font-bold text-slate-900">07:15 WIB</span>
+                  </div>
+
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2">
+                    <span className="text-[11px] text-slate-500 block">Hari & Tanggal</span>
+                    <span className="font-bold text-[#0070BA]">Ahad, 28 September 2026</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Top 3 KPI Cards */}
               <StatCards
                 tercapaiCount={tercapaiCount}
