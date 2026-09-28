@@ -13,7 +13,6 @@
   - Pencatatan ujian tasmi' berbasis ketukan/koreksi (digital tap counter).
   - Dasbor analitik capaian dan retensi hafalan per santri.
   - Transparansi progres santri bagi wali santri secara real-time.
-  - Rekapitulasi riwayat pengajian kitab kuning/turats bersanad.
 - **Prinsip Desain**: Enterprise-Minimalist UI bergaya clean institusi (merujuk portal SIAP IDN), tipografi Inter, palet solid Putih & Biru (tanpa gradien), serta alur pengisian cepat satu tangan (*one-hand mobile workflow*).
 
 ---
@@ -39,7 +38,7 @@
 - Menggunakan aplikasi dalam mode offline di ruang asrama atau masjid.
 
 ### 3.2. Admin / Koordinator Tahfidz
-- Mengelola master data: data santri, akun musyrif, rombel kelompok halaqoh, dan daftar kitab.
+- Mengelola master data: data santri, akun musyrif, dan rombel kelompok halaqoh.
 - Menentukan konfigurasi kurikulum dan target pacing (misal: 30 juz / 3 tahun).
 - Memberikan persetujuan (*approval*) jadwal ujian tasmi' / kenaikan juz santri.
 - Memantau rekap analitik capaian hafalan dan kepatuhan target seluruh angkatan.
@@ -106,11 +105,7 @@
   - **Hijau Solid** (`#059669`): Lulus ujian tasmi' (Mutqin).
 - Interaksi klik/hover memunculkan informasi nomor halaman, nama surah, dan tanggal terakhir disimak.
 
-### 4.6. Turats Ledger (Sanad & Pengajian Kitab)
-- Pencatatan riwayat pengajian kitab matan (seperti Tuhfatul Athfal, Al-Jazariyah, atau Safinatun Najah).
-- Rekap bab yang telah diselesaikan santri, tanggal khatam, serta nama ustadz pengampu beserta silsilah sanad keilmuannya.
-
-### 4.7. Pelaporan & Komunikasi
+### 4.6. Pelaporan & Komunikasi
 - **Ekspor PDF Otomatis**:
   - Rapor Mutaba'ah Berkala: ringkasan halaman ziyadah, rasio kelancaran, status pacing 3 tahun, rekap absensi halaqoh.
   - Sertifikat Kelulusan Kenaikan Juz / Tasmi' lengkap dengan QR Code validasi keaslian dokumen.
@@ -210,19 +205,6 @@ create table public.exams (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 7. TABEL TURATS / KITAB
-create table public.turats_records (
-  id uuid default uuid_generate_v4() primary key,
-  santri_id uuid references public.santri(id) on delete cascade not null,
-  kitab_name text not null,
-  pengampu_name text not null,
-  sanad_lineage text,
-  current_chapter text,
-  is_khatam boolean default false,
-  khatam_date date,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
 -- PENGAKTIFAN ROW LEVEL SECURITY (RLS)
 alter table public.profiles enable row level security;
 alter table public.santri enable row level security;
@@ -230,7 +212,6 @@ alter table public.halaqah_groups enable row level security;
 alter table public.halaqah_members enable row level security;
 alter table public.setoran_logs enable row level security;
 alter table public.exams enable row level security;
-alter table public.turats_records enable row level security;
 
 -- ATURAN KEAMANAN (RLS POLICIES)
 create policy "Authenticated read profiles" on public.profiles
