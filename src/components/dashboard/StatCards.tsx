@@ -1,17 +1,21 @@
 import React, { useRef, useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Clock, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
 
 interface StatCardsProps {
   tercapaiCount?: number;
   tidakTercapaiCount?: number;
   belumSetorCount?: number;
+  activeFilter?: 'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor';
+  onFilterChange?: (filter: 'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor') => void;
 }
 
 export const StatCards: React.FC<StatCardsProps> = ({
   tercapaiCount = 10,
   tidakTercapaiCount = 1,
   belumSetorCount = 1,
+  activeFilter = 'all',
+  onFilterChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const formatNum = (num: number) => (num < 10 ? `0${num}` : `${num}`);
@@ -36,51 +40,105 @@ export const StatCards: React.FC<StatCardsProps> = ({
   }, []);
 
   return (
-    <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+    <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       {/* Box 1: Tercapai (Emerald) */}
-      <div className="stat-box bg-emerald-50/40 border border-emerald-200 rounded-xl p-6 shadow-xs hover:border-emerald-300 transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="text-4xl sm:text-5xl font-bold text-emerald-700 tracking-tight font-sans">
-            {formatNum(tercapaiCount)}
+      <button
+        type="button"
+        onClick={() => onFilterChange && onFilterChange(activeFilter === 'tercapai' ? 'all' : 'tercapai')}
+        className={`stat-box text-left bg-emerald-50/40 border rounded-xl p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between ${
+          activeFilter === 'tercapai'
+            ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/80'
+            : 'border-emerald-200 hover:border-emerald-300'
+        }`}
+      >
+        <div className="flex items-center justify-between w-full mb-2">
+          <span className="text-xs font-semibold text-emerald-800 uppercase tracking-wide">
+            Target Tercapai
           </span>
-          <span className="text-lg sm:text-xl font-semibold text-emerald-900">
-            Tercapai
+          <div className="w-8 h-8 rounded-lg bg-emerald-100/90 border border-emerald-300/60 flex items-center justify-center text-emerald-700 shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+        </div>
+
+        <div className="flex items-baseline justify-between w-full">
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl sm:text-5xl font-bold text-emerald-700 tracking-tight font-sans">
+              {formatNum(tercapaiCount)}
+            </span>
+            <span className="text-xs font-medium text-emerald-800">Santri</span>
+          </div>
+          <span className="text-[11px] font-semibold text-emerald-700 flex items-center gap-0.5 group-hover:underline">
+            <span>Filter list</span>
+            <ChevronRight className="w-3.5 h-3.5" />
           </span>
         </div>
-        <div className="w-12 h-12 rounded-xl bg-emerald-100/80 border border-emerald-300/60 flex items-center justify-center text-emerald-700 shrink-0">
-          <CheckCircle2 className="w-6 h-6" />
-        </div>
-      </div>
+      </button>
 
       {/* Box 2: Tidak Tercapai (Red) */}
-      <div className="stat-box bg-red-50/40 border border-red-200 rounded-xl p-6 shadow-xs hover:border-red-300 transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="text-4xl sm:text-5xl font-bold text-red-700 tracking-tight font-sans">
-            {formatNum(tidakTercapaiCount)}
-          </span>
-          <span className="text-lg sm:text-xl font-semibold text-red-900">
+      <button
+        type="button"
+        onClick={() => onFilterChange && onFilterChange(activeFilter === 'tidak_tercapai' ? 'all' : 'tidak_tercapai')}
+        className={`stat-box text-left bg-red-50/40 border rounded-xl p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between ${
+          activeFilter === 'tidak_tercapai'
+            ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/80'
+            : 'border-red-200 hover:border-red-300'
+        }`}
+      >
+        <div className="flex items-center justify-between w-full mb-2">
+          <span className="text-xs font-semibold text-red-800 uppercase tracking-wide">
             Tidak Tercapai
           </span>
+          <div className="w-8 h-8 rounded-lg bg-red-100/90 border border-red-300/60 flex items-center justify-center text-red-700 shrink-0">
+            <AlertCircle className="w-4 h-4" />
+          </div>
         </div>
-        <div className="w-12 h-12 rounded-xl bg-red-100/80 border border-red-300/60 flex items-center justify-center text-red-700 shrink-0">
-          <AlertCircle className="w-6 h-6" />
+
+        <div className="flex items-baseline justify-between w-full">
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl sm:text-5xl font-bold text-red-700 tracking-tight font-sans">
+              {formatNum(tidakTercapaiCount)}
+            </span>
+            <span className="text-xs font-medium text-red-800">Santri</span>
+          </div>
+          <span className="text-[11px] font-semibold text-red-700 flex items-center gap-0.5">
+            <span>Perlu Setor</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </span>
         </div>
-      </div>
+      </button>
 
       {/* Box 3: Belum Setor (Amber) */}
-      <div className="stat-box bg-amber-50/40 border border-amber-200 rounded-xl p-6 shadow-xs hover:border-amber-300 transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <span className="text-4xl sm:text-5xl font-bold text-amber-700 tracking-tight font-sans">
-            {formatNum(belumSetorCount)}
-          </span>
-          <span className="text-lg sm:text-xl font-semibold text-amber-900">
+      <button
+        type="button"
+        onClick={() => onFilterChange && onFilterChange(activeFilter === 'belum_setor' ? 'all' : 'belum_setor')}
+        className={`stat-box text-left bg-amber-50/40 border rounded-xl p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between ${
+          activeFilter === 'belum_setor'
+            ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/80'
+            : 'border-amber-200 hover:border-amber-300'
+        }`}
+      >
+        <div className="flex items-center justify-between w-full mb-2">
+          <span className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
             Belum Setor
           </span>
+          <div className="w-8 h-8 rounded-lg bg-amber-100/90 border border-amber-300/60 flex items-center justify-center text-amber-700 shrink-0">
+            <Clock className="w-4 h-4" />
+          </div>
         </div>
-        <div className="w-12 h-12 rounded-xl bg-amber-100/80 border border-amber-300/60 flex items-center justify-center text-amber-700 shrink-0">
-          <Clock className="w-6 h-6" />
+
+        <div className="flex items-baseline justify-between w-full">
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl sm:text-5xl font-bold text-amber-700 tracking-tight font-sans">
+              {formatNum(belumSetorCount)}
+            </span>
+            <span className="text-xs font-medium text-amber-800">Santri</span>
+          </div>
+          <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-0.5">
+            <span>Dalam Antrean</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </span>
         </div>
-      </div>
+      </button>
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
 import { SantriModal } from './components/dashboard/SantriModal';
 import { AddSantriModal } from './components/dashboard/AddSantriModal';
 import { SantriDetailPage } from './components/dashboard/SantriDetailPage';
+import { HalaqahQuickFocus } from './components/dashboard/HalaqahQuickFocus';
 import { OtherView } from './components/dashboard/OtherViews';
 
 export function App() {
@@ -24,6 +25,9 @@ export function App() {
 
   // Modal state for Add Santri
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Filter state for Santri cards
+  const [activeFilter, setActiveFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
 
   const [santriList, setSantriList] = useState<Santri[]>(INITIAL_SANTRI_LIST);
 
@@ -140,19 +144,30 @@ export function App() {
                 </div>
               </div>
 
-              {/* Top 3 KPI Cards */}
+              {/* Top 3 KPI Cards with filter interaction */}
               <StatCards
                 tercapaiCount={tercapaiCount}
                 tidakTercapaiCount={tidakTercapaiCount}
                 belumSetorCount={belumSetorCount}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
+              />
+
+              {/* Halaqah Focus & Target Progress */}
+              <HalaqahQuickFocus
+                santriList={santriList}
+                onSetor={handleOpenSetor}
+                onDetail={handleOpenDetail}
               />
 
               {/* Middle Section: Line Chart Trend */}
               <TrendChart />
 
-              {/* Bottom Section: Santri Cards Grid with Vertical Scroll */}
+              {/* Bottom Section: Santri Cards Grid with Filter Tabs & Search */}
               <SantriListSection
                 santriList={santriList}
+                activeFilter={activeFilter}
+                onFilterChange={setActiveFilter}
                 onSetor={handleOpenSetor}
                 onDetail={handleOpenDetail}
                 onOpenAddModal={() => setIsAddModalOpen(true)}
