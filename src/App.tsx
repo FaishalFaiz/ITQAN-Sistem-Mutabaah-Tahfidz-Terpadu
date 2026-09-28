@@ -1,262 +1,201 @@
 import { useState } from 'react';
 import { 
-  BookOpen, 
-  Award, 
-  BarChart3, 
+  Menu, 
   Wifi, 
-  WifiOff, 
-  Layers,
-  ShieldCheck
+  WifiOff
 } from 'lucide-react';
-import { PacingCard } from './components/visualization/PacingCard';
-import { MushafHeatmap } from './components/visualization/MushafHeatmap';
-import { FastSetoranForm } from './components/halaqah/FastSetoranForm';
-import { TapCounterExam } from './components/halaqah/TapCounterExam';
-import { Card } from './components/ui/Card';
-import { Badge } from './components/ui/Badge';
-import { Button } from './components/ui/Button';
+import { INITIAL_SANTRI_LIST } from './components/dashboard/mockData';
+import type { Santri, NavItemKey } from './components/dashboard/types';
+import { StatCards } from './components/dashboard/StatCards';
+import { TrendChart } from './components/dashboard/TrendChart';
+import { SantriListSection } from './components/dashboard/SantriListSection';
+import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
+import { SantriModal } from './components/dashboard/SantriModal';
+import { OtherView } from './components/dashboard/OtherViews';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'halaqah' | 'ujian' | 'heatmap' | 'pacing'>('halaqah');
+  // Navigation state (Default is 'beranda' as requested in wireframe)
+  const [activeNav, setActiveNav] = useState<NavItemKey>('beranda');
+  
+  // Navbar sidebar toggle state (connected to hamburger button ☰)
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false);
+
+  // Online / Offline indicator
   const [isOnline, setIsOnline] = useState(true);
 
+  // Filter state for Santri cards ('all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor')
+  const [activeSantriFilter, setActiveSantriFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
+
+  // Modal state for Setor / Detail
+  const [modalType, setModalType] = useState<'setor' | 'detail' | null>(null);
+  const [selectedSantri, setSelectedSantri] = useState<Santri | null>(null);
+
+  // Santri list data
+  const [santriList] = useState<Santri[]>(INITIAL_SANTRI_LIST);
+
+  const handleOpenSetor = (santri: Santri) => {
+    setSelectedSantri(santri);
+    setModalType('setor');
+  };
+
+  const handleOpenDetail = (santri: Santri) => {
+    setSelectedSantri(santri);
+    setModalType('detail');
+  };
+
+  const handleCloseModal = () => {
+    setModalType(null);
+    setSelectedSantri(null);
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans">
-      {/* Top Navbar Institusi SIAP IDN Style */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans relative antialiased">
+      {/* Top Header Bar with Hamburger Button (☰) as in wireframe */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          {/* Left: Hamburger Button ☰ and Brand Title */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#0070BA] flex items-center justify-center text-white font-bold text-lg shadow-sm">
+            <button
+              type="button"
+              onClick={() => setIsNavbarOpen(!isNavbarOpen)}
+              className="p-2 -ml-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA]"
+              title="Buka / Tutup Navbar Menu"
+              aria-label="Toggle Navbar Menu"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+
+            <div className="w-9 h-9 rounded-lg bg-[#0070BA] flex items-center justify-center text-white font-bold text-base shadow-xs">
               IT
             </div>
+
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-base text-slate-900 tracking-tight">ITQAN</span>
                 <span className="text-[10px] font-semibold uppercase bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200">
                   SIMP Tahfidz
                 </span>
+                <span className="hidden sm:inline-block text-xs text-slate-400 font-normal">|</span>
+                <span className="hidden sm:inline-block text-xs font-semibold text-[#0070BA]">
+                  {activeNav === 'beranda' ? 'Beranda Desktop' : activeNav.toUpperCase()}
+                </span>
               </div>
-              <p className="text-xs text-slate-500">Sistem Mutabaah Tahfidz Terpadu</p>
+              <p className="text-[11px] text-slate-500">Sistem Mutabaah Tahfidz Terpadu</p>
             </div>
           </div>
 
+          {/* Right Header: Online Status & Musyrif Info & Navbar Button */}
           <div className="flex items-center gap-3">
             {/* Status Koneksi Offline-First */}
-            <div className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md border ${
-              isOnline 
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                : 'bg-amber-50 text-amber-700 border-amber-200'
-            }`}>
+            <button
+              onClick={() => setIsOnline(!isOnline)}
+              title="Klik untuk simulasi online/offline"
+              className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md border transition-colors ${
+                isOnline 
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' 
+                  : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+              }`}
+            >
               {isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
-              <span>{isOnline ? 'Online (Tersinkron)' : 'Offline (Tersimpan Lokal)'}</span>
-            </div>
+              <span className="hidden sm:inline">{isOnline ? 'Online (Tersinkron)' : 'Offline'}</span>
+            </button>
 
-            <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-slate-200 text-xs">
-              <span className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold">
-                U
+            {/* Quick Navbar Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setIsNavbarOpen(!isNavbarOpen)}
+              className={`hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${
+                isNavbarOpen 
+                  ? 'bg-[#0070BA] text-white border-[#0070BA]' 
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              <span>Navbar</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-black/10">☰</span>
+            </button>
+
+            {/* Musyrif Avatar */}
+            <div className="flex items-center gap-2 pl-3 border-l border-slate-200 text-xs">
+              <span className="w-8 h-8 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center font-bold text-xs">
+                UA
               </span>
-              <div>
-                <span className="font-semibold block text-slate-900">Ust. Abdullah</span>
-                <span className="text-[11px] text-slate-500">Musyrif Halaqoh 1</span>
+              <div className="hidden md:block">
+                <span className="font-semibold block text-slate-900 leading-tight">Ust. Abdullah</span>
+                <span className="text-[11px] text-slate-500">Halaqoh 1</span>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Tab Navigasi Horizontal */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 border-t border-slate-100 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('halaqah')}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${
-              activeTab === 'halaqah'
-                ? 'border-[#0070BA] text-[#0070BA]'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Fast-Logging Halaqoh</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('pacing')}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${
-              activeTab === 'pacing'
-                ? 'border-[#0070BA] text-[#0070BA]'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>Target Pacing 3 Tahun (9.060 Baris)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('heatmap')}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${
-              activeTab === 'heatmap'
-                ? 'border-[#0070BA] text-[#0070BA]'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>Heatmap 604 Halaman</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('ujian')}
-            className={`py-3 px-4 text-xs font-semibold border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${
-              activeTab === 'ujian'
-                ? 'border-[#0070BA] text-[#0070BA]'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Award className="w-4 h-4" />
-            <span>Ujian Tasmi' (Tap Counter)</span>
-          </button>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Banner Quick Context */}
-        <div className="mb-6 p-4 bg-white border border-slate-200 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#EBF5FB] text-[#0070BA] rounded-lg">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-slate-900">Halaqoh Abu Bakar Ash-Shiddiq</h1>
-              <p className="text-xs text-slate-500">Angkatan 2024 • Target: 30 Juz (15 baris/hal) dalam 3 tahun</p>
-            </div>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Quick Breadcrumb / Halaqoh Context */}
+        <div className="flex items-center justify-between pb-1">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span className="font-semibold text-slate-900">Beranda Desktop</span>
+            <span>/</span>
+            <span>Halaqoh Abu Bakar Ash-Shiddiq</span>
+            <span>/</span>
+            <span className="text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              Sesi Pagi Aktif
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => setIsOnline(!isOnline)}>
-              Simulasi {isOnline ? 'Offline' : 'Online'}
-            </Button>
-            <Badge variant="info">Semester 1 Aktif</Badge>
+          <div className="text-xs text-slate-500 hidden sm:block">
+            Target Kurikulum: <b className="text-slate-900">30 Juz (15 baris/hal)</b>
           </div>
         </div>
 
-        {/* Dynamic Tab Contents */}
-        {activeTab === 'halaqah' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <FastSetoranForm />
-              
-              {/* Daily Checklist Halaqoh Santri */}
-              <Card title="Checklist Target Harian Santri (Halaqoh Hari Ini)">
-                <div className="divide-y divide-slate-100">
-                  {[
-                    { name: 'Muhammad Faiz', nis: '2024001', target: 12, achieved: 15, status: 'tercapai', last: 'An-Naba 1-40' },
-                    { name: 'Ahmad Zaki', nis: '2024002', target: 12, achieved: 8, status: 'kurang', last: 'An-Naziat 1-20' },
-                    { name: 'Farhan Ramadhan', nis: '2024003', target: 15, achieved: 0, status: 'belum', last: 'Abasa 1-15' },
-                    { name: 'Bilal Al-Habasyi', nis: '2024004', target: 10, achieved: 10, status: 'tercapai', last: 'At-Takwir 1-29' },
-                  ].map((s, idx) => (
-                    <div key={idx} className="py-3 flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold text-sm text-slate-900">{s.name}</div>
-                        <div className="text-xs text-slate-500">NIS: {s.nis} • Terakhir: {s.last}</div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right text-xs">
-                          <span className="font-bold text-slate-900">{s.achieved}</span> / {s.target} Baris
-                        </div>
-                        {s.status === 'tercapai' && <Badge variant="mumtaz">Tercapai</Badge>}
-                        {s.status === 'kurang' && <Badge variant="jayyid">Kurang 4 Baris</Badge>}
-                        {s.status === 'belum' && <Badge variant="iadah">Belum Setor</Badge>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-
-            {/* Side Column: Santri Highlight Pacing */}
-            <div className="space-y-6">
-              <PacingCard
-                santriName="Muhammad Faiz"
-                nis="2024001"
-                totalLinesMemorized={1420}
-                totalLinesTarget={9060}
-                daysRemaining={650}
-                dailyTargetLines={12}
-                linesCompletedToday={15}
-                status="on_track"
-              />
-
-              <Card title="Rekomendasi Spaced Retention">
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs space-y-1">
-                  <div className="font-semibold text-amber-800">Perhatian: Muroja'ah Jatuh Tempo</div>
-                  <p className="text-amber-700">
-                    Juz 29 (Hal. 562–564) belum pernah dimuroja'ah dalam 8 hari terakhir. Status sebelumnya: <b>I'ADAH</b>.
-                  </p>
-                </div>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'pacing' && (
+        {/* Dynamic Nav View: Beranda (Primary Dashboard from Wireframe) vs Other Nav Views */}
+        {activeNav === 'beranda' ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <PacingCard
-                santriName="Muhammad Faiz"
-                nis="2024001"
-                totalLinesMemorized={1420}
-                totalLinesTarget={9060}
-                daysRemaining={650}
-                dailyTargetLines={12}
-                linesCompletedToday={15}
-                status="on_track"
-              />
-              <PacingCard
-                santriName="Ahmad Zaki"
-                nis="2024002"
-                totalLinesMemorized={780}
-                totalLinesTarget={9060}
-                daysRemaining={650}
-                dailyTargetLines={15}
-                linesCompletedToday={8}
-                status="behind"
-              />
-            </div>
+            {/* Top 3 KPI Cards: [ 10 Tercapai ] [ 01 Tidak Tercapai ] [ 01 Apa ya? ] */}
+            <StatCards
+              tercapaiCount={10}
+              tidakTercapaiCount={1}
+              belumSetorCount={1}
+              activeFilter={activeSantriFilter}
+              onFilterChange={setActiveSantriFilter}
+            />
 
-            <Card title="Metodologi Kalkulasi Target Baris (15 Baris / Halaman)">
-              <div className="text-xs text-slate-600 space-y-2 leading-relaxed">
-                <p>
-                  • <b>Standar Mushaf Madinah</b>: 604 halaman &times; 15 baris = <b>9.060 total baris</b> (30 Juz).
-                </p>
-                <p>
-                  • <b>Durasi Program 3 Tahun</b>: ~800 hari efektif setoran ziyadah halaqoh.
-                </p>
-                <p>
-                  • <b>Formula Adaptif Harian</b>: Sisa baris menuju 9.060 dibagi sisa hari aktif santri. Jika santri tertinggal, sistem otomatis menaikkan target baris harian berikutnya secara proporsional.
-                </p>
-              </div>
-            </Card>
-          </div>
-        )}
+            {/* Middle Section: Line Chart Trend as drawn in wireframe */}
+            <TrendChart />
 
-        {activeTab === 'heatmap' && (
-          <div className="space-y-6">
-            <Card 
-              title="Heatmap Matriks Mushaf (604 Halaman)"
-              subtitle="Representasi visual solid 604 halaman mushaf Madinah. Klik kotak untuk detail halaman."
-            >
-              <MushafHeatmap />
-            </Card>
+            {/* Bottom Section: Santri Cards Grid with Vertical Scroll */}
+            <SantriListSection
+              santriList={santriList}
+              activeFilter={activeSantriFilter}
+              onFilterChange={setActiveSantriFilter}
+              onSetor={handleOpenSetor}
+              onDetail={handleOpenDetail}
+            />
           </div>
-        )}
-
-        {activeTab === 'ujian' && (
-          <div className="max-w-2xl mx-auto space-y-6">
-            <TapCounterExam />
-          </div>
+        ) : (
+          <OtherView
+            currentView={activeNav}
+            onBackToBeranda={() => setActiveNav('beranda')}
+          />
         )}
       </main>
 
-      {/* Footer Flat */}
-      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-        ITQAN — Sistem Mutabaah Tahfidz Terpadu • Enterprise-Minimalist UI (Solid Blue & White)
+      {/* Navbar Sidebar (Drawer matching the "Navbar" column on right in wireframe) */}
+      <NavbarSidebar
+        isOpen={isNavbarOpen}
+        onClose={() => setIsNavbarOpen(false)}
+        activeItem={activeNav}
+        onSelectItem={(item) => setActiveNav(item)}
+      />
+
+      {/* Santri Action Modal (Setor & Detail) */}
+      <SantriModal
+        type={modalType}
+        santri={selectedSantri}
+        onClose={handleCloseModal}
+      />
+
+      {/* Footer Flat Institusi Style */}
+      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-auto">
+        ITQAN — Sistem Mutabaah Tahfidz Terpadu • Clean & Clear UI Solid Blue & White
       </footer>
     </div>
   );
