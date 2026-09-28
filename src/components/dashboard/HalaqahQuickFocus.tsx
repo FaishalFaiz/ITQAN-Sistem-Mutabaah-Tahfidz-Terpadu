@@ -51,45 +51,45 @@ export const HalaqahQuickFocus: React.FC<HalaqahQuickFocusProps> = ({
               priorityList.map((s) => (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 rounded-full bg-white border border-slate-200 text-[#0070BA] font-bold text-xs flex items-center justify-center shrink-0">
                       {s.avatarInitials}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-slate-900">{s.name}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <span className="font-bold text-xs text-slate-900 truncate">{s.name}</span>
                         {s.status === 'tidak_tercapai' ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 px-1.5 py-0.2 rounded border border-red-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 px-1.5 py-0.5 rounded border border-red-200 shrink-0">
                             <AlertCircle className="w-3 h-3 text-red-600" />
                             Kurang {s.dailyTargetLines - s.linesCompletedToday} baris
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 shrink-0">
                             <Clock className="w-3 h-3 text-amber-600" />
                             Belum Setor
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-[11px] text-slate-500 block truncate">
                         {s.juzAchieved} • Terakhir: {s.lastSurah}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 w-full sm:w-auto justify-end">
                     <button
                       type="button"
                       onClick={() => onDetail(s)}
-                      className="px-2.5 py-1 text-xs font-semibold rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                      className="flex-1 sm:flex-none text-center px-2.5 py-1.5 text-xs font-semibold rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors"
                     >
                       Lihat Profil
                     </button>
                     <button
                       type="button"
                       onClick={() => onSetor(s)}
-                      className="px-3 py-1 text-xs font-semibold rounded bg-[#0070BA] text-white hover:bg-[#005C9E]"
+                      className="flex-1 sm:flex-none text-center px-3 py-1.5 text-xs font-semibold rounded bg-[#0070BA] text-white hover:bg-[#005C9E] transition-colors shadow-2xs"
                     >
                       Simak Setor
                     </button>
