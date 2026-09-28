@@ -5,5 +5,5 @@
 - Act accordingly: prioritize clean architecture, robust best practices, high aesthetic standards, intuitive usability, accessibility, and high performance in all code and design recommendations.
 
 ## Git Workflow Rules
-- Always commit changes when completing tasks or milestone updates.
+- Always commit changes after EACH file modification, file creation, or task milestone.
 - NEVER run `git push` unless explicitly asked by user.
