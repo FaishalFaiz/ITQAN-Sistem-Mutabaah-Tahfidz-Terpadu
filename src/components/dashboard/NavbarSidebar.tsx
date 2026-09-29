@@ -9,6 +9,7 @@ import {
   ChevronDown, 
   ChevronRight, 
   MoreHorizontal,
+  LogOut,
   X
 } from 'lucide-react';
 import type { NavItemKey } from './types';
@@ -239,15 +240,29 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
         </nav>
 
         {/* Sidebar Footer User Info */}
-        <div className="p-4 border-t border-slate-200">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-xs">
-              UA
+        <div className="p-3.5 border-t border-slate-200">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-xs shrink-0">
+                UA
+              </div>
+              <div className="min-w-0">
+                <span className="font-bold text-xs text-slate-900 block truncate">Ust. Abdullah</span>
+                <span className="text-[10px] text-slate-500 block truncate">Musyrif Halaqoh 1</span>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <span className="font-bold text-xs text-slate-900 block truncate">Ust. Abdullah</span>
-              <span className="text-[11px] text-slate-500 block truncate">Musyrif Halaqoh 1</span>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                navigate('/login');
+                onClose();
+              }}
+              title="Keluar / Ganti Akun"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0"
+              aria-label="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </aside>

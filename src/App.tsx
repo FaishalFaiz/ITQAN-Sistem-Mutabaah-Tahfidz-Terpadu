@@ -12,6 +12,8 @@ import { AddSantriModal } from './components/dashboard/AddSantriModal';
 import { SantriDetailPage } from './components/dashboard/SantriDetailPage';
 import { HalaqahQuickFocus } from './components/dashboard/HalaqahQuickFocus';
 import { OtherView } from './components/dashboard/OtherViews';
+import { LoginPage } from './pages/auth/LoginPage';
+import { SignupPage } from './pages/auth/SignupPage';
 
 // Helper component for /santri/:id route
 function SantriDetailRoute({
@@ -108,6 +110,14 @@ export function App() {
   const tidakTercapaiCount = santriList.filter((s) => s.status === 'tidak_tercapai').length;
   const belumSetorCount = santriList.filter((s) => s.status === 'belum_setor').length;
 
+  // Auth routes (render standalone full page)
+  if (location.pathname === '/login') {
+    return <LoginPage />;
+  }
+  if (location.pathname === '/signup') {
+    return <SignupPage />;
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex font-sans antialiased">
       {/* 1. Left Navbar Sidebar with Router Navigation */}
@@ -173,7 +183,11 @@ export function App() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+              <div 
+                onClick={() => navigate('/login')}
+                title="Klik untuk Keluar / Ganti Akun"
+                className="flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer hover:opacity-80 transition-opacity"
+              >
                 <div className="w-8 h-8 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] font-bold text-xs flex items-center justify-center shrink-0">
                   UA
                 </div>
