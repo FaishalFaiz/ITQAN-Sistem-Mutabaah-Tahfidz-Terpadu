@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ArrowLeft, UserPlus, Search } from 'lucide-react';
-import { FastSetoranForm } from '../halaqah/FastSetoranForm';
 import { TapCounterExam } from '../halaqah/TapCounterExam';
 import { PacingCard } from '../visualization/PacingCard';
 import { Button } from '@/components/ui/button';
@@ -184,15 +183,6 @@ export const OtherView: React.FC<OtherViewProps> = ({
             </div>
           </div>
         </Card>
-      )}
-
-      {(currentView === 'setoran-ziyadah' || currentView === 'setoran-murajaah') && (
-        <div className="max-w-2xl mx-auto space-y-4">
-          <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-xs font-medium">
-            Mode Input Setoran Langsung: {currentView === 'setoran-ziyadah' ? 'Ziyadah (Hafalan Baru)' : 'Muraja\'ah (Pengulangan)'}
-          </div>
-          <FastSetoranForm />
-        </div>
       )}
 
       {currentView === 'dll-ujian' && (

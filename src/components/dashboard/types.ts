@@ -17,7 +17,5 @@ export type NavItemKey =
   | 'laporan' 
   | 'santri' 
   | 'pengaturan' 
-  | 'setoran-ziyadah' 
-  | 'setoran-murajaah' 
   | 'dll-pacing' 
   | 'dll-ujian';

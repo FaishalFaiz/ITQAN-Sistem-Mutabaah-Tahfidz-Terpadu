@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
   FileText, 
   Users, 
   Settings, 
-  BookOpen, 
-  ChevronDown, 
-  ChevronRight, 
   MoreHorizontal,
   LogOut,
   X
@@ -26,7 +23,6 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
   onClose,
   onSelectItem,
 }) => {
-  const [isSetoranOpen, setIsSetoranOpen] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -37,8 +33,6 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
     if (path.startsWith('/laporan')) return 'laporan';
     if (path.startsWith('/santri')) return 'santri';
     if (path.startsWith('/pengaturan')) return 'pengaturan';
-    if (path.startsWith('/setoran/ziyadah')) return 'setoran-ziyadah';
-    if (path.startsWith('/setoran/murajaah')) return 'setoran-murajaah';
     if (path.startsWith('/ujian')) return 'dll-ujian';
     if (path.startsWith('/pacing')) return 'dll-pacing';
     return 'beranda';
@@ -62,12 +56,6 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
         break;
       case 'pengaturan':
         navigate('/pengaturan');
-        break;
-      case 'setoran-ziyadah':
-        navigate('/setoran/ziyadah');
-        break;
-      case 'setoran-murajaah':
-        navigate('/setoran/murajaah');
         break;
       case 'dll-ujian':
         navigate('/ujian-tasmi');
@@ -176,55 +164,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             <span>Pengaturan</span>
           </button>
 
-          {/* Setoran (Ziyadah & Murajaah) */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => setIsSetoranOpen(!isSetoranOpen)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left hover:bg-slate-100 transition-colors font-medium text-slate-700"
-            >
-              <div className="flex items-center gap-3">
-                <BookOpen className="w-4 h-4 shrink-0 text-[#0070BA]" />
-                <span>Setoran</span>
-              </div>
-              {isSetoranOpen ? (
-                <ChevronDown className="w-4 h-4 text-slate-400" />
-              ) : (
-                <ChevronRight className="w-4 h-4 text-slate-400" />
-              )}
-            </button>
-
-            {isSetoranOpen && (
-              <div className="pl-7 pr-1 py-1 space-y-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => handleNavClick('setoran-ziyadah')}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
-                    activeKey === 'setoran-ziyadah'
-                      ? 'bg-[#EBF5FB] text-[#0070BA] font-bold'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0070BA]" />
-                  <span>- Ziyadah</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleNavClick('setoran-murajaah')}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
-                    activeKey === 'setoran-murajaah'
-                      ? 'bg-[#EBF5FB] text-[#0070BA] font-bold'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  <span>- Murajaah</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* DLL */}
+          {/* DLL / Ujian & Pacing */}
           <button
             type="button"
             onClick={() => handleNavClick('dll-ujian')}

@@ -12,6 +12,7 @@ interface PacingCardProps {
   dailyTargetLines: number;
   linesCompletedToday: number;
   status?: 'on_track' | 'behind' | 'ahead';
+  hideHeader?: boolean;
 }
 
 export const PacingCard: React.FC<PacingCardProps> = ({
@@ -23,26 +24,45 @@ export const PacingCard: React.FC<PacingCardProps> = ({
   dailyTargetLines = 12,
   linesCompletedToday = 15,
   status = 'on_track',
+  hideHeader = false,
 }) => {
   const percentage = Math.min(100, Math.round((totalLinesMemorized / totalLinesTarget) * 100));
   const pagesEquivalent = (totalLinesMemorized / 15).toFixed(1);
   const totalPagesTarget = (totalLinesTarget / 15).toFixed(0);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)] space-y-4">
+    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-slate-900 text-base">{santriName}</h3>
-            <span className="text-xs text-slate-500 font-mono">({nis})</span>
+      {!hideHeader && (
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-slate-900 text-base">{santriName}</h3>
+              <span className="text-xs text-slate-500 font-mono">({nis})</span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">Target Kurikulum 30 Juz / 3 Tahun</p>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">Target Kurikulum 30 Juz / 3 Tahun</p>
+          <Badge variant={status === 'on_track' ? 'mumtaz' : 'iadah'}>
+            {status === 'on_track' ? 'Sesuai Target (On Track)' : 'Tertinggal (Behind)'}
+          </Badge>
         </div>
-        <Badge variant={status === 'on_track' ? 'mumtaz' : 'iadah'}>
-          {status === 'on_track' ? 'Sesuai Target (On Track)' : 'Tertinggal (Behind)'}
-        </Badge>
-      </div>
+      )}
+
+      {hideHeader && (
+        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+          <div>
+            <h3 className="font-bold text-sm text-slate-900">
+              Progres Kurikulum Tahfidz (30 Juz / 3 Tahun)
+            </h3>
+            <p className="text-[11px] text-slate-500">
+              Kalkulasi baris kumulatif menuju target khatam
+            </p>
+          </div>
+          <Badge variant={status === 'on_track' ? 'mumtaz' : 'iadah'}>
+            {status === 'on_track' ? 'On Track' : 'Tertinggal'}
+          </Badge>
+        </div>
+      )}
 
       {/* Progress Bar Baris */}
       <div>

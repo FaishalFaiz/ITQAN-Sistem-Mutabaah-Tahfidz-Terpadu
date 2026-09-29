@@ -37,7 +37,6 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   // Metrik kalkulasi
   const totalLines = santri.totalLinesMemorized || 1500;
   const totalTarget = 9060;
-  const progressPercent = Math.min(100, Math.round((totalLines / totalTarget) * 100));
   const pagesCompleted = (totalLines / 15).toFixed(1);
   const remainingLines = Math.max(0, totalTarget - totalLines);
   const remainingDays = 650;
@@ -272,6 +271,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               dailyTargetLines={santri.dailyTargetLines}
               linesCompletedToday={santri.linesCompletedToday}
               status={santri.status === 'tercapai' ? 'on_track' : 'behind'}
+              hideHeader={true}
             />
 
             {/* Rekomendasi Tindakan Musyrif */}
@@ -382,13 +382,13 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
-                  <span className="text-slate-500 font-medium">Persentase Khatam</span>
-                  <span className="font-bold text-[#0070BA]">{progressPercent}%</span>
+                  <span className="text-slate-500 font-medium">Sisa Target Hafalan</span>
+                  <span className="font-bold text-slate-800">{remainingLines.toLocaleString()} Baris</span>
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
-                  <span className="text-slate-500 font-medium">Rata-rata Kelancaran</span>
-                  <span className="font-bold text-emerald-700">92% Mumtaz</span>
+                  <span className="text-slate-500 font-medium">Est. Waktu Khatam</span>
+                  <span className="font-bold text-[#0070BA]">~{remainingDays} Hari ({Math.round(remainingDays / 30)} Bulan)</span>
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
@@ -398,7 +398,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
                 <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
                   <span className="text-slate-500 font-medium">Target Harian Ideal</span>
-                  <span className="font-bold text-[#0070BA]">{requiredDailyLines} Baris / Hari</span>
+                  <span className="font-bold text-emerald-700">{requiredDailyLines} Baris / Hari</span>
                 </div>
               </div>
             </div>

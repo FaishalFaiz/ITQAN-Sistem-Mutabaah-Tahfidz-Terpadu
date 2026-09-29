@@ -98,8 +98,6 @@ export function App() {
     if (p.startsWith('/santri')) return 'Daftar Santri';
     if (p.startsWith('/laporan')) return 'Laporan & Ringkasan';
     if (p.startsWith('/pengaturan')) return 'Pengaturan';
-    if (p.startsWith('/setoran/ziyadah')) return 'Setoran Ziyadah';
-    if (p.startsWith('/setoran/murajaah')) return 'Setoran Murajaah';
     if (p.startsWith('/ujian')) return "Ujian Tasmi'";
     if (p.startsWith('/pacing')) return 'Target Pacing 3 Tahun';
     return 'ITQAN';
@@ -313,34 +311,6 @@ export function App() {
               element={
                 <OtherView
                   currentView="pengaturan"
-                  onBackToBeranda={() => navigate('/beranda')}
-                  santriList={santriList}
-                  onSetor={handleOpenSetor}
-                  onDetail={handleOpenDetail}
-                  onOpenAddModal={() => setIsAddModalOpen(true)}
-                />
-              }
-            />
-
-            <Route
-              path="/setoran/ziyadah"
-              element={
-                <OtherView
-                  currentView="setoran-ziyadah"
-                  onBackToBeranda={() => navigate('/beranda')}
-                  santriList={santriList}
-                  onSetor={handleOpenSetor}
-                  onDetail={handleOpenDetail}
-                  onOpenAddModal={() => setIsAddModalOpen(true)}
-                />
-              }
-            />
-
-            <Route
-              path="/setoran/murajaah"
-              element={
-                <OtherView
-                  currentView="setoran-murajaah"
                   onBackToBeranda={() => navigate('/beranda')}
                   santriList={santriList}
                   onSetor={handleOpenSetor}
