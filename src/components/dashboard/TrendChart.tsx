@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BarChart3, TrendingUp, Calendar, Info } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import gsap from 'gsap';
 
 interface BarDataPoint {
@@ -27,9 +27,6 @@ export const TrendChart: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const maxScale = 250; // Skala maksimal baris untuk tinggi 100%
-
-  const totalLinesWeek = PEKAN_DATA.reduce((acc, curr) => acc + curr.ziyadah + curr.murojaah, 0);
-  const avgLinesPerDay = Math.round(totalLinesWeek / PEKAN_DATA.length);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
