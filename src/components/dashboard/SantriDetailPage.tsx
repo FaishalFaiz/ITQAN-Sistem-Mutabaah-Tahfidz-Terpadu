@@ -9,14 +9,17 @@ import {
   Layers, 
   Share2, 
   Sparkles,
-  BarChart3
+  BarChart3,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  UserCheck
 } from 'lucide-react';
 import gsap from 'gsap';
 import type { Santri } from './types';
 import { MushafHeatmap } from '../visualization/MushafHeatmap';
 import { PacingCard } from '../visualization/PacingCard';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 
 interface SantriDetailPageProps {
@@ -52,8 +55,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     const ctx = gsap.context(() => {
       gsap.fromTo(
         '.detail-tab-pane',
-        { opacity: 0, y: 12 },
-        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }
+        { opacity: 0, y: 8 },
+        { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }
       );
     }, detailContainerRef);
 
@@ -75,18 +78,41 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     setTimeout(() => setCopyFeedback(false), 2500);
   };
 
+  const statusConfig = {
+    tercapai: {
+      label: 'Target Tercapai',
+      badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      icon: CheckCircle2,
+      subText: 'Target harian terpenuhi'
+    },
+    tidak_tercapai: {
+      label: 'Defisit Setoran',
+      badgeClass: 'bg-red-50 text-red-700 border-red-200',
+      icon: XCircle,
+      subText: `Kurang ${santri.dailyTargetLines - santri.linesCompletedToday} baris`
+    },
+    belum_setor: {
+      label: 'Belum Setor',
+      badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+      icon: AlertTriangle,
+      subText: 'Menunggu giliran talaqqi'
+    }
+  }[santri.status];
+
+  const StatusIcon = statusConfig.icon;
+
   return (
-    <div ref={detailContainerRef} className="space-y-5 animate-fadeIn">
-      {/* 1. Top Bar: Breadcrumb + Action Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+    <div ref={detailContainerRef} className="space-y-4">
+      {/* 1. Header Navigation Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors group"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#0070BA] transition-colors group"
         >
-          <div className="w-6 h-6 rounded-md bg-brand-50 flex items-center justify-center group-hover:bg-brand-100">
-            <ArrowLeft className="w-3.5 h-3.5 text-brand" />
+          <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-[#EBF5FB] flex items-center justify-center text-slate-600 group-hover:text-[#0070BA] transition-colors">
+            <ArrowLeft className="w-4 h-4" />
           </div>
-          <span>Kembali ke Beranda Halaqoh</span>
+          <span>Kembali ke Daftar Santri</span>
         </button>
 
         <div className="flex items-center gap-2">
@@ -96,19 +122,19 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             variant="outline"
             size="sm"
             onClick={handleCopyWADigest}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold h-8.5 px-3 border-slate-200 text-slate-700 hover:bg-slate-50"
             title="Salin ringkasan progres untuk dikirim ke Wali Santri via WA"
           >
             <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{copyFeedback ? 'Tersalin ke Clipboard!' : 'Kirim WA Wali'}</span>
+            <span>{copyFeedback ? 'Tersalin!' : 'Laporan WA Wali'}</span>
           </Button>
 
-          {/* Tombol Input Setoran Cepat */}
+          {/* Tombol Input Setoran */}
           <Button
             type="button"
             size="sm"
             onClick={() => onSetor(santri)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold h-8.5 px-3.5 bg-[#0070BA] hover:bg-[#005C9E] text-white shadow-xs"
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>Input Setoran</span>
@@ -116,152 +142,138 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         </div>
       </div>
 
-      {/* 2. Hero Profile Banner */}
-      <Card className="p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-border">
-        {/* Identitas Santri */}
-        <div className="flex items-start sm:items-center gap-4">
-          <div className="relative shrink-0">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-brand-50 border border-brand-100 text-brand flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-xs">
+      {/* 2. Hero Profile Banner (Executive Enterprise Look) */}
+      <Card className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {/* Kolom Kiri: Profil & Meta Halaqoh */}
+          <div className="flex items-start gap-4 sm:gap-5">
+            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-2xl sm:text-3xl shrink-0 shadow-2xs">
               {santri.avatarInitials}
             </div>
-            <span
-              className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ring-2 ring-card flex items-center justify-center text-[10px] text-white ${
-                santri.status === 'tercapai'
-                  ? 'bg-emerald-600'
-                  : santri.status === 'tidak_tercapai'
-                  ? 'bg-red-600'
-                  : 'bg-amber-500'
-              }`}
-            >
-              {santri.status === 'tercapai' ? '✓' : '!'}
-            </span>
-          </div>
 
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  {santri.name}
+                </h1>
+                <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600">
+                  NIS {santri.nis}
+                </span>
+                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-md border ${statusConfig.badgeClass}`}>
+                  <StatusIcon className="w-3.5 h-3.5" />
+                  <span>{statusConfig.label}</span>
+                </span>
+              </div>
 
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                {santri.name}
-              </h1>
-              <Badge variant="outline" className="font-mono text-xs">
-                NIS: {santri.nis}
-              </Badge>
-              <Badge variant="info" className="text-xs">
-                Angkatan 2024
-              </Badge>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500">
-              <span>Halaqoh: <b className="text-slate-800">Abu Bakar Ash-Shiddiq</b></span>
-              <span className="text-slate-300">•</span>
-              <span>Musyrif: <b className="text-slate-800">Ust. Abdullah</b></span>
-              <span className="text-slate-300">•</span>
-              <span>Terakhir Setor: <b className="text-[#0070BA]">{santri.lastSurah}</b></span>
+              <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Halaqoh: <strong className="text-slate-800 font-semibold">Abu Bakar Ash-Shiddiq</strong></span>
+                </span>
+                <span className="text-slate-300">•</span>
+                <span>Musyrif: <strong className="text-slate-800 font-semibold">Ust. Abdullah</strong></span>
+                <span className="text-slate-300">•</span>
+                <span>Setoran Terakhir: <strong className="text-[#0070BA] font-semibold">{santri.lastSurah}</strong></span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* 3 Metric Pills */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 shrink-0">
-          <div className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-center">
-            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 block uppercase">
-              Total Hafalan
-            </span>
-            <span className="text-base sm:text-lg font-bold text-[#0070BA]">
-              {santri.juzAchieved}
-            </span>
-            <span className="text-[10px] text-slate-500 block">
-              ~{pagesCompleted} Hal
-            </span>
-          </div>
+          {/* Kolom Kanan: 3 Kartu Key Performance Metrics */}
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3 shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            {/* Total Capaian */}
+            <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl px-4 py-3 min-w-[105px] text-center">
+              <span className="text-[11px] font-medium text-slate-500 block">Total Hafalan</span>
+              <span className="text-lg font-bold text-[#0070BA] block mt-0.5">{santri.juzAchieved}</span>
+              <span className="text-[10px] text-slate-500 block">~{pagesCompleted} Halaman</span>
+            </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-center">
-            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 block uppercase">
-              Target Hari Ini
-            </span>
-            <span className="text-base sm:text-lg font-bold text-slate-900">
-              {santri.linesCompletedToday} <span className="text-xs font-normal text-slate-400">/ {santri.dailyTargetLines}</span>
-            </span>
-            <span className="text-[10px] text-slate-500 block">
-              baris
-            </span>
-          </div>
+            {/* Target Harian */}
+            <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl px-4 py-3 min-w-[105px] text-center">
+              <span className="text-[11px] font-medium text-slate-500 block">Setoran Hari Ini</span>
+              <span className="text-lg font-bold text-slate-900 block mt-0.5">
+                {santri.linesCompletedToday}
+                <span className="text-xs font-normal text-slate-400 ml-1">/ {santri.dailyTargetLines}</span>
+              </span>
+              <span className="text-[10px] text-slate-500 block">baris</span>
+            </div>
 
-          <div className={`border rounded-xl px-3.5 py-2.5 text-center ${
-            santri.status === 'tercapai'
-              ? 'bg-emerald-50/60 border-emerald-200 text-emerald-800'
-              : santri.status === 'tidak_tercapai'
-              ? 'bg-red-50/60 border-red-200 text-red-800'
-              : 'bg-amber-50/60 border-amber-200 text-amber-800'
-          }`}>
-            <span className="text-[10px] sm:text-[11px] font-semibold block uppercase">
-              Status Harian
-            </span>
-            <span className="text-xs sm:text-sm font-bold block mt-0.5">
-              {santri.status === 'tercapai' && 'Tercapai'}
-              {santri.status === 'tidak_tercapai' && 'Defisit'}
-              {santri.status === 'belum_setor' && 'Belum Setor'}
-            </span>
-            <span className="text-[10px] opacity-80 block">
-              Sesi Pagi
-            </span>
+            {/* Status & Kelancaran */}
+            <div className={`border rounded-xl px-4 py-3 min-w-[110px] text-center ${
+              santri.status === 'tercapai'
+                ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
+                : santri.status === 'tidak_tercapai'
+                ? 'bg-red-50/70 border-red-200 text-red-800'
+                : 'bg-amber-50/70 border-amber-200 text-amber-800'
+            }`}>
+              <span className="text-[11px] font-medium opacity-80 block">Mutaba'ah</span>
+              <span className="text-sm font-bold block mt-1">
+                {santri.status === 'tercapai' && '92% Mumtaz'}
+                {santri.status === 'tidak_tercapai' && 'Perlu I\'adah'}
+                {santri.status === 'belum_setor' && 'Talaqqi'}
+              </span>
+              <span className="text-[10px] opacity-75 block truncate mt-0.5">
+                {statusConfig.subText}
+              </span>
+            </div>
           </div>
         </div>
       </Card>
 
-      {/* 3. Tab Navigasi Detail */}
-      <div className="flex items-center gap-1 border-b border-slate-200 text-xs font-semibold overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => setActiveTab('overview')}
-          className={`py-3 px-4 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'overview'
-              ? 'border-[#0070BA] text-[#0070BA]'
-              : 'border-transparent text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Ringkasan &amp; Rekomendasi Pacing</span>
-        </button>
+      {/* 3. Tab Navigasi Detail (Clean Underline Style) */}
+      <div className="border-b border-slate-200 bg-white rounded-t-xl px-2">
+        <div className="flex items-center gap-2 text-xs font-semibold overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'overview'
+                ? 'border-[#0070BA] text-[#0070BA]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Ringkasan &amp; Rekomendasi Pacing</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('heatmap')}
-          className={`py-3 px-4 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'heatmap'
-              ? 'border-[#0070BA] text-[#0070BA]'
-              : 'border-transparent text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>Heatmap Mushaf 604 Halaman</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('heatmap')}
+            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'heatmap'
+                ? 'border-[#0070BA] text-[#0070BA]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Heatmap Mushaf 604 Halaman</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('riwayat')}
-          className={`py-3 px-4 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'riwayat'
-              ? 'border-[#0070BA] text-[#0070BA]'
-              : 'border-transparent text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <History className="w-4 h-4" />
-          <span>Riwayat Setoran Halaqoh</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('riwayat')}
+            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'riwayat'
+                ? 'border-[#0070BA] text-[#0070BA]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <History className="w-4 h-4" />
+            <span>Riwayat Setoran Halaqoh</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('analisis')}
-          className={`py-3 px-4 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'analisis'
-              ? 'border-[#0070BA] text-[#0070BA]'
-              : 'border-transparent text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4" />
-          <span>Analisis Retensi &amp; Spaced Muroja'ah</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('analisis')}
+            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'analisis'
+                ? 'border-[#0070BA] text-[#0070BA]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Analisis Retensi &amp; Spaced Muroja'ah</span>
+          </button>
+        </div>
       </div>
 
       {/* 4. Tab 1: Overview & Rekomendasi Pacing */}
@@ -283,27 +295,27 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
             {/* Rekomendasi Tindakan Musyrif */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <div className="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-slate-900">
-                      Rekomendasi Tindakan Musyrif (Adaptive Action Plan)
+                      Rekomendasi Tindakan Musyrif
                     </h3>
                     <p className="text-[11px] text-slate-500">
-                      Rencana aksi otomatis berdasarkan data kecepatan setoran &amp; kurva retensi santri
+                      Rencana aksi talaqqi &amp; pengulangan berbasis evaluasi harian
                     </p>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                {/* Action Card 1 */}
-                <div className="p-3.5 rounded-lg border border-blue-200 bg-[#EBF5FB]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                {/* Action Card 1: Ziyadah */}
+                <div className="p-3.5 rounded-xl border border-blue-100 bg-[#F4F9FD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-[#0070BA] px-2 py-0.5 rounded">
                         Ziyadah
                       </span>
@@ -314,22 +326,23 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                     <p className="text-xs text-slate-600 leading-relaxed">
                       {santri.status === 'tercapai'
                         ? `Target hari ini telah tuntas. Kunci hafalan ${santri.lastSurah} dengan tasmi' mandiri 2x sebelum berpindah ke surah berikutnya.`
-                        : `Terdapat defisit ${santri.dailyTargetLines - santri.linesCompletedToday} baris. Berikan slot setoran khusus pada sesi halaqoh Ashar agar sisa target tidak membebani hari esok.`}
+                        : `Terdapat defisit ${santri.dailyTargetLines - santri.linesCompletedToday} baris. Berikan slot setoran khusus pada sesi halaqoh berikutnya.`}
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    size="sm"
                     onClick={() => onSetor(santri)}
-                    className="self-start sm:self-center px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] shrink-0"
+                    className="self-start sm:self-center text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white shrink-0 h-8"
                   >
                     Setor Sekarang
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Action Card 2: Spaced Repetition Muroja'ah */}
-                <div className="p-3.5 rounded-lg border border-amber-200 bg-amber-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="p-3.5 rounded-xl border border-amber-100 bg-[#FFFDF7] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
                         Muroja'ah Rutin
                       </span>
@@ -341,19 +354,21 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                       Sistem mendeteksi rentang halaman ini terakhir dimuroja'ah 8 hari yang lalu dengan status I'adah. Sangat krusial disimak ulang pekan ini.
                     </p>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => onSetor(santri)}
-                    className="self-start sm:self-center px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-300 bg-white text-amber-800 hover:bg-amber-50 shrink-0"
+                    className="self-start sm:self-center text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 shrink-0 h-8"
                   >
                     Simak Muroja'ah
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Action Card 3: Tiket Ujian Tasmi' */}
-                <div className="p-3.5 rounded-lg border border-emerald-200 bg-emerald-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
+                <div className="p-3.5 rounded-xl border border-emerald-100 bg-[#F4FDF8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
                         Kesiapan Tasmi'
                       </span>
@@ -365,7 +380,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                       Akumulasi setoran Juz 30 telah lengkap 100%. Santri dapat didaftarkan tiket ujian kenaikan juz melalui koordinator tahfidz.
                     </p>
                   </div>
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded shrink-0">
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-md shrink-0">
                     Siap Ujian
                   </span>
                 </div>
@@ -377,50 +392,49 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           <div className="space-y-4">
             {/* Kartu Parameter Akademik */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-              <h3 className="font-bold text-sm text-slate-900 pb-2 border-b border-slate-100">
-                Statistik Mutaba'ah Santri
-              </h3>
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                <h3 className="font-bold text-sm text-slate-900">
+                  Statistik Mutaba'ah
+                </h3>
+                <span className="text-[11px] font-medium text-slate-400">Kurikulum 3 Tahun</span>
+              </div>
 
-              <div className="space-y-2.5 text-xs">
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
-                  <span className="text-slate-500 font-medium">Target Durasi</span>
-                  <span className="font-bold text-slate-900">3 Tahun (36 Bulan)</span>
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
                   <span className="text-slate-500 font-medium">Persentase Khatam</span>
                   <span className="font-bold text-[#0070BA]">{progressPercent}%</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+                <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
                   <span className="text-slate-500 font-medium">Rata-rata Kelancaran</span>
                   <span className="font-bold text-emerald-700">92% Mumtaz</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+                <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
                   <span className="text-slate-500 font-medium">Kehadiran Halaqoh</span>
                   <span className="font-bold text-slate-900">98% (28 dari 29 Sesi)</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
-                  <span className="text-slate-500 font-medium">Rekomendasi Harian Baru</span>
+                <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
+                  <span className="text-slate-500 font-medium">Target Harian Ideal</span>
                   <span className="font-bold text-[#0070BA]">{requiredDailyLines} Baris / Hari</span>
                 </div>
               </div>
             </div>
 
             {/* Kotak Pengingat Ujian Tasmi' */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-2">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-2.5">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
                 <Award className="w-4 h-4 text-[#0070BA]" />
                 <span>Riwayat Tiket Ujian Terakhir</span>
               </div>
-              <p className="text-xs text-slate-600">
-                Tasmi' Juz 29 telah diselesaikan pada 12 Agustus 2026 dengan predikat <b>Mumtaz (Nilai: 94.5)</b>.
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Tasmi' Juz 29 telah diselesaikan pada 12 Agustus 2026 dengan predikat <strong className="text-slate-900">Mumtaz (Nilai: 94.5)</strong>.
               </p>
-              <div className="pt-2">
-                <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                  Sertifikat Terbit ber-QR Code
+              <div className="pt-1">
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Sertifikat Terbit ber-QR Code</span>
                 </span>
               </div>
             </div>
