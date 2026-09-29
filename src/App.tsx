@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Menu } from 'lucide-react';
+import { Menu, Calendar } from 'lucide-react';
 import { INITIAL_SANTRI_LIST } from './components/dashboard/mockData';
 import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
@@ -160,13 +160,18 @@ export function App() {
               </div>
             </div>
 
-            {/* Sisi Kanan: Status Sesi & Profil */}
+            {/* Sisi Kanan: Tanggal Real & Profil */}
             <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="font-medium text-slate-600">Sesi Pagi</span>
-                <span className="text-slate-300">•</span>
-                <span className="font-semibold text-slate-800">Ahad, 28 Sep 2026</span>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+                <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                <span className="font-semibold text-slate-800">
+                  {new Intl.DateTimeFormat('id-ID', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  }).format(new Date())}
+                </span>
               </div>
 
               <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
