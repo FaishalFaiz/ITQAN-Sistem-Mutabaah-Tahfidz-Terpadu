@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { INITIAL_SANTRI_LIST } from './components/dashboard/mockData';
-import type { Santri, NavItemKey } from './components/dashboard/types';
+import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
 import { TrendChart } from './components/dashboard/TrendChart';
 import { SantriListSection } from './components/dashboard/SantriListSection';
@@ -12,12 +13,46 @@ import { SantriDetailPage } from './components/dashboard/SantriDetailPage';
 import { HalaqahQuickFocus } from './components/dashboard/HalaqahQuickFocus';
 import { OtherView } from './components/dashboard/OtherViews';
 
-export function App() {
-  const [activeNav, setActiveNav] = useState<NavItemKey>('beranda');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+// Helper component for /santri/:id route
+function SantriDetailRoute({
+  santriList,
+  onSetor,
+}: {
+  santriList: Santri[];
+  onSetor: (santri: Santri) => void;
+}) {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const santri = santriList.find((s) => s.id === id);
 
-  // Dedicated page view for selected santri
-  const [activeSantriPage, setActiveSantriPage] = useState<Santri | null>(null);
+  if (!santri) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl p-8 text-center space-y-3">
+        <h3 className="font-bold text-base text-slate-800">Santri Tidak Ditemukan</h3>
+        <p className="text-xs text-slate-500">Data santri dengan ID {id} tidak ada dalam daftar.</p>
+        <button
+          onClick={() => navigate('/beranda')}
+          className="px-4 py-2 bg-[#0070BA] text-white rounded-lg text-xs font-semibold"
+        >
+          Kembali ke Beranda
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <SantriDetailPage
+      santri={santri}
+      onBack={() => navigate('/beranda')}
+      onSetor={onSetor}
+    />
+  );
+}
+
+export function App() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Modal state for Setor
   const [modalType, setModalType] = useState<'setor' | null>(null);
@@ -37,7 +72,7 @@ export function App() {
   };
 
   const handleOpenDetail = (santri: Santri) => {
-    setActiveSantriPage(santri);
+    navigate(`/santri/${santri.id}`);
   };
 
   const handleCloseModal = () => {
@@ -49,6 +84,26 @@ export function App() {
     setSantriList((prev) => [newSantri, ...prev]);
   };
 
+  // Dynamic header title based on URL
+  const getHeaderTitle = () => {
+    const p = location.pathname;
+    if (p === '/' || p === '/beranda') return 'Beranda Halaqoh';
+    if (p.startsWith('/santri/')) {
+      const id = p.split('/')[2];
+      const s = santriList.find((item) => item.id === id);
+      return s ? s.name : 'Detail Santri';
+    }
+    if (p.startsWith('/santri')) return 'Daftar Santri';
+    if (p.startsWith('/laporan')) return 'Laporan & Ringkasan';
+    if (p.startsWith('/pengaturan')) return 'Pengaturan';
+    if (p.startsWith('/setoran/ziyadah')) return 'Setoran Ziyadah';
+    if (p.startsWith('/setoran/murajaah')) return 'Setoran Murajaah';
+    if (p.startsWith('/ujian')) return "Ujian Tasmi'";
+    if (p.startsWith('/heatmap')) return 'Heatmap 604 Halaman';
+    if (p.startsWith('/pacing')) return 'Target Pacing 3 Tahun';
+    return 'ITQAN';
+  };
+
   // Recalculate dynamic stats from santriList
   const tercapaiCount = santriList.filter((s) => s.status === 'tercapai').length;
   const tidakTercapaiCount = santriList.filter((s) => s.status === 'tidak_tercapai').length;
@@ -56,23 +111,18 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex font-sans antialiased">
-      {/* 1. Left Navbar Sidebar */}
+      {/* 1. Left Navbar Sidebar with Router Navigation */}
       <NavbarSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        activeItem={activeNav}
-        onSelectItem={(item) => {
-          setActiveNav(item);
-          setActiveSantriPage(null); // Reset detail page when switching main nav
-        }}
       />
 
       {/* 2. Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header Bar yang Bersih, Terintegrasi, & Bernapas */}
+        {/* Header Bar */}
         <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 z-20 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Sisi Kiri: Hamburger + Breadcrumb / Navigation Title */}
+            {/* Sisi Kiri: Hamburger + Breadcrumb */}
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -84,19 +134,23 @@ export function App() {
               </button>
 
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                <div 
+                  onClick={() => navigate('/beranda')}
+                  className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 cursor-pointer"
+                >
                   IT
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-base text-slate-900 tracking-tight">ITQAN</span>
+                    <span 
+                      onClick={() => navigate('/beranda')}
+                      className="font-extrabold text-base text-slate-900 tracking-tight cursor-pointer"
+                    >
+                      ITQAN
+                    </span>
                     <span className="text-slate-300">/</span>
                     <span className="font-semibold text-sm text-[#0070BA]">
-                      {activeSantriPage
-                        ? activeSantriPage.name
-                        : activeNav === 'beranda'
-                        ? 'Beranda Halaqoh'
-                        : activeNav.toUpperCase()}
+                      {getHeaderTitle()}
                     </span>
                   </div>
                   <span className="text-[11px] text-slate-500 block leading-none mt-0.5">
@@ -106,7 +160,7 @@ export function App() {
               </div>
             </div>
 
-            {/* Sisi Kanan: Context Chip Terpadu (Sesi & Tanggal) + Profil Ringkas */}
+            {/* Sisi Kanan: Status Sesi & Profil */}
             <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -128,57 +182,198 @@ export function App() {
           </div>
         </header>
 
-        {/* Dynamic Content Views */}
+        {/* Dynamic Route View */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
-          {activeSantriPage ? (
-            /* Dedicated Santri Page */
-            <SantriDetailPage
-              santri={activeSantriPage}
-              onBack={() => setActiveSantriPage(null)}
-              onSetor={handleOpenSetor}
+          <Routes>
+            {/* Beranda Dashboard */}
+            <Route
+              path="/"
+              element={
+                <div className="space-y-4">
+                  <StatCards
+                    tercapaiCount={tercapaiCount}
+                    tidakTercapaiCount={tidakTercapaiCount}
+                    belumSetorCount={belumSetorCount}
+                    activeFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
+                  />
+
+                  <HalaqahQuickFocus
+                    santriList={santriList}
+                    onSetor={handleOpenSetor}
+                    onDetail={handleOpenDetail}
+                  />
+
+                  <TrendChart />
+
+                  <SantriListSection
+                    santriList={santriList}
+                    activeFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
+                    onSetor={handleOpenSetor}
+                    onDetail={handleOpenDetail}
+                    onOpenAddModal={() => setIsAddModalOpen(true)}
+                  />
+                </div>
+              }
             />
-          ) : activeNav === 'beranda' ? (
-            <div className="space-y-4">
 
-              {/* Top 3 KPI Cards with filter interaction */}
-              <StatCards
-                tercapaiCount={tercapaiCount}
-                tidakTercapaiCount={tidakTercapaiCount}
-                belumSetorCount={belumSetorCount}
-                activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
-              />
+            <Route
+              path="/beranda"
+              element={
+                <div className="space-y-4">
+                  <StatCards
+                    tercapaiCount={tercapaiCount}
+                    tidakTercapaiCount={tidakTercapaiCount}
+                    belumSetorCount={belumSetorCount}
+                    activeFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
+                  />
 
-              {/* Halaqah Focus & Target Progress */}
-              <HalaqahQuickFocus
-                santriList={santriList}
-                onSetor={handleOpenSetor}
-                onDetail={handleOpenDetail}
-              />
+                  <HalaqahQuickFocus
+                    santriList={santriList}
+                    onSetor={handleOpenSetor}
+                    onDetail={handleOpenDetail}
+                  />
 
-              {/* Middle Section: Line Chart Trend */}
-              <TrendChart />
+                  <TrendChart />
 
-              {/* Bottom Section: Santri Cards Grid with Filter Tabs & Search */}
-              <SantriListSection
-                santriList={santriList}
-                activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
-                onSetor={handleOpenSetor}
-                onDetail={handleOpenDetail}
-                onOpenAddModal={() => setIsAddModalOpen(true)}
-              />
-            </div>
-          ) : (
-            <OtherView
-              currentView={activeNav}
-              onBackToBeranda={() => setActiveNav('beranda')}
-              santriList={santriList}
-              onSetor={handleOpenSetor}
-              onDetail={handleOpenDetail}
-              onOpenAddModal={() => setIsAddModalOpen(true)}
+                  <SantriListSection
+                    santriList={santriList}
+                    activeFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
+                    onSetor={handleOpenSetor}
+                    onDetail={handleOpenDetail}
+                    onOpenAddModal={() => setIsAddModalOpen(true)}
+                  />
+                </div>
+              }
             />
-          )}
+
+            {/* Dedicated Detail Santri with URL /santri/:id */}
+            <Route
+              path="/santri/:id"
+              element={
+                <SantriDetailRoute
+                  santriList={santriList}
+                  onSetor={handleOpenSetor}
+                />
+              }
+            />
+
+            {/* Sub-halaman Ber-URL */}
+            <Route
+              path="/santri"
+              element={
+                <OtherView
+                  currentView="santri"
+                  onBackToBeranda={() => navigate('/beranda')}
+                  santriList={santriList}
+                  onSetor={handleOpenSetor}
+                  onDetail={handleOpenDetail}
+                  onOpenAddModal={() => setIsAddModalOpen(true)}
+                />
+              }
+            />
+
+            <Route
+              path="/laporan"
+              element={
+                <OtherView
+                  currentView="laporan"
+                  onBackToBeranda={() => navigate('/beranda')}
+                  santriList={santriList}
+                  onSetor={handleOpenSetor}
+                  onDetail={handleOpenDetail}
+                  onOpenAddModal={() => setIsAddModalOpen(true)}
+                />
+              }
+            />
+
+            <Route
+              path="/pengaturan"
+              element={
+                <OtherView
+                  currentView="pengaturan"
+                  onBackToBeranda={() => navigate('/beranda')}
+                  santriList={santriList}
+                  onSetor={handleOpenSetor}
+                  onDetail={handleOpenDetail}
+                  onOpenAddModal={() => setIsAddModalOpen(true)}
+                />
+              }
+            />
+
+            <Route
+              path="/setoran/ziyadah"
+              element={
+                <OtherView
+                  currentView="setoran-ziyadah"
+                  onBackToBeranda={() => navigate('/beranda')}
+                  santriList={santriList}
+                  onSetor={handleOpenSetor}
+                  onDetail={handleOpenDetail}
+                  onOpenAddModal={() => setIsAddModalOpen(true)}
+                />
+              }
+            />
+
+            <Route
+              path="/setoran/murajaah"
+              element={
+                <OtherView
+                  currentView="setoran-murajaah"
+                  onBackToBeranda={() => navigate('/beranda')}
+                  santriList={santriList}
+                  onSetor={handleOpenSetor}
+                  onDetail={handleOpenDetail}
+                  onOpenAddModal={() => setIsAddModalOpen(true)}
+                />
+              }
+            />
+
+            <Route
+              path="/ujian-tasmi"
+              element={
+                <OtherView
+                  currentView="dll-ujian"
+                  onBackToBeranda={() => navigate('/beranda')}
+                  santriList={santriList}
+                  onSetor={handleOpenSetor}
+                  onDetail={handleOpenDetail}
+                  onOpenAddModal={() => setIsAddModalOpen(true)}
+                />
+              }
+            />
+
+            <Route
+              path="/heatmap"
+              element={
+                <OtherView
+                  currentView="dll-heatmap"
+                  onBackToBeranda={() => navigate('/beranda')}
+                  santriList={santriList}
+                  onSetor={handleOpenSetor}
+                  onDetail={handleOpenDetail}
+                  onOpenAddModal={() => setIsAddModalOpen(true)}
+                />
+              }
+            />
+
+            <Route
+              path="/pacing"
+              element={
+                <OtherView
+                  currentView="dll-pacing"
+                  onBackToBeranda={() => navigate('/beranda')}
+                  santriList={santriList}
+                  onSetor={handleOpenSetor}
+                  onDetail={handleOpenDetail}
+                  onOpenAddModal={() => setIsAddModalOpen(true)}
+                />
+              }
+            />
+          </Routes>
         </main>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
   FileText, 
@@ -15,32 +16,72 @@ import type { NavItemKey } from './types';
 interface NavbarSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  activeItem: NavItemKey;
-  onSelectItem: (item: NavItemKey) => void;
+  activeItem?: NavItemKey;
+  onSelectItem?: (item: NavItemKey) => void;
 }
 
 export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
   isOpen,
   onClose,
-  activeItem,
   onSelectItem,
 }) => {
   const [isSetoranOpen, setIsSetoranOpen] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  React.useEffect(() => {
-    if (isOpen) {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          onClose();
-        }
-      };
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen, onClose]);
+  // Map route pathname to NavItemKey
+  const getActiveKey = (): NavItemKey => {
+    const path = location.pathname;
+    if (path === '/' || path === '/beranda') return 'beranda';
+    if (path.startsWith('/laporan')) return 'laporan';
+    if (path.startsWith('/santri')) return 'santri';
+    if (path.startsWith('/pengaturan')) return 'pengaturan';
+    if (path.startsWith('/setoran/ziyadah')) return 'setoran-ziyadah';
+    if (path.startsWith('/setoran/murajaah')) return 'setoran-murajaah';
+    if (path.startsWith('/ujian')) return 'dll-ujian';
+    if (path.startsWith('/heatmap')) return 'dll-heatmap';
+    if (path.startsWith('/pacing')) return 'dll-pacing';
+    return 'beranda';
+  };
+
+  const activeKey = getActiveKey();
 
   const handleNavClick = (key: NavItemKey) => {
-    onSelectItem(key);
+    if (onSelectItem) onSelectItem(key);
+    
+    // URL routing map
+    switch (key) {
+      case 'beranda':
+        navigate('/beranda');
+        break;
+      case 'laporan':
+        navigate('/laporan');
+        break;
+      case 'santri':
+        navigate('/santri');
+        break;
+      case 'pengaturan':
+        navigate('/pengaturan');
+        break;
+      case 'setoran-ziyadah':
+        navigate('/setoran/ziyadah');
+        break;
+      case 'setoran-murajaah':
+        navigate('/setoran/murajaah');
+        break;
+      case 'dll-ujian':
+        navigate('/ujian-tasmi');
+        break;
+      case 'dll-heatmap':
+        navigate('/heatmap');
+        break;
+      case 'dll-pacing':
+        navigate('/pacing');
+        break;
+      default:
+        navigate('/beranda');
+        break;
+    }
     onClose();
   };
 
@@ -87,7 +128,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             type="button"
             onClick={() => handleNavClick('beranda')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-              activeItem === 'beranda'
+              activeKey === 'beranda'
                 ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
@@ -101,7 +142,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             type="button"
             onClick={() => handleNavClick('laporan')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-              activeItem === 'laporan'
+              activeKey === 'laporan'
                 ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
@@ -115,7 +156,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             type="button"
             onClick={() => handleNavClick('santri')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-              activeItem === 'santri'
+              activeKey === 'santri'
                 ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
@@ -129,7 +170,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             type="button"
             onClick={() => handleNavClick('pengaturan')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-              activeItem === 'pengaturan'
+              activeKey === 'pengaturan'
                 ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
@@ -162,7 +203,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
                   type="button"
                   onClick={() => handleNavClick('setoran-ziyadah')}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
-                    activeItem === 'setoran-ziyadah'
+                    activeKey === 'setoran-ziyadah'
                       ? 'bg-[#EBF5FB] text-[#0070BA] font-bold'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
@@ -174,7 +215,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
                   type="button"
                   onClick={() => handleNavClick('setoran-murajaah')}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
-                    activeItem === 'setoran-murajaah'
+                    activeKey === 'setoran-murajaah'
                       ? 'bg-[#EBF5FB] text-[#0070BA] font-bold'
                       : 'text-slate-600 hover:bg-slate-100'
                   }`}
@@ -191,13 +232,13 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             type="button"
             onClick={() => handleNavClick('dll-ujian')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-              activeItem.startsWith('dll')
+              activeKey.startsWith('dll')
                 ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
           >
             <MoreHorizontal className="w-4 h-4 shrink-0" />
-            <span>DLL</span>
+            <span>DLL / Ujian &amp; Heatmap</span>
           </button>
         </nav>
 
