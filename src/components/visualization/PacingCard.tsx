@@ -1,6 +1,6 @@
 import React from 'react';
 import { Target, TrendingUp, Calendar, AlertTriangle } from 'lucide-react';
-import { Badge } from '../ui/Badge';
+import { Badge } from '@/components/ui/badge';
 
 interface PacingCardProps {
   santriName: string;

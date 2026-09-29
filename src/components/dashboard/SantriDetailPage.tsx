@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -11,9 +11,13 @@ import {
   Sparkles,
   BarChart3
 } from 'lucide-react';
+import gsap from 'gsap';
 import type { Santri } from './types';
 import { MushafHeatmap } from '../visualization/MushafHeatmap';
 import { PacingCard } from '../visualization/PacingCard';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 
 interface SantriDetailPageProps {
   santri: Santri;
@@ -42,6 +46,20 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   const completedPages = Array.from({ length: completedCount }, (_, i) => i + 1);
   const inProgressPages = [completedCount + 1, completedCount + 2, completedCount + 3];
 
+  const detailContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        '.detail-tab-pane',
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }
+      );
+    }, detailContainerRef);
+
+    return () => ctx.revert();
+  }, [activeTab]);
+
   // WhatsApp Digest Generator
   const handleCopyWADigest = () => {
     const text = `*LAPORAN MUTABA'AH TAHFIDZ SANTRI ITQAN*\n\n` +
@@ -58,53 +76,56 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   };
 
   return (
-    <div className="space-y-5 animate-fadeIn">
+    <div ref={detailContainerRef} className="space-y-5 animate-fadeIn">
       {/* 1. Top Bar: Breadcrumb + Action Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#0070BA] hover:text-[#005C9E] transition-colors group"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:text-primary/80 transition-colors group"
         >
-          <div className="w-6 h-6 rounded-md bg-[#EBF5FB] flex items-center justify-center group-hover:bg-[#D6EAF8]">
-            <ArrowLeft className="w-3.5 h-3.5 text-[#0070BA]" />
+          <div className="w-6 h-6 rounded-md bg-brand-50 flex items-center justify-center group-hover:bg-brand-100">
+            <ArrowLeft className="w-3.5 h-3.5 text-brand" />
           </div>
           <span>Kembali ke Beranda Halaqoh</span>
         </button>
 
         <div className="flex items-center gap-2">
           {/* Tombol Salin WA Digest */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={handleCopyWADigest}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold"
             title="Salin ringkasan progres untuk dikirim ke Wali Santri via WA"
           >
             <Share2 className="w-3.5 h-3.5 text-emerald-600" />
             <span>{copyFeedback ? 'Tersalin ke Clipboard!' : 'Kirim WA Wali'}</span>
-          </button>
+          </Button>
 
           {/* Tombol Input Setoran Cepat */}
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={() => onSetor(santri)}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] transition-colors shadow-2xs"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>Input Setoran</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* 2. Hero Profile Banner */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+      <Card className="p-5 sm:p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-border">
         {/* Identitas Santri */}
         <div className="flex items-start sm:items-center gap-4">
           <div className="relative shrink-0">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-xs">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-brand-50 border border-brand-100 text-brand flex items-center justify-center font-bold text-2xl sm:text-3xl shadow-xs">
               {santri.avatarInitials}
             </div>
             <span
-              className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ring-2 ring-white flex items-center justify-center text-[10px] text-white ${
+              className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full ring-2 ring-card flex items-center justify-center text-[10px] text-white ${
                 santri.status === 'tercapai'
                   ? 'bg-emerald-600'
                   : santri.status === 'tidak_tercapai'
@@ -116,17 +137,18 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             </span>
           </div>
 
+
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                 {santri.name}
               </h1>
-              <span className="text-xs font-mono font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+              <Badge variant="outline" className="font-mono text-xs">
                 NIS: {santri.nis}
-              </span>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#EBF5FB] text-[#0070BA] border border-[#D6EAF8]">
+              </Badge>
+              <Badge variant="info" className="text-xs">
                 Angkatan 2024
-              </span>
+              </Badge>
             </div>
 
             <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500">
@@ -185,7 +207,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             </span>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* 3. Tab Navigasi Detail */}
       <div className="flex items-center gap-1 border-b border-slate-200 text-xs font-semibold overflow-x-auto">
@@ -244,7 +266,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
       {/* 4. Tab 1: Overview & Rekomendasi Pacing */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="detail-tab-pane grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Kolom Kiri: Pacing Card & Actionable Guidance */}
           <div className="lg:col-span-2 space-y-4">
             {/* Pacing Engine Card */}
@@ -408,7 +430,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
       {/* 5. Tab 2: Heatmap 604 Halaman */}
       {activeTab === 'heatmap' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
             <div>
               <h3 className="font-bold text-base text-slate-900">
@@ -433,7 +455,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
       {/* 6. Tab 3: Riwayat Setoran */}
       {activeTab === 'riwayat' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
+
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="font-bold text-base text-slate-900">
@@ -523,7 +546,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
       {/* 7. Tab 4: Analisis Retensi & Spaced Repetition */}
       {activeTab === 'analisis' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-5">
+        <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-5">
           <div>
             <h3 className="font-bold text-base text-slate-900">
               Analisis Kurva Retensi Hafalan (Spaced Retention Engine)

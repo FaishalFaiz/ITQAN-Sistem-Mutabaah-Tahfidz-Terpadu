@@ -1,7 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { X, UserPlus } from 'lucide-react';
-import gsap from 'gsap';
+import React, { useState } from 'react';
+import { UserPlus } from 'lucide-react';
 import type { Santri } from './types';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface AddSantriModalProps {
   isOpen: boolean;
@@ -20,190 +29,154 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
   const [dailyTargetLines, setDailyTargetLines] = useState(15);
   const [lastSurah, setLastSurah] = useState('An-Naba 1-15');
 
-  const backdropRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (backdropRef.current) {
-        gsap.fromTo(
-          backdropRef.current,
-          { opacity: 0 },
-          { opacity: 1, duration: 0.25, ease: 'power2.out' }
-        );
-      }
-      if (cardRef.current) {
-        gsap.fromTo(
-          cardRef.current,
-          { opacity: 0, scale: 0.95, y: 16 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: 'power3.out' }
-        );
-      }
-
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          onClose();
-        }
-      };
-
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
     // Generate initials
-    const initials = name
-      .trim()
-      .split(' ')
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() || '')
-      .join('');
+    const words = name.trim().split(' ');
+    const initials =
+      words.length >= 2
+        ? `${words[0][0]}${words[1][0]}`.toUpperCase()
+        : name.slice(0, 2).toUpperCase();
 
     const newSantri: Santri = {
       id: Date.now().toString(),
       name: name.trim(),
       nis: nis.trim() || `2024${Math.floor(100 + Math.random() * 900)}`,
-      juzAchieved: juzAchieved.trim().endsWith('Juz') ? juzAchieved.trim() : `${juzAchieved.trim()} Juz`,
-      linesCompletedToday: 0,
+      avatarInitials: initials,
+      juzAchieved: juzAchieved.trim() || '1.0 Juz',
       dailyTargetLines: Number(dailyTargetLines) || 15,
-      totalLinesMemorized: 0,
-      totalLinesTarget: 9060,
+      linesCompletedToday: 0,
       status: 'belum_setor',
-      lastSurah: lastSurah.trim() || 'Baru Masuk',
-      avatarInitials: initials || 'ST',
+      lastSurah: lastSurah.trim() || 'Al-Fatihah 1-7',
+      totalLinesMemorized: 15 * 15,
+      totalLinesTarget: 9060,
     };
 
     onAddSantri(newSantri);
+    onClose();
+
+    // Reset form
     setName('');
     setNis('');
-    onClose();
+    setJuzAchieved('1.0 Juz');
+    setDailyTargetLines(15);
+    setLastSurah('An-Naba 1-15');
   };
 
   return (
-    <div
-      ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[1px]"
-    >
-      <div
-        ref={cardRef}
-        className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden"
-      >
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand flex items-center justify-center">
               <UserPlus className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-base text-slate-900">Tambah Santri Baru</h3>
-              <p className="text-xs text-slate-500">Masukkan santri ke daftar halaqoh</p>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Tambah Santri Baru
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Masukkan santri ke daftar rombel halaqoh aktif
+              </DialogDescription>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors active:scale-95"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        </DialogHeader>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div>
-            <label className="block text-xs font-semibold text-slate-800 mb-1">
-              Nama Lengkap Santri <span className="text-red-500">*</span>
+            <label className="block text-xs font-semibold text-foreground mb-1.5">
+              Nama Lengkap Santri <span className="text-destructive">*</span>
             </label>
-            <input
+            <Input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Contoh: Zaid bin Haritsah"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+              className="text-xs"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
                 NIS (Nomor Induk)
               </label>
-              <input
+              <Input
                 type="text"
                 value={nis}
                 onChange={(e) => setNis(e.target.value)}
                 placeholder="2024013"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+                className="text-xs"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
                 Capaian Juz Awal
               </label>
-              <input
+              <Input
                 type="text"
                 value={juzAchieved}
                 onChange={(e) => setJuzAchieved(e.target.value)}
                 placeholder="5.0 Juz"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+                className="text-xs"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
                 Target Baris / Hari
               </label>
-              <input
+              <Input
                 type="number"
                 min={1}
                 max={30}
                 value={dailyTargetLines}
                 onChange={(e) => setDailyTargetLines(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+                className="text-xs"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
                 Surah Terakhir
               </label>
-              <input
+              <Input
                 type="text"
                 value={lastSurah}
                 onChange={(e) => setLastSurah(e.target.value)}
                 placeholder="An-Naba 1-40"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+                className="text-xs"
               />
             </div>
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
-            <button
+          <DialogFooter className="pt-2 border-t border-border gap-2">
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+              className="text-xs"
             >
               Batal
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] transition-colors shadow-2xs"
+              size="sm"
+              className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
             >
               Simpan Santri
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

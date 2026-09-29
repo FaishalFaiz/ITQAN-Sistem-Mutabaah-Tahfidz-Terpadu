@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { CheckCircle } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 interface FastSetoranFormProps {
   onSuccess?: () => void;
 }
 
-export const FastSetoranForm: React.FC<FastSetoranFormProps> = () => {
+export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({ onSuccess }) => {
   const [selectedSantri, setSelectedSantri] = useState('1');
   const [type, setType] = useState<'ziyadah' | 'murojaah'>('ziyadah');
   const [juz, setJuz] = useState(30);
@@ -26,24 +29,25 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    setTimeout(() => {
+      setSubmitted(false);
+      if (onSuccess) onSuccess();
+    }, 1200);
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-      <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
+    <Card className="p-5 shadow-xs border-border">
+      <div className="flex items-center justify-between pb-4 mb-4 border-b border-border">
         <div>
-          <h2 className="text-base font-semibold text-slate-900">Input Setoran Cepat Halaqoh</h2>
-          <p className="text-xs text-slate-500">Target input &lt; 15 detik saat halaqoh aktif</p>
+          <h2 className="text-base font-semibold text-foreground">Input Setoran Cepat Halaqoh</h2>
+          <p className="text-xs text-muted-foreground">Target input &lt; 15 detik saat halaqoh aktif</p>
         </div>
-        <span className="text-xs font-medium px-2.5 py-1 bg-[#EBF5FB] text-[#0070BA] rounded-md border border-[#D6EAF8]">
-          Mode Cepat
-        </span>
+        <Badge variant="info">Mode Cepat</Badge>
       </div>
 
       {submitted && (
         <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-emerald-600" />
+          <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Setoran berhasil disimpan! Baris tersimpan: <b>{totalLines} baris</b>.</span>
         </div>
       )}
@@ -51,11 +55,11 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* 1. Pilih Santri */}
         <div>
-          <label className="block text-xs font-semibold text-slate-800 mb-1">Nama Santri</label>
+          <label className="block text-xs font-semibold text-foreground mb-1.5">Nama Santri</label>
           <select
             value={selectedSantri}
             onChange={(e) => setSelectedSantri(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
           >
             <option value="1">Muhammad Faiz (NIS: 2024001) - Target: 12 Baris</option>
             <option value="2">Ahmad Zaki (NIS: 2024002) - Target: 15 Baris</option>
@@ -65,41 +69,37 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = () => {
 
         {/* 2. Jenis Setoran (Toggle Cepat) */}
         <div>
-          <label className="block text-xs font-semibold text-slate-800 mb-1">Jenis Setoran</label>
+          <label className="block text-xs font-semibold text-foreground mb-1.5">Jenis Setoran</label>
           <div className="grid grid-cols-2 gap-2">
-            <button
+            <Button
               type="button"
+              variant={type === 'ziyadah' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setType('ziyadah')}
-              className={`py-2 text-xs font-semibold rounded-lg border transition-colors ${
-                type === 'ziyadah'
-                  ? 'bg-[#0070BA] text-white border-[#0070BA]'
-                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-              }`}
+              className="text-xs h-9"
             >
               Ziyadah (Hafalan Baru)
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant={type === 'murojaah' ? 'default' : 'outline'}
+              size="sm"
               onClick={() => setType('murojaah')}
-              className={`py-2 text-xs font-semibold rounded-lg border transition-colors ${
-                type === 'murojaah'
-                  ? 'bg-[#0070BA] text-white border-[#0070BA]'
-                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-              }`}
+              className="text-xs h-9"
             >
               Muroja'ah (Pengulangan)
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* 3. Juz & Rentang Halaman */}
         <div className="grid grid-cols-3 gap-2">
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Juz</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Juz</label>
             <select
               value={juz}
               onChange={(e) => setJuz(Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none"
+              className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
             >
               {Array.from({ length: 30 }, (_, i) => i + 1).map((j) => (
                 <option key={j} value={j}>Juz {j}</option>
@@ -107,56 +107,56 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Hal. Awal</label>
-            <input
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Hal. Awal</label>
+            <Input
               type="number"
               min={1}
               max={604}
               value={pageStart}
               onChange={(e) => setPageStart(Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none"
+              className="h-8 text-xs"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Hal. Akhir</label>
-            <input
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Hal. Akhir</label>
+            <Input
               type="number"
               min={1}
               max={604}
               value={pageEnd}
               onChange={(e) => setPageEnd(Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none"
+              className="h-8 text-xs"
             />
           </div>
         </div>
 
         {/* 4. Granularitas Baris (1-15 Baris / Halaman) */}
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-          <div className="flex items-center justify-between text-xs font-medium text-slate-700 mb-2">
+        <div className="bg-muted/50 p-3 rounded-lg border border-border">
+          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground mb-2">
             <span>Posisi Baris (Standar 15 Baris/Hal)</span>
-            <span className="font-bold text-[#0070BA]">{totalLines} Baris Terhitung</span>
+            <span className="font-bold text-primary">{totalLines} Baris Terhitung</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] text-slate-500 mb-0.5">Baris Awal (1–15)</label>
-              <input
+              <label className="block text-[11px] text-muted-foreground mb-1">Baris Awal (1–15)</label>
+              <Input
                 type="number"
                 min={1}
                 max={15}
                 value={lineStart}
                 onChange={(e) => setLineStart(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none"
+                className="h-8 text-xs bg-background"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-slate-500 mb-0.5">Baris Akhir (1–15)</label>
-              <input
+              <label className="block text-[11px] text-muted-foreground mb-1">Baris Akhir (1–15)</label>
+              <Input
                 type="number"
                 min={1}
                 max={15}
                 value={lineEnd}
                 onChange={(e) => setLineEnd(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none"
+                className="h-8 text-xs bg-background"
               />
             </div>
           </div>
@@ -164,12 +164,12 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = () => {
 
         {/* 5. Tingkat Kelancaran (Mumtaz, Jayyid, I'adah) */}
         <div>
-          <label className="block text-xs font-semibold text-slate-800 mb-1">Evaluasi Kelancaran</label>
+          <label className="block text-xs font-semibold text-foreground mb-1.5">Evaluasi Kelancaran</label>
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setGrade('mumtaz')}
-              className={`py-2 text-xs font-semibold rounded-lg border transition-all ${
+              className={`py-2 text-xs font-semibold rounded-md border transition-all ${
                 grade === 'mumtaz'
                   ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-200'
                   : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
@@ -180,7 +180,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = () => {
             <button
               type="button"
               onClick={() => setGrade('jayyid')}
-              className={`py-2 text-xs font-semibold rounded-lg border transition-all ${
+              className={`py-2 text-xs font-semibold rounded-md border transition-all ${
                 grade === 'jayyid'
                   ? 'bg-amber-600 text-white border-amber-600 ring-2 ring-amber-200'
                   : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
@@ -191,7 +191,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = () => {
             <button
               type="button"
               onClick={() => setGrade('iadah')}
-              className={`py-2 text-xs font-semibold rounded-lg border transition-all ${
+              className={`py-2 text-xs font-semibold rounded-md border transition-all ${
                 grade === 'iadah'
                   ? 'bg-red-600 text-white border-red-600 ring-2 ring-red-200'
                   : 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100'
@@ -203,10 +203,10 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = () => {
         </div>
 
         {/* Tombol Simpan Setoran */}
-        <Button type="submit" fullWidth size="lg" className="mt-2">
+        <Button type="submit" className="w-full mt-2 bg-primary hover:bg-primary/90 text-primary-foreground">
           Simpan Setoran Santri
         </Button>
       </form>
-    </div>
+    </Card>
   );
 };

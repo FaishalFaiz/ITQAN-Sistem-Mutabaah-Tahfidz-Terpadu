@@ -4,8 +4,8 @@ import { FastSetoranForm } from '../halaqah/FastSetoranForm';
 import { TapCounterExam } from '../halaqah/TapCounterExam';
 import { MushafHeatmap } from '../visualization/MushafHeatmap';
 import { PacingCard } from '../visualization/PacingCard';
-import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import type { NavItemKey, Santri } from './types';
 
 interface OtherViewProps {
