@@ -69,35 +69,67 @@ export function App() {
 
       {/* 2. Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header Bar */}
-        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 -ml-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA]"
-              aria-label="Toggle Menu"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-            <span className="font-bold text-lg text-slate-900">
-              {activeSantriPage
-                ? `Santri: ${activeSantriPage.name}`
-                : activeNav === 'beranda'
-                ? 'Beranda'
-                : activeNav.toUpperCase()}
-            </span>
-          </div>
+        {/* Header Bar yang Bersih, Terintegrasi, & Bernapas */}
+        <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 z-20 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Sisi Kiri: Hamburger + Breadcrumb / Navigation Title */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="p-2 -ml-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA]"
+                aria-label="Toggle Menu"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
 
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="hidden sm:inline font-medium text-slate-700">Halaqoh Abu Bakar</span>
-            <span className="hidden sm:inline text-slate-300">•</span>
-            <span>Ahad, 28 Sep 2026</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                  IT
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-base text-slate-900 tracking-tight">ITQAN</span>
+                    <span className="text-slate-300">/</span>
+                    <span className="font-semibold text-sm text-[#0070BA]">
+                      {activeSantriPage
+                        ? activeSantriPage.name
+                        : activeNav === 'beranda'
+                        ? 'Beranda Halaqoh'
+                        : activeNav.toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 block leading-none mt-0.5">
+                    Halaqoh Abu Bakar Ash-Shiddiq
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sisi Kanan: Context Chip Terpadu (Sesi & Tanggal) + Profil Ringkas */}
+            <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="font-medium text-slate-600">Sesi Pagi</span>
+                <span className="text-slate-300">•</span>
+                <span className="font-semibold text-slate-800">Ahad, 28 Sep 2026</span>
+              </div>
+
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                <div className="w-8 h-8 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] font-bold text-xs flex items-center justify-center shrink-0">
+                  UA
+                </div>
+                <div className="hidden md:block text-left">
+                  <span className="text-xs font-semibold text-slate-900 block leading-tight">Ust. Abdullah</span>
+                  <span className="text-[10px] text-slate-500">Musyrif</span>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
         {/* Dynamic Content Views */}
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 space-y-3 sm:space-y-4 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
           {activeSantriPage ? (
             /* Dedicated Santri Page */
             <SantriDetailPage
@@ -107,42 +139,6 @@ export function App() {
             />
           ) : activeNav === 'beranda' ? (
             <div className="space-y-4">
-              {/* Dashboard Banner: ITQAN Sistem Muroja'ah + Assalamualaikum + Sesi Halaqoh + Jam & Hari/Tgl */}
-              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#0070BA] text-white flex items-center justify-center font-bold text-base sm:text-lg shadow-xs shrink-0">
-                    IT
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                      <h1 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">ITQAN</h1>
-                      <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-[#EBF5FB] text-[#0070BA] border border-[#D6EAF8]">
-                        Mutaba'ah Tahfidz
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm font-semibold text-slate-800 mt-0.5">
-                      Assalamu'alaikum, <span className="text-[#0070BA]">Ust. Abdullah</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 text-xs">
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2">
-                    <span className="text-[10px] sm:text-[11px] text-slate-500 block">Sesi Halaqoh</span>
-                    <span className="font-bold text-slate-900 text-[11px] sm:text-xs">Ba'da Shubuh</span>
-                  </div>
-
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2">
-                    <span className="text-[10px] sm:text-[11px] text-slate-500 block">Waktu Sesi</span>
-                    <span className="font-bold text-slate-900 text-[11px] sm:text-xs">07:15 WIB</span>
-                  </div>
-
-                  <div className="col-span-2 sm:col-span-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2">
-                    <span className="text-[10px] sm:text-[11px] text-slate-500 block">Hari & Tanggal</span>
-                    <span className="font-bold text-[#0070BA] text-[11px] sm:text-xs">Ahad, 28 Sept 2026</span>
-                  </div>
-                </div>
-              </div>
 
               {/* Top 3 KPI Cards with filter interaction */}
               <StatCards
