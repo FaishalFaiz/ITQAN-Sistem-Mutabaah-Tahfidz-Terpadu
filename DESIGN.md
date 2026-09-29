@@ -95,13 +95,6 @@ Menggunakan jenis huruf **Inter** di seluruh antarmuka untuk memastikan angka da
 - Latar putih bersih (`bg-white`), dibatasi garis tepi solid 1px (`border border-slate-200`), sudut `rounded-xl`.
 - Tidak menggunakan bayangan buram. Jika diperlukan elevasi, gunakan bayangan tipis datar: `shadow-[0_1px_2px_rgba(0,0,0,0.05)]`.
 
-### 4.4. Heatmap Matriks Mushaf (604 Halaman)
-- Grid responsif yang menampilkan 604 kotak berukuran seragam (`w-3.5 h-3.5` atau `w-4 h-4`) dengan sudut tumpul minimal (`rounded-sm`).
-- **Warna Status Kotak**:
-  - **Abu-abu Solid** (`#E2E8F0`): Belum pernah disetorkan.
-  - **Oranye Solid** (`#F59E0B`): Dalam proses ziyadah / butuh muroja'ah.
-  - **Hijau Solid** (`#059669`): Teruji dan lulus ujian tasmi' (Mutqin).
-
 ---
 
 ## 5. Konfigurasi Tailwind CSS (`tailwind.config.js`)

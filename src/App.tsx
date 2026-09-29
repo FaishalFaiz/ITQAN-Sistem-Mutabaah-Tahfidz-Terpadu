@@ -99,7 +99,6 @@ export function App() {
     if (p.startsWith('/setoran/ziyadah')) return 'Setoran Ziyadah';
     if (p.startsWith('/setoran/murajaah')) return 'Setoran Murajaah';
     if (p.startsWith('/ujian')) return "Ujian Tasmi'";
-    if (p.startsWith('/heatmap')) return 'Heatmap 604 Halaman';
     if (p.startsWith('/pacing')) return 'Target Pacing 3 Tahun';
     return 'ITQAN';
   };
@@ -342,20 +341,6 @@ export function App() {
               element={
                 <OtherView
                   currentView="dll-ujian"
-                  onBackToBeranda={() => navigate('/beranda')}
-                  santriList={santriList}
-                  onSetor={handleOpenSetor}
-                  onDetail={handleOpenDetail}
-                  onOpenAddModal={() => setIsAddModalOpen(true)}
-                />
-              }
-            />
-
-            <Route
-              path="/heatmap"
-              element={
-                <OtherView
-                  currentView="dll-heatmap"
                   onBackToBeranda={() => navigate('/beranda')}
                   santriList={santriList}
                   onSetor={handleOpenSetor}

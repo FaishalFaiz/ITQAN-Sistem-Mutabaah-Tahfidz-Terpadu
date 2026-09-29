@@ -45,7 +45,7 @@
 
 ### 3.3. Wali Santri (Walsan)
 - Masuk melalui portal khusus santri.
-- Mode Read-Only: memantau progres harian vs target harian, riwayat muroja'ah, status kelancaran, melihat peta heatmap mushaf, serta mengunduh rapor dan sertifikat resmi.
+- Mode Read-Only: memantau progres harian vs target harian, riwayat muroja'ah, status kelancaran, serta mengunduh rapor dan sertifikat resmi.
 
 ---
 
@@ -98,14 +98,7 @@
   - Tombol tap besar untuk mencatat Dibetulkan / Fath (Salah Fatal Lafadz).
   - Form penilaian tajwid, fashahah, serta kalkulasi otomatis skor akhir dan penentuan status lulus/tidak lulus.
 
-### 4.5. Heatmap 604 Halaman Mushaf
-- Peta matriks interaktif 604 kotak (merepresentasikan 604 halaman mushaf):
-  - **Abu-abu Solid** (`#E2E8F0`): Belum pernah disetorkan.
-  - **Oranye Solid** (`#F59E0B`): Sudah disetorkan / proses pemantapan muroja'ah.
-  - **Hijau Solid** (`#059669`): Lulus ujian tasmi' (Mutqin).
-- Interaksi klik/hover memunculkan informasi nomor halaman, nama surah, dan tanggal terakhir disimak.
-
-### 4.6. Pelaporan & Komunikasi
+### 4.5. Pelaporan & Komunikasi
 - **Ekspor PDF Otomatis**:
   - Rapor Mutaba'ah Berkala: ringkasan halaman ziyadah, rasio kelancaran, status pacing 3 tahun, rekap absensi halaqoh.
   - Sertifikat Kelulusan Kenaikan Juz / Tasmi' lengkap dengan QR Code validasi keaslian dokumen.
@@ -246,7 +239,7 @@ itqan-app/
 │   ├── components/
 │   │   ├── ui/               # Button, Input, Card, Badge, Modal (Solid Clean UI)
 │   │   ├── halaqah/          # SetoranForm, QuranSelector, TapCounter, DailyPacingBadge
-│   │   ├── visualization/    # MushafHeatmap, PacingCard, TargetPacingChart
+│   │   ├── visualization/    # PacingCard, TargetPacingChart
 │   │   └── shared/           # Navbar, Sidebar, OfflineIndicator
 │   ├── data/
 │   │   └── quranMeta.ts      # Mapping statis data Juz, Surah, rentang Halaman & Ayat
@@ -271,7 +264,7 @@ itqan-app/
 │   │   │   ├── MasterSantri.tsx
 │   │   │   └── ApprovalUjian.tsx
 │   │   └── santri/
-│   │       └── DetailSantri.tsx # Dasbor profil, riwayat, heatmap, & progress pacing 3 thn
+│   │       └── DetailSantri.tsx # Dasbor profil, riwayat, & progress pacing 3 thn
 │   ├── types/
 │   │   └── index.ts          # TypeScript interfaces untuk database & form
 │   ├── App.tsx

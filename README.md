@@ -1,17 +1,18 @@
-# React + TypeScript + Vite
+# ITQAN - Sistem Mutaba'ah Tahfidz Terpadu
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplikasi mutaba'ah tahfidz terpadu berbasis web yang dirancang untuk pesantren dan halaqoh Al-Qur'an. Berfokus pada fast-logging musyrif, kurikulum target pacing 3 tahun, digital tap counter ujian tasmi', serta pelaporan progres harian dan rapor santri.
 
-Currently, two official plugins are available:
+## Fitur Utama
+- **Fast-Logging Halaqoh**: Input setoran ziyadah & muroja'ah cepat berbasis surah, ayat, dan halaman standar mushaf 15 baris.
+- **Pacing Engine Adaptif**: Kalkulasi otomatis target harian 30 Juz dalam 3 tahun (36 bulan).
+- **Digital Tap Counter Ujian**: Simulasi ujian tasmi' dengan penghitung tawaqquf & fath digital.
+- **Rapor & WhatsApp Digest**: Generator pesan progres harian untuk wali santri.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
+## Tech Stack
+- React 19 + TypeScript + Vite
+- Tailwind CSS
+- GSAP & Lucide Icons
+- React Router DOM
 
 If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 

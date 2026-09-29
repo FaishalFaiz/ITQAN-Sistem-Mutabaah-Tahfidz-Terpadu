@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { ArrowLeft, UserPlus, Search } from 'lucide-react';
 import { FastSetoranForm } from '../halaqah/FastSetoranForm';
 import { TapCounterExam } from '../halaqah/TapCounterExam';
-import { MushafHeatmap } from '../visualization/MushafHeatmap';
 import { PacingCard } from '../visualization/PacingCard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -225,12 +224,6 @@ export const OtherView: React.FC<OtherViewProps> = ({
             status="behind"
           />
         </div>
-      )}
-
-      {currentView === 'dll-heatmap' && (
-        <Card title="Heatmap Matriks Mushaf (604 Halaman)" subtitle="Klik kotak untuk melihat status hafalan tiap halaman">
-          <MushafHeatmap />
-        </Card>
       )}
     </div>
   );

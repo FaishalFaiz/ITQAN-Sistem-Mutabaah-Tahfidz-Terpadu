@@ -6,9 +6,8 @@ import {
   Clock, 
   Award, 
   History, 
-  Layers, 
   Share2, 
-  Sparkles,
+  Sparkles, 
   BarChart3,
   CheckCircle2,
   AlertTriangle,
@@ -17,7 +16,6 @@ import {
 } from 'lucide-react';
 import gsap from 'gsap';
 import type { Santri } from './types';
-import { MushafHeatmap } from '../visualization/MushafHeatmap';
 import { PacingCard } from '../visualization/PacingCard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -33,7 +31,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   onBack,
   onSetor,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'heatmap' | 'riwayat' | 'analisis'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'riwayat' | 'analisis'>('overview');
   const [copyFeedback, setCopyFeedback] = useState(false);
 
   // Metrik kalkulasi
@@ -44,10 +42,6 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   const remainingLines = Math.max(0, totalTarget - totalLines);
   const remainingDays = 650;
   const requiredDailyLines = Math.ceil(remainingLines / remainingDays);
-
-  const completedCount = Math.min(604, Math.round(totalLines / 15));
-  const completedPages = Array.from({ length: completedCount }, (_, i) => i + 1);
-  const inProgressPages = [completedCount + 1, completedCount + 2, completedCount + 3];
 
   const detailContainerRef = useRef<HTMLDivElement>(null);
 
@@ -233,19 +227,6 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           >
             <Sparkles className="w-4 h-4" />
             <span>Ringkasan &amp; Rekomendasi Pacing</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('heatmap')}
-            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-              activeTab === 'heatmap'
-                ? 'border-[#0070BA] text-[#0070BA]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>Heatmap Mushaf 604 Halaman</span>
           </button>
 
           <button
@@ -442,32 +423,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         </div>
       )}
 
-      {/* 5. Tab 2: Heatmap 604 Halaman */}
-      {activeTab === 'heatmap' && (
-        <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-            <div>
-              <h3 className="font-bold text-base text-slate-900">
-                Peta Matriks Mushaf (604 Halaman) — {santri.name}
-              </h3>
-              <p className="text-xs text-slate-500">
-                Setiap kotak merepresentasikan 1 halaman mushaf Madinah standar (15 baris per halaman)
-              </p>
-            </div>
-            <div className="text-xs font-semibold px-3 py-1 bg-[#EBF5FB] text-[#0070BA] rounded-lg border border-[#D6EAF8]">
-              {completedCount} / 604 Halaman Tuntas
-            </div>
-          </div>
-
-          <MushafHeatmap
-            completedPages={completedPages}
-            inProgressPages={inProgressPages}
-            totalPages={604}
-          />
-        </div>
-      )}
-
-      {/* 6. Tab 3: Riwayat Setoran */}
+      {/* 5. Tab 2: Riwayat Setoran */}
       {activeTab === 'riwayat' && (
         <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
 

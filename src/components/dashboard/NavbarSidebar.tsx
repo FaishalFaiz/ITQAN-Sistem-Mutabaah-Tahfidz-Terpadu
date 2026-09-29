@@ -39,7 +39,6 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
     if (path.startsWith('/setoran/ziyadah')) return 'setoran-ziyadah';
     if (path.startsWith('/setoran/murajaah')) return 'setoran-murajaah';
     if (path.startsWith('/ujian')) return 'dll-ujian';
-    if (path.startsWith('/heatmap')) return 'dll-heatmap';
     if (path.startsWith('/pacing')) return 'dll-pacing';
     return 'beranda';
   };
@@ -71,9 +70,6 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
         break;
       case 'dll-ujian':
         navigate('/ujian-tasmi');
-        break;
-      case 'dll-heatmap':
-        navigate('/heatmap');
         break;
       case 'dll-pacing':
         navigate('/pacing');
@@ -238,7 +234,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             }`}
           >
             <MoreHorizontal className="w-4 h-4 shrink-0" />
-            <span>DLL / Ujian &amp; Heatmap</span>
+            <span>DLL / Ujian &amp; Pacing</span>
           </button>
         </nav>
 

@@ -20,5 +20,4 @@ export type NavItemKey =
   | 'setoran-ziyadah' 
   | 'setoran-murajaah' 
   | 'dll-pacing' 
-  | 'dll-heatmap' 
   | 'dll-ujian';
