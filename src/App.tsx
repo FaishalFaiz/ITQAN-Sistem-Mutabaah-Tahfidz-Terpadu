@@ -140,71 +140,73 @@ export function App() {
       {/* 2. Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header Bar */}
-        <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 sticky top-0 z-20 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Sisi Kiri: Hamburger + Breadcrumb */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-2 -ml-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA]"
-                aria-label="Toggle Menu"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-
-              <div className="flex items-center gap-2.5">
-                <div 
-                  onClick={() => navigate('/beranda')}
-                  className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 cursor-pointer"
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
+          <div className="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Sisi Kiri: Hamburger + Breadcrumb */}
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className="p-2 -ml-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA]"
+                  aria-label="Toggle Menu"
                 >
-                  IT
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span 
-                      onClick={() => navigate('/beranda')}
-                      className="font-extrabold text-base text-slate-900 tracking-tight cursor-pointer"
-                    >
-                      ITQAN
-                    </span>
-                    <span className="text-slate-300">/</span>
-                    <span className="font-semibold text-sm text-[#0070BA]">
-                      {getHeaderTitle()}
+                  <Menu className="w-5 h-5" />
+                </button>
+
+                <div className="flex items-center gap-2.5">
+                  <div 
+                    onClick={() => navigate('/beranda')}
+                    className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 cursor-pointer"
+                  >
+                    IT
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span 
+                        onClick={() => navigate('/beranda')}
+                        className="font-extrabold text-base text-slate-900 tracking-tight cursor-pointer"
+                      >
+                        ITQAN
+                      </span>
+                      <span className="text-slate-300">/</span>
+                      <span className="font-semibold text-sm text-[#0070BA]">
+                        {getHeaderTitle()}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 block leading-none mt-0.5">
+                      Halaqoh Abu Bakar Ash-Shiddiq
                     </span>
                   </div>
-                  <span className="text-[11px] text-slate-500 block leading-none mt-0.5">
-                    Halaqoh Abu Bakar Ash-Shiddiq
+                </div>
+              </div>
+
+              {/* Sisi Kanan: Tanggal Real & Profil */}
+              <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="font-semibold text-slate-800">
+                    {new Intl.DateTimeFormat('id-ID', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    }).format(new Date())}
                   </span>
                 </div>
-              </div>
-            </div>
 
-            {/* Sisi Kanan: Tanggal Real & Profil */}
-            <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                <span className="font-semibold text-slate-800">
-                  {new Intl.DateTimeFormat('id-ID', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  }).format(new Date())}
-                </span>
-              </div>
-
-              <div 
-                onClick={() => navigate('/login')}
-                title="Klik untuk Keluar / Ganti Akun"
-                className="flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer hover:opacity-80 transition-opacity"
-              >
-                <div className="w-8 h-8 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] font-bold text-xs flex items-center justify-center shrink-0">
-                  UA
-                </div>
-                <div className="hidden md:block text-left">
-                  <span className="text-xs font-semibold text-slate-900 block leading-tight">Ust. Abdullah</span>
-                  <span className="text-[10px] text-slate-500">Musyrif</span>
+                <div 
+                  onClick={() => navigate('/login')}
+                  title="Klik untuk Keluar / Ganti Akun"
+                  className="flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer hover:opacity-80 transition-opacity"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] font-bold text-xs flex items-center justify-center shrink-0">
+                    UA
+                  </div>
+                  <div className="hidden md:block text-left">
+                    <span className="text-xs font-semibold text-slate-900 block leading-tight">Ust. Abdullah</span>
+                    <span className="text-[10px] text-slate-500">Musyrif</span>
+                  </div>
                 </div>
               </div>
             </div>
