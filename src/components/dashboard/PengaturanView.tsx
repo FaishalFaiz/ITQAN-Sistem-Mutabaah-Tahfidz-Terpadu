@@ -279,8 +279,7 @@ export const PengaturanView: React.FC = () => {
             </span>
             <Button
               type="submit"
-              size="sm"
-              className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs h-8.5"
+              className="bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs h-10 px-5 rounded-lg shadow-xs"
             >
               Simpan Konfigurasi Gateway
             </Button>
@@ -303,15 +302,14 @@ export const PengaturanView: React.FC = () => {
               value={testPhone}
               onChange={(e) => setTestPhone(e.target.value)}
               placeholder="Masukkan No WhatsApp Anda (0812xxxx)"
-              className="text-xs h-8.5 bg-white flex-1"
+              className="text-xs h-10 bg-white flex-1"
             />
             <Button
               type="button"
               variant="outline"
-              size="sm"
               disabled={isTesting || !testPhone}
               onClick={handleTestConnection}
-              className="w-full sm:w-auto text-xs h-8.5 border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB]"
+              className="w-full sm:w-auto text-xs font-semibold h-10 px-4 border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB] rounded-lg"
             >
               {isTesting ? 'Menguji Gateway...' : 'Kirim Pesan Uji Coba'}
             </Button>
@@ -458,9 +456,8 @@ export const PengaturanView: React.FC = () => {
 
         <div className="text-right">
           <Button
-            size="sm"
             onClick={handleSaveWAConfig}
-            className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs h-8.5"
+            className="bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs h-10 px-5 rounded-lg shadow-xs"
           >
             Simpan Template Pesan
           </Button>
@@ -610,8 +607,7 @@ export const PengaturanView: React.FC = () => {
             </span>
             <Button
               type="submit"
-              size="sm"
-              className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs h-8.5"
+              className="bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs h-10 px-5 rounded-lg shadow-xs"
             >
               Simpan Parameter
             </Button>

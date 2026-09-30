@@ -400,9 +400,8 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                     <Button
                       type="button"
                       variant="outline"
-                      size="sm"
                       onClick={() => setSelectedPreviewSantri(santri)}
-                      className="h-8 text-xs text-slate-600 hover:text-slate-900 border-slate-200"
+                      className="h-9 px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 border-slate-200 rounded-lg"
                       title="Lihat pesan yang akan dikirim"
                     >
                       <Eye className="w-3.5 h-3.5 mr-1" />
@@ -414,10 +413,9 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                       <Button
                         type="button"
                         variant="outline"
-                        size="sm"
                         disabled={!hasPhone || isSending || Boolean(batchProgress?.isRunning)}
                         onClick={() => handleSendSingle(santri, true)}
-                        className="h-8 text-xs text-slate-600 hover:text-[#0070BA] border-slate-200"
+                        className="h-9 px-3 text-xs font-semibold text-slate-600 hover:text-[#0070BA] border-slate-200 rounded-lg"
                         title="Kirim ulang laporan hari ini"
                       >
                         {isSending ? (
@@ -430,10 +428,9 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                     ) : (
                       <Button
                         type="button"
-                        size="sm"
                         disabled={!hasPhone || isSending || Boolean(batchProgress?.isRunning)}
                         onClick={() => handleSendSingle(santri, false)}
-                        className="h-8 text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white font-medium"
+                        className="h-9 px-3.5 text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-2xs"
                       >
                         {isSending ? (
                           <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" />
@@ -449,12 +446,11 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
                         onClick={() => {
                           const msg = waGatewayService.buildDailyProgressMessage(santri);
                           waGatewayService.openDirectWA(santri.parentPhone, msg);
                         }}
-                        className="h-8 w-8 p-0 text-slate-400 hover:text-emerald-600"
+                        className="h-9 w-9 p-0 text-slate-400 hover:text-emerald-600 rounded-lg"
                         title="Buka langsung di WhatsApp Web / App"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -506,7 +502,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
               variant="outline"
               onClick={onClose}
               disabled={Boolean(batchProgress?.isRunning)}
-              className="text-xs h-9 border-slate-200"
+              className="text-xs font-semibold h-10 px-4 border-slate-200 rounded-lg"
             >
               Tutup
             </Button>
@@ -514,7 +510,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
               type="button"
               onClick={handleSendBatch}
               disabled={pendingCount === 0 || Boolean(batchProgress?.isRunning)}
-              className="text-xs h-9 bg-[#0070BA] hover:bg-[#005C9E] text-white font-medium shadow-sm"
+              className="text-xs font-semibold h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs"
             >
               {batchProgress?.isRunning ? (
                 <>

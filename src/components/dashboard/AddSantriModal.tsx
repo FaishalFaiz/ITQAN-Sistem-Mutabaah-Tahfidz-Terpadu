@@ -150,7 +150,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                   value={parentName}
                   onChange={(e) => setParentName(e.target.value)}
                   placeholder="Contoh: Bpk. Ruslan Abdullah"
-                  className="text-xs h-8.5 bg-white"
+                  className="text-xs h-10 bg-white"
                 />
               </div>
               <div>
@@ -162,7 +162,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                   value={parentPhone}
                   onChange={(e) => setParentPhone(e.target.value)}
                   placeholder="081234567890"
-                  className="text-xs h-8.5 bg-white"
+                  className="text-xs h-10 bg-white"
                 />
               </div>
             </div>
@@ -179,7 +179,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                 max={30}
                 value={dailyTargetLines}
                 onChange={(e) => setDailyTargetLines(Number(e.target.value))}
-                className="text-xs h-9"
+                className="text-xs h-10"
               />
             </div>
 
@@ -192,7 +192,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                 value={lastSurah}
                 onChange={(e) => setLastSurah(e.target.value)}
                 placeholder="An-Naba 1-40"
-                className="text-xs h-9"
+                className="text-xs h-10"
               />
             </div>
           </div>
@@ -201,16 +201,14 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={onClose}
-              className="text-xs"
+              className="text-xs font-semibold h-10 px-4 border-slate-200 rounded-lg"
             >
               Batal
             </Button>
             <Button
               type="submit"
-              size="sm"
-              className="text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white"
+              className="text-xs font-semibold h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs"
             >
               Simpan Santri Baru
             </Button>

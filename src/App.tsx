@@ -196,7 +196,7 @@ export function App() {
                 <button
                   type="button"
                   onClick={() => setIsDailyReportModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer"
                   title="Kirim 1 Laporan Harian per Santri ke Wali via Fonnte"
                 >
                   <Send className="w-3.5 h-3.5 text-emerald-600" />
@@ -209,7 +209,7 @@ export function App() {
                   )}
                 </button>
 
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+                <div className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
                   <Calendar className="w-3.5 h-3.5 text-slate-500" />
                   <span className="font-semibold text-slate-800">
                     {new Intl.DateTimeFormat('id-ID', {

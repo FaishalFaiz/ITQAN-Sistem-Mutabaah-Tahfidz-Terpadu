@@ -68,17 +68,15 @@ export const SantriCard: React.FC<SantriCardProps> = ({
       {/* Two action buttons side-by-side: "Setor" and "Detail" */}
       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
         <Button
-          size="sm"
           onClick={() => onSetor(santri)}
-          className="w-full text-xs font-semibold h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
+          className="w-full text-xs font-semibold h-9 bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs rounded-lg"
         >
           Setor
         </Button>
         <Button
           variant="outline"
-          size="sm"
           onClick={() => onDetail(santri)}
-          className="w-full text-xs font-semibold h-8"
+          className="w-full text-xs font-semibold h-9 rounded-lg border-slate-200 text-slate-700 hover:bg-slate-50"
         >
           Detail
         </Button>

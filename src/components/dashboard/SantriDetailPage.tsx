@@ -202,9 +202,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           <Button
             type="button"
             variant="outline"
-            size="sm"
             onClick={() => setIsWAModalOpen(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold h-8.5 px-3 border-slate-200 text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold h-10 px-3.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg shadow-2xs"
             title="Kirim atau salin laporan progres ke Wali Santri via WA"
           >
             <Share2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -214,9 +213,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           {/* Tombol Input Setoran */}
           <Button
             type="button"
-            size="sm"
             onClick={() => onSetor(santri)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold h-8.5 px-3.5 bg-[#0070BA] hover:bg-[#005C9E] text-white shadow-xs"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs"
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>Input Setoran</span>
@@ -401,9 +399,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                   </div>
                   <Button
                     type="button"
-                    size="sm"
                     onClick={() => onSetor(santri)}
-                    className="self-start sm:self-center text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white shrink-0 h-8"
+                    className="self-start sm:self-center text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white shrink-0 h-9 px-3.5 rounded-lg shadow-2xs"
                   >
                     Setor Sekarang
                   </Button>
@@ -427,9 +424,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
                     onClick={() => onSetor(santri)}
-                    className="self-start sm:self-center text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 shrink-0 h-8"
+                    className="self-start sm:self-center text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 shrink-0 h-9 px-3.5 rounded-lg"
                   >
                     Simak Muroja'ah
                   </Button>
@@ -592,9 +588,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 Santri belum memiliki riwayat mutaba'ah untuk kategori ini. Klik tombol di bawah untuk memasukkan setoran perdana.
               </p>
               <Button
-                size="sm"
                 onClick={() => onSetor(santri)}
-                className="bg-[#0070BA] text-white text-xs h-8"
+                className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-semibold h-9.5 px-4 rounded-lg shadow-xs"
               >
                 Input Setoran Sekarang
               </Button>

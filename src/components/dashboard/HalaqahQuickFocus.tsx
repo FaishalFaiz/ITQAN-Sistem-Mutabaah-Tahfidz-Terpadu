@@ -106,16 +106,14 @@ export const HalaqahQuickFocus: React.FC<HalaqahQuickFocusProps> = ({
                   <div className="flex items-center gap-2 self-end sm:self-auto shrink-0 w-full sm:w-auto justify-end">
                     <Button
                       variant="outline"
-                      size="sm"
                       onClick={() => onDetail(s)}
-                      className="text-xs font-semibold h-8"
+                      className="text-xs font-semibold h-9 px-3.5 border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50"
                     >
                       Lihat Profil
                     </Button>
                     <Button
-                      size="sm"
                       onClick={() => onSetor(s)}
-                      className="text-xs font-semibold h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
+                      className="text-xs font-semibold h-9 px-3.5 bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs rounded-lg"
                     >
                       Simak Setor
                     </Button>

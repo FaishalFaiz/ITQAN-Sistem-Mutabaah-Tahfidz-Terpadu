@@ -279,9 +279,8 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={() => setIsWAModalOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold h-8.5 px-3 border-slate-200 text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold h-10 px-3.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg shadow-2xs"
             >
               <Share2 className="w-3.5 h-3.5 text-emerald-600" />
               <span>Broadcast WA</span>
@@ -291,9 +290,8 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={handleExportCSV}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold h-8.5 px-3 border-slate-200 text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold h-10 px-3.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg shadow-2xs"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-[#0070BA]" />
               <span>Ekspor CSV</span>
@@ -302,9 +300,8 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
             {/* Print Official Summary */}
             <Button
               type="button"
-              size="sm"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold h-8.5 px-3.5 bg-[#0070BA] hover:bg-[#005C9E] text-white shadow-2xs"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Cetak Rekap</span>
@@ -1525,7 +1522,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                 value={broadcastTarget}
                 onChange={(e) => setBroadcastTarget(e.target.value)}
                 placeholder="Nomor WA Tujuan / Grup"
-                className="text-xs h-8.5 bg-slate-50 flex-1"
+                className="text-xs h-10 bg-slate-50 flex-1"
               />
               <span className="text-[11px] text-slate-400 whitespace-nowrap">Target WA</span>
             </div>
@@ -1544,9 +1541,8 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={handleCopyWA}
-                  className="text-xs h-8"
+                  className="text-xs font-semibold h-9.5 px-3.5 border-slate-200 rounded-lg"
                 >
                   {copySuccess ? <Check className="w-3.5 h-3.5 mr-1" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
                   <span>Salin Teks</span>
@@ -1557,7 +1553,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                     href={waGatewayService.getDirectWALink(broadcastTarget, waDigestMessage)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold h-8"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold h-9.5"
                   >
                     <span>Direct WA (wa.me)</span>
                     <ExternalLink className="w-3 h-3" />
@@ -1565,10 +1561,9 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                 )}
 
                 <Button
-                  size="sm"
                   disabled={isBroadcasting || !broadcastTarget}
                   onClick={handleSendBroadcastGateway}
-                  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 h-8"
+                  className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 h-9.5 px-4 rounded-lg shadow-xs"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>{isBroadcasting ? 'Mengirim...' : 'Kirim via Gateway'}</span>

@@ -122,16 +122,14 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={onClose}
-              className="text-xs h-8.5 border-slate-200"
+              className="text-xs font-semibold h-9.5 px-4 border-slate-200 rounded-lg"
             >
               Batal
             </Button>
             <Button
               type="submit"
-              size="sm"
-              className="text-xs h-8.5 bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5"
+              className="text-xs font-semibold h-9.5 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg flex items-center gap-1.5 shadow-xs"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Simpan Perubahan</span>
