@@ -15,13 +15,16 @@ import {
   ExternalLink,
   MessageSquare,
   Edit2,
-  X
+  X,
+  Award
 } from 'lucide-react';
 import gsap from 'gsap';
-import type { Santri, SetoranRecord } from './types';
+import type { Santri, SetoranRecord, ExamRecord } from './types';
 import { PacingCard } from '../visualization/PacingCard';
+import { TapCounterExam } from '../halaqah/TapCounterExam';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from '../../services/storageService';
 import { waGatewayService, type SendResult } from '../../services/waGatewayService';
 import { EditWaliModal } from './EditWaliModal';
@@ -37,8 +40,10 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   onBack,
   onSetor,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'riwayat' | 'analisis'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'riwayat' | 'analisis' | 'ujian'>('overview');
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [isTakingExam, setIsTakingExam] = useState(false);
+  const [examRecords, setExamRecords] = useState<ExamRecord[]>(() => storageService.getExamsBySantriId(santri.id));
   
   // Real Setoran records state
   const [records, setRecords] = useState<SetoranRecord[]>(() => storageService.getSetoranBySantriId(santri.id));
@@ -65,6 +70,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   useEffect(() => {
     const handleDataChanged = () => {
       loadRecords();
+      setExamRecords(storageService.getExamsBySantriId(santri.id));
       const updated = storageService.getSantriById(santri.id);
       if (updated) {
         setCurrentSantri(updated);
@@ -198,6 +204,21 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
+          {/* Tombol Ujian Tasmi' Santri */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setActiveTab('ujian');
+              setIsTakingExam(true);
+            }}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold h-10 px-3.5 border-amber-300 bg-amber-50/70 text-amber-900 hover:bg-amber-100 rounded-lg shadow-2xs cursor-pointer"
+            title="Uji Tasmi' / Kenaikan Juz untuk santri ini"
+          >
+            <Award className="w-3.5 h-3.5 text-amber-700" />
+            <span>Ujian Tasmi'</span>
+          </Button>
+
           {/* Tombol Modal WA Digest */}
           <Button
             type="button"
@@ -339,6 +360,19 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           >
             <BarChart3 className="w-4 h-4" />
             <span>Analisis Retensi &amp; Spaced Muroja'ah</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('ujian')}
+            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'ujian'
+                ? 'border-[#0070BA] text-[#0070BA]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Award className="w-4 h-4" />
+            <span>Ujian Tasmi' &amp; Kenaikan Juz ({examRecords.length})</span>
           </button>
         </div>
       </div>
@@ -722,6 +756,127 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               <p className="text-[11px] text-slate-500">Memenuhi standar kurikulum pesantren</p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 6. Tab 4: Ujian Tasmi' & Kenaikan Juz */}
+      {activeTab === 'ujian' && (
+        <div className="detail-tab-pane space-y-4">
+          {/* Mode Ujian Aktif */}
+          {isTakingExam ? (
+            <div className="max-w-2xl mx-auto">
+              <TapCounterExam
+                santri={currentSantri}
+                onFinish={() => {
+                  setIsTakingExam(false);
+                  setExamRecords(storageService.getExamsBySantriId(currentSantri.id));
+                }}
+                onCancel={() => setIsTakingExam(false)}
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Header Tab Ujian */}
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                    <Award className="w-4 h-4 text-amber-600" />
+                    <span>Ujian Tasmi' &amp; Evaluasi Kenaikan Juz</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Evaluasi kelancaran sekali duduk dengan Digital Tap Counter (toleransi salah &amp; bobot tajwid/fashahah).
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => setIsTakingExam(true)}
+                  className="h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-semibold rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  <span>Mulai Ujian Baru</span>
+                </Button>
+              </div>
+
+              {/* Riwayat Ujian Tasmi' */}
+              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    Riwayat Hasil Ujian Santri ({examRecords.length})
+                  </h4>
+                  <span className="text-[11px] text-slate-500">
+                    Standar Lulus: Nilai &ge; 75 &amp; Fatal &le; 3 kali
+                  </span>
+                </div>
+
+                {examRecords.length === 0 ? (
+                  <div className="text-center py-10 space-y-2">
+                    <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+                      <Award className="w-6 h-6" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-700">Belum ada riwayat ujian tasmi' untuk {santri.name}</p>
+                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                      Gunakan tombol "Mulai Ujian Baru" di atas untuk menguji kenaikan juz atau tasmi' berkala santri.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] border-b border-slate-200">
+                        <tr>
+                          <th className="py-2.5 px-3">Tanggal</th>
+                          <th className="py-2.5 px-3">Juz Diuji</th>
+                          <th className="py-2.5 px-3 text-center">Skor Akhir</th>
+                          <th className="py-2.5 px-3 text-center">Hasil</th>
+                          <th className="py-2.5 px-3">Evaluasi Kesalahan</th>
+                          <th className="py-2.5 px-3">Penguji &amp; Catatan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {examRecords.map((exam) => (
+                          <tr key={exam.id} className="hover:bg-slate-50/70">
+                            <td className="py-3 px-3 font-medium text-slate-900 whitespace-nowrap">
+                              {exam.date}
+                            </td>
+                            <td className="py-3 px-3 font-bold text-[#0070BA]">
+                              Juz {exam.juz}
+                            </td>
+                            <td className="py-3 px-3 text-center font-mono font-extrabold text-sm text-slate-900">
+                              {exam.finalScore}
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] font-bold px-2 py-0.5 ${
+                                  exam.isPassed
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                    : 'bg-red-50 text-red-700 border-red-300'
+                                }`}
+                              >
+                                {exam.isPassed ? 'LULUS / MEMENUHI' : 'BELUM MEMENUHI'}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-3 text-[11px] text-slate-600">
+                              <div>Ketukan: <strong>{exam.ketukan}</strong> | Dibetulkan: <strong>{exam.dibetulkan}</strong></div>
+                              <div className="text-slate-400 text-[10px]">Tajwid: {exam.tajwidScore} • Fashahah: {exam.fashahahScore}</div>
+                            </td>
+                            <td className="py-3 px-3 text-[11px]">
+                              <span className="font-semibold text-slate-800 block">{exam.musyrif}</span>
+                              {exam.notes ? (
+                                <span className="text-slate-500 italic block mt-0.5 max-w-xs">{exam.notes}</span>
+                              ) : (
+                                <span className="text-slate-400">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

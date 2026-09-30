@@ -5,7 +5,7 @@ import {
   FileText, 
   Users, 
   Settings, 
-  MoreHorizontal,
+  Target,
   LogOut,
   X
 } from 'lucide-react';
@@ -33,8 +33,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
     if (path.startsWith('/laporan')) return 'laporan';
     if (path.startsWith('/santri')) return 'santri';
     if (path.startsWith('/pengaturan')) return 'pengaturan';
-    if (path.startsWith('/ujian')) return 'dll-ujian';
-    if (path.startsWith('/pacing')) return 'dll-pacing';
+    if (path.startsWith('/pacing')) return 'pacing';
     return 'beranda';
   };
 
@@ -57,10 +56,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
       case 'pengaturan':
         navigate('/pengaturan');
         break;
-      case 'dll-ujian':
-        navigate('/ujian-tasmi');
-        break;
-      case 'dll-pacing':
+      case 'pacing':
         navigate('/pacing');
         break;
       default:
@@ -164,18 +160,18 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             <span>Pengaturan</span>
           </button>
 
-          {/* DLL / Ujian & Pacing */}
+          {/* Target Hafalan (Pacing) */}
           <button
             type="button"
-            onClick={() => handleNavClick('dll-ujian')}
+            onClick={() => handleNavClick('pacing')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-              activeKey.startsWith('dll')
+              activeKey === 'pacing'
                 ? 'bg-[#0070BA] text-white font-semibold shadow-xs'
                 : 'hover:bg-slate-100'
             }`}
           >
-            <MoreHorizontal className="w-4 h-4 shrink-0" />
-            <span>DLL / Ujian &amp; Pacing</span>
+            <Target className="w-4 h-4 shrink-0" />
+            <span>Target Hafalan (Pacing)</span>
           </button>
         </nav>
 

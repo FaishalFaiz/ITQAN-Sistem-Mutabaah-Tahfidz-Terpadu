@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ArrowLeft, UserPlus, Search, MessageSquare, ExternalLink, Edit2 } from 'lucide-react';
-import { TapCounterExam } from '../halaqah/TapCounterExam';
 import { PacingCard } from '../visualization/PacingCard';
 import { LaporanPage } from './LaporanPage';
 import { PengaturanView } from './PengaturanView';
@@ -189,13 +188,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
         <PengaturanView />
       )}
 
-      {currentView === 'dll-ujian' && (
-        <div className="max-w-2xl mx-auto">
-          <TapCounterExam />
-        </div>
-      )}
-
-      {currentView === 'dll-pacing' && (
+      {currentView === 'pacing' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <PacingCard
             santriName="Muhammad Faiz"

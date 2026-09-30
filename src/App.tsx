@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { Menu, Calendar, Send } from 'lucide-react';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
 import type { Santri } from './components/dashboard/types';
@@ -115,7 +115,6 @@ export function App() {
     if (p.startsWith('/santri')) return 'Daftar Santri';
     if (p.startsWith('/laporan')) return 'Laporan & Ringkasan';
     if (p.startsWith('/pengaturan')) return 'Pengaturan';
-    if (p.startsWith('/ujian')) return "Ujian Tasmi'";
     if (p.startsWith('/pacing')) return 'Target Hafalan Santri';
     return 'ITQAN';
   };
@@ -363,23 +362,14 @@ export function App() {
 
             <Route
               path="/ujian-tasmi"
-              element={
-                <OtherView
-                  currentView="dll-ujian"
-                  onBackToBeranda={() => navigate('/beranda')}
-                  santriList={santriList}
-                  onSetor={handleOpenSetor}
-                  onDetail={handleOpenDetail}
-                  onOpenAddModal={() => setIsAddModalOpen(true)}
-                />
-              }
+              element={<Navigate to="/santri" replace />}
             />
 
             <Route
               path="/pacing"
               element={
                 <OtherView
-                  currentView="dll-pacing"
+                  currentView="pacing"
                   onBackToBeranda={() => navigate('/beranda')}
                   santriList={santriList}
                   onSetor={handleOpenSetor}

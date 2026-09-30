@@ -71,11 +71,28 @@ export interface HalaqahSettings {
   standardDailyTargetLines: number;
 }
 
+export interface ExamRecord {
+  id: string;
+  santriId: string;
+  santriName: string;
+  nis: string;
+  juz: number;
+  ketukan: number;
+  dibetulkan: number;
+  tajwidScore: number;
+  fashahahScore: number;
+  penalty: number;
+  finalScore: number;
+  isPassed: boolean;
+  date: string;
+  musyrif: string;
+  notes?: string;
+}
+
 export type NavItemKey = 
   | 'beranda' 
   | 'laporan' 
   | 'santri' 
   | 'pengaturan' 
-  | 'dll-pacing' 
-  | 'dll-ujian';
+  | 'pacing';
 

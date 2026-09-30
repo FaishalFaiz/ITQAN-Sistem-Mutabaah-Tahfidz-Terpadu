@@ -1,4 +1,4 @@
-import type { Santri, SetoranRecord, WAGatewayConfig, WALog, HalaqahSettings } from '../components/dashboard/types';
+import type { Santri, SetoranRecord, WAGatewayConfig, WALog, HalaqahSettings, ExamRecord } from '../components/dashboard/types';
 import { 
   INITIAL_SANTRI_LIST, 
   INITIAL_SETORAN_RECORDS, 
@@ -12,6 +12,7 @@ const KEYS = {
   WA_CONFIG: 'itqan_wa_gateway_config',
   WA_LOGS: 'itqan_wa_logs',
   SETTINGS: 'itqan_halaqah_settings',
+  EXAMS: 'itqan_exam_records',
 };
 
 // Event for cross-component reactive updates
@@ -282,6 +283,41 @@ export const storageService = {
   saveHalaqahSettings(settings: HalaqahSettings): void {
     localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
     emitChange('halaqah_settings_updated');
+  },
+
+  // ================= UJIAN TASMI' =================
+  getExamRecords(): ExamRecord[] {
+    try {
+      const data = localStorage.getItem(KEYS.EXAMS);
+      if (!data) return [];
+      return JSON.parse(data);
+    } catch {
+      return [];
+    }
+  },
+
+  getExamsBySantriId(santriId: string): ExamRecord[] {
+    const list = this.getExamRecords();
+    return list.filter((e) => e.santriId === santriId);
+  },
+
+  addExamRecord(input: Omit<ExamRecord, 'id' | 'date'>): ExamRecord {
+    const record: ExamRecord = {
+      ...input,
+      id: `exam-${Date.now()}`,
+      date: new Intl.DateTimeFormat('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date()) + ' WIB',
+    };
+    const list = this.getExamRecords();
+    const updated = [record, ...list];
+    localStorage.setItem(KEYS.EXAMS, JSON.stringify(updated));
+    emitChange('exam_record_added');
+    return record;
   },
 
   // ================= RESET SEED =================
