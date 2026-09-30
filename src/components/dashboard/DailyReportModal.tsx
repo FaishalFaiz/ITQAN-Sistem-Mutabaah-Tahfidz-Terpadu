@@ -167,9 +167,9 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
   return (
     <>
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden w-[95vw] sm:w-full rounded-xl sm:rounded-2xl">
         {/* Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100 bg-slate-50/50">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
@@ -248,37 +248,37 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
         )}
 
         {/* Filter Tabs & Stats Bar */}
-        <div className="px-6 py-3 border-b border-slate-100 flex items-center justify-between bg-white text-xs">
-          <div className="flex items-center gap-2">
+        <div className="px-4 sm:px-6 py-2.5 sm:py-3 border-b border-slate-100 flex items-center justify-between bg-white text-xs overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => setFilterTab('all')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap ${
                 filterTab === 'all'
                   ? 'bg-slate-900 text-white'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Semua Santri ({santriList.length})
+              Semua ({santriList.length})
             </button>
             <button
               onClick={() => setFilterTab('pending')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap ${
                 filterTab === 'pending'
                   ? 'bg-amber-600 text-white'
                   : 'text-amber-800 bg-amber-50 hover:bg-amber-100'
               }`}
             >
-              Belum Terkirim ({pendingCount})
+              Belum ({pendingCount})
             </button>
             <button
               onClick={() => setFilterTab('sent')}
-              className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap ${
                 filterTab === 'sent'
                   ? 'bg-emerald-600 text-white'
                   : 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
               }`}
             >
-              Sudah Terkirim ({sentCount})
+              Sudah ({sentCount})
             </button>
           </div>
 
@@ -288,7 +288,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
         </div>
 
         {/* Content Body: List Santri */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-3 divide-y divide-slate-100">
+        <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-3 divide-y divide-slate-100">
           {filteredList.length === 0 ? (
             <div className="text-center py-12 text-slate-400">
               <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500 stroke-[1.5]" />
@@ -360,7 +360,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                   </div>
 
                   {/* Status Laporan Hari Ini & Actions */}
-                  <div className="flex items-center justify-between md:justify-end gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 sm:gap-2 shrink-0 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-slate-100 w-full sm:w-auto">
                     {/* Status Badge */}
                     <div className="text-right mr-1">
                       {isSentToday ? (
@@ -472,7 +472,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
         )}
 
         {/* Footer */}
-        <DialogFooter className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <DialogFooter className="px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-xs text-slate-500 flex items-center gap-2">
             <span>Terkirim: <strong className="text-emerald-600 font-semibold">{sentCount}</strong></span>
             <span>•</span>
@@ -481,13 +481,13 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
             <span>Total: <strong>{santriList.length} Santri</strong></span>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={Boolean(batchProgress?.isRunning)}
-              className="text-xs font-semibold h-10 px-4 border-slate-200 rounded-lg"
+              className="text-xs font-semibold h-9 sm:h-10 px-4 border-slate-200 rounded-lg justify-center"
             >
               Tutup
             </Button>
@@ -495,7 +495,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
               type="button"
               onClick={handleSendBatch}
               disabled={pendingCount === 0 || Boolean(batchProgress?.isRunning)}
-              className="text-xs font-semibold h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs"
+              className="text-xs font-semibold h-9 sm:h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs justify-center"
             >
               {batchProgress?.isRunning ? (
                 <>

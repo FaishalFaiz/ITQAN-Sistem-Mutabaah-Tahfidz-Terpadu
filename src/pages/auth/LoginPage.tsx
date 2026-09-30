@@ -1,25 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, BookOpen } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { authService } from '@/services/authService';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('abdullah@itqan.sch.id');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<'musyrif' | 'admin' | 'wali'>('musyrif');
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     setIsLoading(true);
-    // Simulates quick login
-    setTimeout(() => {
-      setIsLoading(false);
+
+    const res = await authService.signIn(email, password);
+    setIsLoading(false);
+
+    if (res.success) {
       navigate('/beranda');
-    }, 400);
+    } else {
+      setErrorMessage(res.error || 'Gagal masuk. Periksa kembali email dan kata sandi Anda.');
+    }
   };
 
   return (
@@ -28,11 +35,13 @@ export const LoginPage: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-4">
         {/* Logo & Judul Institusi */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#0070BA] text-white shadow-xs mb-3.5">
-            <BookOpen className="w-6 h-6" />
-          </div>
+          <img
+            src="/favicon.svg"
+            alt="Logo ITQAN"
+            className="inline-block w-12 h-12 rounded-xl shadow-xs mb-3.5 object-contain"
+          />
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-            ITQAN TAHFIDZ
+            PORTAL MUSYRIF ITQAN
           </h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">
             Sistem Mutaba'ah &amp; Evaluasi Tahfidz Terpadu
@@ -41,73 +50,57 @@ export const LoginPage: React.FC = () => {
 
         {/* Card Form */}
         <div className="bg-white py-8 px-5 sm:px-8 border border-slate-200 rounded-2xl shadow-xs">
-          {/* Header Tab Peran Akun */}
-          <div className="mb-6">
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-              Masuk Sebagai
-            </label>
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-lg">
-              <button
-                type="button"
-                onClick={() => {
-                  setRole('musyrif');
-                  setEmail('abdullah@itqan.sch.id');
-                }}
-                className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  role === 'musyrif'
-                    ? 'bg-white text-[#0070BA] shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Musyrif
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setRole('admin');
-                  setEmail('admin@itqan.sch.id');
-                }}
-                className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  role === 'admin'
-                    ? 'bg-white text-[#0070BA] shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Koordinator
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setRole('wali');
-                  setEmail('wali.fatih@gmail.com');
-                }}
-                className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  role === 'wali'
-                    ? 'bg-white text-[#0070BA] shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Wali Santri
-              </button>
-            </div>
+          {/* Header Info Khusus Musyrif */}
+          <div className="mb-6 p-3 rounded-lg bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] text-xs font-semibold flex items-center justify-between">
+            <span>Akses Masuk: Musyrif Halaqoh</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
+                isSupabaseConfigured
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : 'bg-amber-100 text-amber-800'
+              }`}
+            >
+              {isSupabaseConfigured ? 'Supabase Auth' : 'Env Supabase Kosong'}
+            </span>
           </div>
 
+          {!isSupabaseConfigured && (
+            <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col gap-1">
+              <span className="font-bold flex items-center gap-1.5">
+                <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
+                Supabase Belum Dikonfigurasi
+              </span>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                Isi <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">VITE_SUPABASE_URL</code> dan{' '}
+                <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">VITE_SUPABASE_ANON_KEY</code> pada file <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">.env</code> agar login dapat diverifikasi langsung oleh database Supabase Anda.
+              </p>
+            </div>
+          )}
+
+
+          {errorMessage && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Input Email / Username */}
+            {/* Input Email */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-800">
-                Alamat Email / NIS
+                Alamat Email Musyrif
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
-                  type="text"
+                  type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nama@itqan.sch.id atau NIS"
+                  placeholder="musyrif@itqan.sch.id"
                   className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
                 />
               </div>
@@ -119,16 +112,6 @@ export const LoginPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-800">
                   Kata Sandi
                 </label>
-                <a
-                  href="#forgot"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert('Silakan hubungi Koordinator Tahfidz/Admin untuk reset kata sandi akun.');
-                  }}
-                  className="text-xs text-[#0070BA] hover:underline font-medium"
-                >
-                  Lupa sandi?
-                </a>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -145,7 +128,7 @@ export const LoginPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                   aria-label="Toggle password visibility"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -170,21 +153,20 @@ export const LoginPage: React.FC = () => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-10 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-sm rounded-lg shadow-xs transition-colors mt-2"
+              className="w-full h-10 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-sm rounded-lg shadow-xs transition-colors mt-2 cursor-pointer"
             >
-              {isLoading ? 'Memproses Masuk...' : 'Masuk ke Portal'}
+              {isLoading ? 'Memverifikasi...' : 'Masuk sebagai Musyrif'}
             </Button>
           </form>
 
-
           {/* Link ke Registrasi */}
           <div className="mt-6 text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
-            Belum memiliki akun?{' '}
+            Belum memiliki akun musyrif?{' '}
             <Link
               to="/signup"
               className="font-semibold text-[#0070BA] hover:underline"
             >
-              Daftar Akun Baru
+              Daftar Akun Musyrif
             </Link>
           </div>
         </div>
@@ -197,3 +179,4 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
+export default LoginPage;

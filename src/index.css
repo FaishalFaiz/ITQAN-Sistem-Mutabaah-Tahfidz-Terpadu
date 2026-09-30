@@ -92,21 +92,85 @@
   background: #94A3B8;
 }
 
-/* Print Styles for Official Reports */
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  height: 0px !important;
+  width: 0px !important;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+/* Print Styles for Official Reports (Export to PDF) */
+@page {
+  size: A4 portrait;
+  margin: 12mm 15mm 15mm 15mm;
+}
+
 @media print {
-  header, aside, nav, .no-print {
+  /* Hide all app navigation, headers, footers, sidebars, interactive controls, and non-print elements */
+  header, 
+  aside, 
+  nav, 
+  button, 
+  .no-print,
+  [data-no-print="true"] {
     display: none !important;
   }
-  body, #root, main {
+
+  /* Reset document flow and force high-contrast printing */
+  html, body {
     background: #ffffff !important;
-    color: #000000 !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* When modal is open for printing, isolate modal content and hide background app */
+  body:has(.print-modal-container) #root {
+    display: none !important;
+  }
+
+  body:has(.print-modal-container) .print-modal-backdrop {
+    position: static !important;
+    background: transparent !important;
     padding: 0 !important;
     margin: 0 !important;
+    display: block !important;
   }
+
+  body:has(.print-modal-container) .print-modal-container {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body:has(.print-modal-container) .print-modal-header {
+    display: none !important;
+  }
+
+  /* Avoid unwanted page breaks inside report cards/tables */
+  table, tr, td, th, .print-card, .avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
   .print-page {
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
+    width: 100% !important;
   }
 }
 

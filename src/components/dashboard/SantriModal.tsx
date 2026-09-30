@@ -7,8 +7,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
+
 
 interface SantriModalProps {
   type: 'setor' | 'detail' | null;
@@ -27,17 +27,16 @@ export const SantriModal: React.FC<SantriModalProps> = ({
 
   return (
     <Dialog open={Boolean(type && santri)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-        <DialogHeader className="pb-3 border-b border-slate-100">
-          <DialogTitle className="text-lg font-bold text-slate-900">
-            {type === 'setor' ? `Input Setoran: ${santri.name}` : `Detail Capaian: ${santri.name}`}
+      <DialogContent className="w-[96vw] max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-2xl border-slate-200 shadow-xl bg-white focus:outline-none">
+        <DialogHeader className="pb-2.5 border-b border-slate-100 text-left">
+          <DialogTitle className="text-base font-bold text-slate-900 pr-6">
+            {type === 'setor' ? `Setoran: ${santri.name}` : `Detail: ${santri.name}`}
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
-            NIS: {santri.nis} • Capaian Saat Ini: {santri.juzAchieved} • Wali: {santri.parentName || '-'} ({santri.parentPhone || 'No WA belum ada'})
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="pt-2">
+        <div className="pt-1">
+
+
           {type === 'setor' ? (
             <div>
               <FastSetoranForm 

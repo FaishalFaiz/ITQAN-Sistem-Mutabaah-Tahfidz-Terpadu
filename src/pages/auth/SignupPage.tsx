@@ -1,42 +1,54 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, User, BookOpen, ShieldAlert } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { authService } from '@/services/authService';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'musyrif' | 'wali'>('musyrif');
-  const [nisOrCode, setNisOrCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
 
     if (password !== confirmPassword) {
       setErrorMsg('Konfirmasi kata sandi tidak cocok.');
       return;
     }
 
+    if (password.length < 6) {
+      setErrorMsg('Kata sandi minimal 6 karakter.');
+      return;
+    }
+
     if (!agreedToTerms) {
-      setErrorMsg('Harap setujui syarat & ketentuan layanan.');
+      setErrorMsg('Harap setujui pakta integritas dan ketentuan layanan.');
       return;
     }
 
     setIsLoading(true);
-    // Simulates account creation
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('Pendaftaran berhasil! Akun Anda siap digunakan.');
-      navigate('/login');
-    }, 500);
+    const res = await authService.signUp(fullName, email, password);
+    setIsLoading(false);
+
+    if (res.success) {
+      setSuccessMsg('Pendaftaran akun musyrif berhasil! Mengalihkan ke halaman masuk...');
+      setTimeout(() => {
+        navigate('/login');
+      }, 1500);
+    } else {
+      setErrorMsg(res.error || 'Gagal mendaftar akun. Silakan coba kembali.');
+    }
   };
 
   return (
@@ -44,19 +56,33 @@ export const SignupPage: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-4">
         {/* Header Logo */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#0070BA] text-white shadow-xs mb-3">
-            <BookOpen className="w-6 h-6" />
-          </div>
+          <img
+            src="/favicon.svg"
+            alt="Logo ITQAN"
+            className="inline-block w-12 h-12 rounded-xl shadow-xs mb-3 object-contain"
+          />
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-            Daftar Akun Baru
+            Daftar Musyrif Baru
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Bergabung ke ekosistem mutaba'ah tahfidz ITQAN
+            Pendaftaran akun pembimbing halaqoh tahfidz ITQAN
           </p>
         </div>
 
         {/* Card Form */}
         <div className="bg-white py-8 px-5 sm:px-8 border border-slate-200 rounded-2xl shadow-xs">
+          {!isSupabaseConfigured && (
+            <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col gap-1">
+              <span className="font-bold flex items-center gap-1.5">
+                <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
+                Supabase Belum Dikonfigurasi
+              </span>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                Pendaftaran akun musyrif terhubung langsung ke Supabase Auth. Mohon isi variabel <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">VITE_SUPABASE_URL</code> dan <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">VITE_SUPABASE_ANON_KEY</code> di file <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">.env</code>.
+              </p>
+            </div>
+          )}
+
           {errorMsg && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />
@@ -64,42 +90,18 @@ export const SignupPage: React.FC = () => {
             </div>
           )}
 
-          {/* Tab Jenis Akun */}
-          <div className="mb-5">
-            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-              Daftar Sebagai
-            </label>
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-lg">
-              <button
-                type="button"
-                onClick={() => setRole('musyrif')}
-                className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  role === 'musyrif'
-                    ? 'bg-white text-[#0070BA] shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Musyrif (Guru Halaqoh)
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('wali')}
-                className={`py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  role === 'wali'
-                    ? 'bg-white text-[#0070BA] shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Wali Santri
-              </button>
+          {successMsg && (
+            <div className="mb-4 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+              <span>{successMsg}</span>
             </div>
-          </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {/* Nama Lengkap */}
             <div className="space-y-1">
               <label className="block text-xs font-semibold text-slate-800">
-                Nama Lengkap
+                Nama Lengkap Musyrif
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -110,7 +112,7 @@ export const SignupPage: React.FC = () => {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder={role === 'musyrif' ? 'Contoh: Ust. Hamdan Rabbani' : 'Contoh: H. Agus Sulaiman'}
+                  placeholder="Contoh: Ust. Abdullah Fauzi"
                   className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
                 />
               </div>
@@ -130,30 +132,10 @@ export const SignupPage: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nama@email.com"
+                  placeholder="musyrif@itqan.sch.id"
                   className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
                 />
               </div>
-            </div>
-
-            {/* Kode Verifikasi / NIS Santri */}
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-800">
-                {role === 'musyrif' ? 'Kode Registrasi Lembaga' : 'Nomor Induk Santri (NIS)'}
-              </label>
-              <input
-                type="text"
-                required
-                value={nisOrCode}
-                onChange={(e) => setNisOrCode(e.target.value)}
-                placeholder={role === 'musyrif' ? 'Contoh: ITQAN-MSF-2026' : 'Contoh: 20240182'}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
-              />
-              <span className="text-[11px] text-slate-400 block">
-                {role === 'musyrif'
-                  ? '*Didapatkan dari koordinator kurikulum tahfidz'
-                  : '*Masukkan NIS santri untuk menghubungkan data mutaba\'ah'}
-              </span>
             </div>
 
             {/* Kata Sandi */}
@@ -170,13 +152,13 @@ export const SignupPage: React.FC = () => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimal 8 karakter"
+                  placeholder="Minimal 6 karakter"
                   className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                   aria-label="Toggle password visibility"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -215,7 +197,7 @@ export const SignupPage: React.FC = () => {
                   className="rounded border-slate-300 text-[#0070BA] focus:ring-[#0070BA] w-4 h-4 mt-0.5 cursor-pointer"
                 />
                 <span className="text-xs text-slate-600 leading-snug">
-                  Saya menyetujui kebijakan privasi dan pakta integritas data mutaba'ah Pesantren ITQAN.
+                  Saya mendaftar sebagai Musyrif Halaqoh dan menyetujui integritas mutaba'ah tahfidz ITQAN.
                 </span>
               </label>
             </div>
@@ -224,9 +206,9 @@ export const SignupPage: React.FC = () => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-10 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-sm rounded-lg shadow-xs transition-colors mt-3"
+              className="w-full h-10 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-sm rounded-lg shadow-xs transition-colors mt-3 cursor-pointer"
             >
-              {isLoading ? 'Mendaftarkan Akun...' : 'Daftar Sekarang'}
+              {isLoading ? 'Mendaftarkan Akun...' : 'Daftar sebagai Musyrif'}
             </Button>
           </form>
 
@@ -249,3 +231,4 @@ export const SignupPage: React.FC = () => {
     </div>
   );
 };
+export default SignupPage;

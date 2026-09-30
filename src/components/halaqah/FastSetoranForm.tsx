@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, MessageSquare, Send, AlertTriangle, ExternalLink } from 'lucide-react';
+import { CheckCircle, Send, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import type { Santri } from '../dashboard/types';
@@ -193,89 +193,64 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3.5">
-        {/* 1. Identitas Santri */}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {/* 1. Identitas Santri Ringkas */}
         {initialSantri ? (
-          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] font-bold text-xs flex items-center justify-center shrink-0">
-                {initialSantri.avatarInitials}
-              </div>
-              <div>
-                <span className="text-xs font-bold text-slate-900 block leading-tight">
-                  {initialSantri.name}
-                </span>
-                <span className="text-[11px] text-slate-500 font-mono">
-                  NIS: {initialSantri.nis} • Capaian: {initialSantri.juzAchieved}
-                </span>
-                {initialSantri.parentName && (
-                  <span className="text-[11px] text-slate-600 block mt-0.5">
-                    Wali: <strong className="text-slate-800">{initialSantri.parentName}</strong> ({initialSantri.parentPhone || 'No WA belum diisi'})
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] text-slate-400 block uppercase font-medium">Target Harian</span>
-              <span className="text-xs font-bold text-[#0070BA]">{initialSantri.dailyTargetLines} Baris</span>
-            </div>
+          <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50 border border-slate-200">
+            <span className="text-xs font-bold text-slate-800 truncate">
+              {initialSantri.name} ({initialSantri.nis})
+            </span>
+            <span className="text-xs font-semibold text-[#0070BA] shrink-0">
+              Target: {initialSantri.dailyTargetLines} Baris
+            </span>
           </div>
         ) : (
           <div>
-            <label className="block text-xs font-bold text-slate-800 mb-1.5">Pilih Santri</label>
             <select
               value={selectedSantriId}
               onChange={(e) => handleSantriChange(e.target.value)}
-              className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 shadow-xs"
+              className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none"
             >
               {allSantri.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} (NIS: {s.nis}) — Capaian: {s.juzAchieved} — Target: {s.dailyTargetLines} Baris
+                  {s.name} ({s.nis})
                 </option>
               ))}
             </select>
-            {activeSantri && (
-              <p className="text-xs text-slate-500 mt-1.5">
-                Wali: <strong className="text-slate-700">{activeSantri.parentName}</strong> ({activeSantri.parentPhone || 'No WA belum diisi'})
-              </p>
-            )}
           </div>
         )}
 
-        {/* 2. Jenis Setoran (Toggle Cepat) */}
-        <div>
-          <label className="block text-xs font-bold text-slate-800 mb-1.5">Jenis Setoran</label>
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => setType('ziyadah')}
-              className={`h-10 text-sm font-semibold rounded-lg border transition-all ${
-                type === 'ziyadah'
-                  ? 'bg-[#0070BA] text-white border-[#0070BA] shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              Ziyadah (Hafalan Baru)
-            </button>
-            <button
-              type="button"
-              onClick={() => setType('murojaah')}
-              className={`h-10 text-sm font-semibold rounded-lg border transition-all ${
-                type === 'murojaah'
-                  ? 'bg-[#0070BA] text-white border-[#0070BA] shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              Muroja'ah (Pengulangan)
-            </button>
-          </div>
+        {/* 2. Jenis Setoran (Ziyadah vs Muroja'ah) */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setType('ziyadah')}
+            className={`h-9 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+              type === 'ziyadah'
+                ? 'bg-[#0070BA] text-white border-[#0070BA]'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            Ziyadah (Baru)
+          </button>
+          <button
+            type="button"
+            onClick={() => setType('murojaah')}
+            className={`h-9 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
+              type === 'murojaah'
+                ? 'bg-[#0070BA] text-white border-[#0070BA]'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            Muroja'ah (Ulang)
+          </button>
         </div>
 
         {/* 3. Surah & Juz */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <div className="sm:col-span-3">
-            <label className="block text-xs font-bold text-slate-800 mb-1.5">
-              Nama Surah &amp; Ayat
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          <div className="col-span-2 sm:col-span-3">
+            <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+              Surah &amp; Ayat
             </label>
             <input
               type="text"
@@ -284,7 +259,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
               value={surahName}
               onChange={(e) => setSurahName(e.target.value)}
               placeholder="Contoh: An-Naba 1-40"
-              className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 shadow-xs"
+              className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none"
             />
             <datalist id="surah-list">
               {COMMON_SURAHS.map((s) => (
@@ -293,11 +268,11 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
             </datalist>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-800 mb-1.5">Juz</label>
+            <label className="block text-[11px] font-semibold text-slate-700 mb-1">Juz</label>
             <select
               value={juz}
               onChange={(e) => setJuz(Number(e.target.value))}
-              className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 shadow-xs"
+              className="w-full h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none"
             >
               {Array.from({ length: 30 }, (_, i) => i + 1).map((j) => (
                 <option key={j} value={j}>Juz {j}</option>
@@ -306,174 +281,143 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
           </div>
         </div>
 
-        {/* 4. Rentang Halaman & Posisi Baris (Lapang & Jelas) */}
-        <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/80 space-y-3.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-            <span className="font-bold text-slate-800">
-              Posisi Halaman Mushaf &amp; Granularitas Baris
-            </span>
-            <span className="self-start sm:self-auto font-bold text-[#0070BA] bg-[#EBF5FB] px-2.5 py-1 rounded-md border border-[#D6EAF8] text-xs">
-              {totalLines} Baris Terhitung
-            </span>
+        {/* 4. Posisi Halaman & Baris (Ringkas 4 Kolom) */}
+        <div className="space-y-1.5 pt-0.5">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+            <span>Posisi Halaman &amp; Baris</span>
+            <span className="text-[#0070BA] font-bold">{totalLines} Baris</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Subgrup 1: Halaman Mushaf (1–604) */}
-            <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-2">
-              <span className="text-xs font-bold text-slate-700 block">
-                1. Rentang Halaman (Mushaf Madinah 1–604)
-              </span>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1">Halaman Awal</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={604}
-                    value={pageStart}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setPageStart(val);
-                      if (pageEnd < val) setPageEnd(val);
-                    }}
-                    className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 shadow-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1">Halaman Akhir</label>
-                  <input
-                    type="number"
-                    min={pageStart}
-                    max={604}
-                    value={pageEnd}
-                    onChange={(e) => setPageEnd(Number(e.target.value))}
-                    className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 shadow-xs"
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            <div>
+              <label className="block text-[10px] text-slate-500 mb-0.5">Hal. Awal</label>
+              <input
+                type="number"
+                min={1}
+                max={604}
+                value={pageStart}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setPageStart(val);
+                  if (pageEnd < val) setPageEnd(val);
+                }}
+                className="w-full h-8.5 rounded-md border border-slate-300 bg-white px-1.5 text-xs text-center font-bold text-slate-900 focus:border-[#0070BA] focus:outline-none"
+              />
             </div>
-
-            {/* Subgrup 2: Posisi Baris (1–15) */}
-            <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-2">
-              <span className="text-xs font-bold text-slate-700 block">
-                2. Posisi Baris Ayat (Standar 1–15 Baris)
-              </span>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1">Baris Awal (1–15)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={15}
-                    value={lineStart}
-                    onChange={(e) => setLineStart(Number(e.target.value))}
-                    className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 shadow-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-500 mb-1">Baris Akhir (1–15)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={15}
-                    value={lineEnd}
-                    onChange={(e) => setLineEnd(Number(e.target.value))}
-                    className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 shadow-xs"
-                  />
-                </div>
-              </div>
+            <div>
+              <label className="block text-[10px] text-slate-500 mb-0.5">Hal. Akhir</label>
+              <input
+                type="number"
+                min={pageStart}
+                max={604}
+                value={pageEnd}
+                onChange={(e) => setPageEnd(Number(e.target.value))}
+                className="w-full h-8.5 rounded-md border border-slate-300 bg-white px-1.5 text-xs text-center font-bold text-slate-900 focus:border-[#0070BA] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] text-slate-500 mb-0.5">Baris Awal</label>
+              <input
+                type="number"
+                min={1}
+                max={15}
+                value={lineStart}
+                onChange={(e) => setLineStart(Number(e.target.value))}
+                className="w-full h-8.5 rounded-md border border-slate-300 bg-white px-1.5 text-xs text-center font-bold text-slate-900 focus:border-[#0070BA] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] text-slate-500 mb-0.5">Baris Akhir</label>
+              <input
+                type="number"
+                min={1}
+                max={15}
+                value={lineEnd}
+                onChange={(e) => setLineEnd(Number(e.target.value))}
+                className="w-full h-8.5 rounded-md border border-slate-300 bg-white px-1.5 text-xs text-center font-bold text-slate-900 focus:border-[#0070BA] focus:outline-none"
+              />
             </div>
           </div>
         </div>
 
-        {/* 5. Evaluasi Kelancaran (Mumtaz, Jayyid, I'adah) */}
-        <div>
-          <label className="block text-xs font-bold text-slate-800 mb-1.5">Evaluasi Mutu Kelancaran</label>
-          <div className="grid grid-cols-3 gap-2.5">
+        {/* 5. Evaluasi Kelancaran */}
+        <div className="pt-0.5">
+          <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nilai Kelancaran</label>
+          <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               onClick={() => setGrade('mumtaz')}
-              className={`h-10 text-xs sm:text-sm font-bold rounded-lg border transition-all ${
+              className={`h-8.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                 grade === 'mumtaz'
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
               }`}
             >
-              MUMTAZ (Lancar)
+              Mumtaz
             </button>
             <button
               type="button"
               onClick={() => setGrade('jayyid')}
-              className={`h-10 text-xs sm:text-sm font-bold rounded-lg border transition-all ${
+              className={`h-8.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                 grade === 'jayyid'
-                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                  : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                  ? 'bg-amber-600 text-white border-amber-600'
+                  : 'bg-amber-50 text-amber-800 border-amber-200'
               }`}
             >
-              JAYYID (Cukup)
+              Jayyid
             </button>
             <button
               type="button"
               onClick={() => setGrade('iadah')}
-              className={`h-10 text-xs sm:text-sm font-bold rounded-lg border transition-all ${
+              className={`h-8.5 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
                 grade === 'iadah'
-                  ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                  : 'bg-red-50 text-red-800 border-red-200 hover:bg-red-100'
+                  ? 'bg-red-600 text-white border-red-600'
+                  : 'bg-red-50 text-red-800 border-red-200'
               }`}
             >
-              I'ADAH (Ulang)
+              I'adah
             </button>
           </div>
         </div>
 
-        {/* 6. Catatan Musyrif */}
+        {/* 6. Catatan Ringkas */}
         <div>
-          <label className="block text-xs font-bold text-slate-800 mb-1.5">
-            Catatan Musyrif <span className="text-slate-400 font-normal">(opsional)</span>
+          <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+            Catatan <span className="text-slate-400 font-normal">(opsional)</span>
           </label>
           <input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Contoh: Makharijul huruf fasih, tingkatkan ketukan waqaf"
-            className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 shadow-xs"
+            placeholder="Catatan talaqqi..."
+            className="w-full h-8.5 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none"
           />
         </div>
 
-        {/* 7. Pengaturan Notifikasi WhatsApp Gateway */}
-        <div className="flex items-center justify-between p-3.5 rounded-xl border border-emerald-100 bg-[#F4FDF8]">
-          <div className="flex items-center gap-2.5">
-            <MessageSquare className="w-4 h-4 text-emerald-600 shrink-0" />
-            <div>
-              <span className="text-xs font-bold text-slate-900 block leading-tight">
-                Notifikasi WhatsApp ke Wali Santri
-              </span>
-              <span className="text-xs text-slate-500">
-                {activeSantri?.parentPhone ? `Kirim ke: ${activeSantri.parentPhone} (${activeSantri.parentName})` : 'Nomor WhatsApp wali belum tersimpan'}
-              </span>
-            </div>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
+        {/* 7. Kirim WA & Submit */}
+        <div className="flex items-center justify-between py-1 px-1">
+          <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
             <input
               type="checkbox"
               checked={sendWA}
               disabled={!activeSantri?.parentPhone}
               onChange={(e) => setSendWA(e.target.checked)}
-              className="sr-only peer"
+              className="rounded border-slate-300 text-[#0070BA] focus:ring-[#0070BA] w-4 h-4 cursor-pointer"
             />
-            <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+            <span className="text-[11px] font-medium">Kirim laporan WA ke wali</span>
           </label>
         </div>
 
-        {/* Tombol Simpan Setoran */}
         <Button 
           type="submit" 
           disabled={isSubmitting}
-          className="w-full bg-[#0070BA] hover:bg-[#005C9E] text-white font-bold text-sm h-11 rounded-lg shadow-xs mt-2"
+          className="w-full bg-[#0070BA] hover:bg-[#005C9E] text-white font-bold text-xs h-9.5 rounded-lg shadow-xs cursor-pointer"
         >
-          {isSubmitting ? 'Menyimpan & Memproses WA...' : 'Simpan & Validasi Setoran Santri'}
+          {isSubmitting ? 'Menyimpan...' : 'Simpan Setoran'}
         </Button>
       </form>
     </div>
   );
 };
+
+

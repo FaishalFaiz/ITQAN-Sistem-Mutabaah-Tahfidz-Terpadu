@@ -4,7 +4,6 @@ import {
   Send, 
   CheckCircle2, 
   AlertTriangle, 
-  RefreshCw, 
   Trash2, 
   Settings, 
   FileText, 
@@ -97,17 +96,16 @@ export const PengaturanView: React.FC = () => {
   };
 
   const handleResetData = () => {
-    if (window.confirm('Apakah Anda yakin ingin mereset seluruh data santri, setoran, dan log ke kondisi awal (seed data)?')) {
+    if (window.confirm('Apakah Anda yakin ingin menghapus seluruh data santri, setoran, dan log? Database akan dikosongkan.')) {
       storageService.resetDatabase();
-      setWaConfig(storageService.getWAGatewayConfig());
-      setSettings(storageService.getHalaqahSettings());
       setLogs([]);
-      alert('Data sistem ITQAN berhasil direset ke seed awal.');
+      alert('Seluruh data mutabaah dan santri telah dibersihkan (kosong).');
     }
   };
 
   return (
     <div className="space-y-6 max-w-5xl">
+
       {/* Header */}
       <div>
         <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
@@ -615,12 +613,12 @@ export const PengaturanView: React.FC = () => {
         </form>
       </div>
 
-      {/* 5. SECTION: Manajemen Database & Reset Seed */}
+      {/* 5. SECTION: Manajemen Database & Bersihkan Data */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h4 className="font-bold text-sm text-slate-900">Reset Data ke Kondisi Awal</h4>
+          <h4 className="font-bold text-sm text-slate-900">Bersihkan Database</h4>
           <p className="text-xs text-slate-500 mt-0.5">
-            Kembalikan daftar 12 santri teladan, riwayat setoran contoh, dan template default.
+            Kosongkan seluruh data santri, setoran mutaba'ah, dan catatan log.
           </p>
         </div>
         <Button
@@ -628,12 +626,13 @@ export const PengaturanView: React.FC = () => {
           variant="outline"
           size="sm"
           onClick={handleResetData}
-          className="border-red-200 text-red-700 hover:bg-red-50 text-xs shrink-0 inline-flex items-center gap-1.5"
+          className="border-red-200 text-red-700 hover:bg-red-50 text-xs shrink-0 inline-flex items-center gap-1.5 cursor-pointer"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Reset Database Lokal</span>
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Hapus Semua Data</span>
         </Button>
       </div>
     </div>
   );
 };
+

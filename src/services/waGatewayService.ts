@@ -74,9 +74,9 @@ export const waGatewayService = {
     const template = record.type === 'ziyadah' ? config.templateZiyadah : config.templateMurojaah;
 
     const gradeLabel = {
-      mumtaz: 'Mumtaz (Lancar Sekali - 100%)',
-      jayyid: 'Jayyid (Lancar Bersyarat - Cukup Baik)',
-      iadah: "I'adah (Perlu Pengulangan / Pendampingan)",
+      mumtaz: 'Mumtaz (Lancar)',
+      jayyid: 'Jayyid (Cukup)',
+      iadah: "I'adah (Perlu Diulang)",
     }[record.grade];
 
     const now = new Date(record.createdAt);
@@ -85,19 +85,19 @@ export const waGatewayService = {
 
     let statusNote = '';
     if (record.grade === 'iadah') {
-      statusNote = `⚠️ *Catatan Khusus Musyrif:*\nAnanda perlu melancarkan kembali ayat ini sebelum melanjutkan ke halaman berikutnya. Mohon Ayah/Bunda mengingatkan muroja'ah ba'da maghrib di rumah.`;
+      statusNote = `\n⚠️ *Catatan:* Perlu dimuroja'ah kembali ba'da maghrib di rumah agar lancar.`;
     } else if (record.notes) {
-      statusNote = `💬 *Catatan Musyrif:* ${record.notes}`;
+      statusNote = `\n💬 *Catatan:* ${record.notes}`;
     }
 
     return this.formatMessage(template, {
       nama: santri.name,
       nis: santri.nis,
       wali: santri.parentName || 'Ayah/Bunda',
-      jenis: record.type === 'ziyadah' ? 'Ziyadah (Hafalan Baru)' : "Muroja'ah (Pengulangan)",
+      jenis: record.type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah",
       surah: record.surahName,
       juz: record.juz,
-      halaman: record.pageStart === record.pageEnd ? record.pageStart : `${record.pageStart}–${record.pageEnd}`,
+      halaman: record.pageStart === record.pageEnd ? `Hal. ${record.pageStart}` : `Hal. ${record.pageStart}–${record.pageEnd}`,
       barisAwal: record.lineStart,
       barisAkhir: record.lineEnd,
       baris: record.totalLines,
@@ -276,24 +276,24 @@ export const waGatewayService = {
     const linesToday = todayRecords.reduce((acc, r) => acc + r.totalLines, 0) || santri.linesCompletedToday;
     const estPagesToday = (linesToday / 15).toFixed(1);
 
-    // Format rincian sesi harian
+    // Format rincian sesi harian (ringkas & jelas untuk orang tua)
     let rincianSesi = '';
     if (todayRecords.length === 0) {
-      rincianSesi = `_Belum ada riwayat setoran masuk hari ini._`;
+      rincianSesi = `_Belum ada setoran hari ini._`;
     } else {
       rincianSesi = todayRecords
         .map((r, idx) => {
-          const typeTag = r.type === 'ziyadah' ? 'Ziyadah (Baru)' : "Muroja'ah (Ulang)";
+          const typeTag = r.type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah";
           const gradeStr =
             r.grade === 'mumtaz'
-              ? 'Mumtaz ⭐'
+              ? 'Lancar'
               : r.grade === 'jayyid'
-              ? 'Jayyid'
-              : "I'adah ⚠️";
+              ? 'Cukup'
+              : "Perlu Diulang";
           const pageRange = r.pageStart === r.pageEnd ? `Hal. ${r.pageStart}` : `Hal. ${r.pageStart}–${r.pageEnd}`;
-          let entry = `${idx + 1}. *[${typeTag}]* ${r.surahName} (${pageRange}, ${r.totalLines} baris) • *${gradeStr}*`;
+          let entry = `${idx + 1}. [${typeTag}] ${r.surahName} (${pageRange}) • *${gradeStr}*`;
           if (r.notes && r.notes.trim()) {
-            entry += `\n   ↳ _Catatan: ${r.notes}_`;
+            entry += `\n   Catatan: ${r.notes}`;
           }
           return entry;
         })
@@ -303,29 +303,29 @@ export const waGatewayService = {
     // Status harian
     let statusHarian = '';
     if (linesToday >= santri.dailyTargetLines) {
-      statusHarian = '✅ TERCAPAI (Target Terpenuhi)';
+      statusHarian = '✅ Tercapai';
     } else if (linesToday > 0) {
-      statusHarian = `⚠️ BELUM TERCAPAI (Kurang ${santri.dailyTargetLines - linesToday} Baris)`;
+      statusHarian = `Kurang ${santri.dailyTargetLines - linesToday} baris`;
     } else {
-      statusHarian = '⚪ BELUM SETOR HARI INI';
+      statusHarian = 'Belum setor';
     }
 
     // Status Pacing kurikulum 30 Juz
     const remainingLines = Math.max(0, (santri.totalLinesTarget || 9060) - (santri.totalLinesMemorized || 0));
     let statusPacing = '';
     if (linesToday >= santri.dailyTargetLines) {
-      statusPacing = '✅ On Track (Sesuai Target Harian)';
+      statusPacing = 'Sesuai Target';
     } else {
-      statusPacing = '⚠️ Di Bawah Target (Disarankan menambah muroja\'ah mandiri)';
+      statusPacing = 'Perlu ditingkatkan';
     }
 
     // Catatan Musyrif
     let catatanMusyrif = '';
     const hasIadah = todayRecords.some((r) => r.grade === 'iadah');
     if (hasIadah) {
-      catatanMusyrif = `⚠️ *Pesan Musyrif untuk Wali:*\nAnanda memiliki ayat yang perlu diulang (i'adah) hari ini. Mohon berkenan mendampingi muroja'ah santai di rumah selama 15-20 menit ba'da maghrib agar besok lebih lancar.`;
+      catatanMusyrif = `\n💬 *Pesan Musyrif:* Mohon dibantu muroja'ah di rumah ba'da maghrib agar hafalan ananda makin lancar.`;
     } else if (todayRecords.length > 0 && linesToday >= santri.dailyTargetLines) {
-      catatanMusyrif = `✨ *Catatan Musyrif:*\nAlhamdulillah ananda sangat fokus dan bersemangat pada sesi mutaba'ah hari ini. Terus berikan apresiasi kepada ananda di rumah.`;
+      catatanMusyrif = `\n💬 *Pesan Musyrif:* Alhamdulillah setoran ananda hari ini sangat baik dan lancar.`;
     }
 
     return this.formatMessage(config.templateDailyProgress, {

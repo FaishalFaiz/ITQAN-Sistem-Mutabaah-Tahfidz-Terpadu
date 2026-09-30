@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { Menu, Calendar, Send } from 'lucide-react';
+import gsap from 'gsap';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
 import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
@@ -15,6 +16,7 @@ import { HalaqahQuickFocus } from './components/dashboard/HalaqahQuickFocus';
 import { OtherView } from './components/dashboard/OtherViews';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
+import { authService } from './services/authService';
 
 // Helper component for /santri/:id route
 function SantriDetailRoute({
@@ -71,6 +73,14 @@ export function App() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
 
   const [santriList, setSantriList] = useState<Santri[]>(() => storageService.getSantriList());
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Verifikasi status login musyrif dari Supabase
+  useEffect(() => {
+    authService.getCurrentUser().then((user) => {
+      setIsAuthenticated(Boolean(user));
+    });
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -79,6 +89,7 @@ export function App() {
     window.addEventListener(EVENT_DATA_CHANGED, handleStorageChange);
     return () => window.removeEventListener(EVENT_DATA_CHANGED, handleStorageChange);
   }, []);
+
 
   const handleOpenSetor = (santri: Santri) => {
     setSelectedSantriForSetor(santri);
@@ -104,16 +115,19 @@ export function App() {
   };
 
   // Dynamic header title based on URL
+  const halaqahSettings = storageService.getHalaqahSettings();
+  const halaqahName = halaqahSettings?.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq';
+
   const getHeaderTitle = () => {
     const p = location.pathname;
-    if (p === '/' || p === '/beranda') return 'Beranda Halaqoh';
+    if (p === '/' || p === '/beranda') return halaqahName;
     if (p.startsWith('/santri/')) {
       const id = p.split('/')[2];
       const s = santriList.find((item) => item.id === id);
       return s ? s.name : 'Detail Santri';
     }
     if (p.startsWith('/santri')) return 'Daftar Santri';
-    if (p.startsWith('/laporan')) return 'Laporan & Ringkasan';
+    if (p.startsWith('/laporan')) return 'Laporan';
     if (p.startsWith('/pengaturan')) return 'Pengaturan';
     if (p.startsWith('/pacing')) return 'Target Hafalan Santri';
     return 'ITQAN';
@@ -129,12 +143,60 @@ export function App() {
     (s) => s.lastDailyReportSentDate !== todayKey && s.parentPhone && s.parentPhone.trim().length > 5
   ).length;
 
+  // Animasi Halus & Dinamis Saat Perpindahan Page / Route
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (mainContentRef.current) {
+      const ctx = gsap.context(() => {
+        // 1. Animasi transisi container utama
+        gsap.fromTo(
+          mainContentRef.current,
+          { opacity: 0, y: 14 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.35,
+            ease: 'power3.out',
+            clearProps: 'transform,opacity',
+          }
+        );
+
+        // 2. Animasi bertingkat (stagger) pada blok konten utama halaman
+        const contentBlocks = mainContentRef.current?.querySelectorAll(':scope > div > *, :scope > *');
+        if (contentBlocks && contentBlocks.length > 0) {
+          gsap.fromTo(
+            Array.from(contentBlocks).slice(0, 4),
+            { opacity: 0, y: 12 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.4,
+              stagger: 0.05,
+              ease: 'power3.out',
+              clearProps: 'transform,opacity',
+            }
+          );
+        }
+      }, mainContentRef);
+
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return () => ctx.revert();
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [location.pathname]);
+
   // Auth routes (render standalone full page)
   if (location.pathname === '/login') {
     return <LoginPage />;
   }
   if (location.pathname === '/signup') {
     return <SignupPage />;
+  }
+
+  // Jika belum login, alihkan ke /login
+  if (isAuthenticated === false) {
+    return <Navigate to="/login" replace />;
   }
 
   return (
@@ -149,97 +211,75 @@ export function App() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header Bar */}
         <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
-          <div className="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3">
+            <div className="flex items-center justify-between gap-2">
               {/* Sisi Kiri: Hamburger + Breadcrumb */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 min-w-0">
                 <button
                   type="button"
                   onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="p-2 -ml-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA]"
+                  className="p-1.5 -ml-1 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA] lg:hidden shrink-0 cursor-pointer"
                   aria-label="Toggle Menu"
                 >
                   <Menu className="w-5 h-5" />
                 </button>
 
-                <div className="flex items-center gap-2.5">
-                  <div 
-                    onClick={() => navigate('/beranda')}
-                    className="w-8 h-8 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 cursor-pointer"
-                  >
-                    IT
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span 
-                        onClick={() => navigate('/beranda')}
-                        className="font-extrabold text-base text-slate-900 tracking-tight cursor-pointer"
-                      >
-                        ITQAN
-                      </span>
-                      <span className="text-slate-300">/</span>
-                      <span className="font-semibold text-sm text-[#0070BA]">
-                        {getHeaderTitle()}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 block leading-none mt-0.5">
-                      Halaqoh Abu Bakar Ash-Shiddiq
-                    </span>
-                  </div>
+                <div className="min-w-0">
+                  <h1 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight truncate leading-tight">
+                    {getHeaderTitle()}
+                  </h1>
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 block leading-none truncate mt-0.5">
+                    {location.pathname === '/' || location.pathname === '/beranda'
+                      ? 'Pesantren Tahfidz Terpadu'
+                      : halaqahName}
+                  </span>
                 </div>
               </div>
 
-              {/* Sisi Kanan: Laporan Harian WA Button + Tanggal Real & Profil */}
-              <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
+              {/* Sisi Kanan: Laporan Harian WA Button + Tanggal */}
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0">
                 {/* Tombol Akses Cepat Laporan Harian Wali */}
                 <button
                   type="button"
                   onClick={() => setIsDailyReportModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer text-[11px] sm:text-xs"
                   title="Kirim Laporan Harian ke Wali Santri"
                 >
-                  <Send className="w-3.5 h-3.5 text-emerald-600" />
+                  <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600 shrink-0" />
                   <span className="hidden sm:inline">Laporan Harian WA</span>
                   <span className="sm:hidden">Laporan WA</span>
                   {pendingDailyReportsCount > 0 && (
-                    <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-600 text-white font-bold leading-none">
+                    <span className="px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] bg-emerald-600 text-white font-bold leading-none">
                       {pendingDailyReportsCount}
                     </span>
                   )}
                 </button>
 
-                <div className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
-                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="font-semibold text-slate-800">
+                {/* Badge Tanggal */}
+                <div className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-[11px] sm:text-xs">
+                  <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500 shrink-0" />
+                  <span className="font-semibold text-slate-800 hidden sm:inline">
                     {new Intl.DateTimeFormat('id-ID', {
-                      weekday: 'long',
+                      weekday: 'short',
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',
                     }).format(new Date())}
                   </span>
-                </div>
-
-                <div 
-                  onClick={() => navigate('/login')}
-                  title="Klik untuk Keluar / Ganti Akun"
-                  className="flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer hover:opacity-80 transition-opacity"
-                >
-                  <div className="w-8 h-8 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] font-bold text-xs flex items-center justify-center shrink-0">
-                    UA
-                  </div>
-                  <div className="hidden md:block text-left">
-                    <span className="text-xs font-semibold text-slate-900 block leading-tight">Ust. Abdullah</span>
-                    <span className="text-[10px] text-slate-500">Musyrif</span>
-                  </div>
+                  <span className="font-semibold text-slate-800 sm:hidden">
+                    {new Intl.DateTimeFormat('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                    }).format(new Date())}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Dynamic Route View */}
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
+        {/* Dynamic Route View dengan Animasi Halus */}
+        <main ref={mainContentRef} className="flex-1 p-3 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
           <Routes>
             {/* Beranda Dashboard */}
             <Route

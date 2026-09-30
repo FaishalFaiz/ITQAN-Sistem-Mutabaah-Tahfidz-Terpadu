@@ -320,13 +320,13 @@ export const storageService = {
     return record;
   },
 
-  // ================= RESET SEED =================
+  // ================= RESET / BERSIHKAN DATA =================
   resetDatabase(): void {
-    localStorage.setItem(KEYS.SANTRI, JSON.stringify(INITIAL_SANTRI_LIST));
-    localStorage.setItem(KEYS.SETORAN, JSON.stringify(INITIAL_SETORAN_RECORDS));
-    localStorage.setItem(KEYS.WA_CONFIG, JSON.stringify(DEFAULT_WA_CONFIG));
-    localStorage.setItem(KEYS.SETTINGS, JSON.stringify(DEFAULT_HALAQAH_SETTINGS));
+    localStorage.setItem(KEYS.SANTRI, JSON.stringify([]));
+    localStorage.setItem(KEYS.SETORAN, JSON.stringify([]));
     localStorage.setItem(KEYS.WA_LOGS, JSON.stringify([]));
+    localStorage.setItem(KEYS.EXAMS, JSON.stringify([]));
     emitChange('database_reset');
   },
 };
+

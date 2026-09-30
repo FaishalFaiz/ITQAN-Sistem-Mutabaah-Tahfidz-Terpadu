@@ -1,26 +1,27 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   ArrowLeft, 
   BookOpen, 
   History, 
   Share2, 
   Sparkles, 
-  BarChart3,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  UserCheck,
-  Send,
-  Check,
-  ExternalLink,
-  MessageSquare,
-  Edit2,
-  X,
-  Award
+  CheckCircle2, 
+  AlertTriangle, 
+  XCircle, 
+  Send, 
+  Check, 
+  ExternalLink, 
+  MessageSquare, 
+  Edit2, 
+  X, 
+  Award, 
+  Clock, 
+  Printer, 
+  FileText
 } from 'lucide-react';
 import gsap from 'gsap';
 import type { Santri, SetoranRecord, ExamRecord } from './types';
-import { PacingCard } from '../visualization/PacingCard';
 import { TapCounterExam } from '../halaqah/TapCounterExam';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -40,7 +41,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   onBack,
   onSetor,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'riwayat' | 'analisis' | 'ujian'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'riwayat' | 'ujian'>('overview');
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [isTakingExam, setIsTakingExam] = useState(false);
   const [examRecords, setExamRecords] = useState<ExamRecord[]>(() => storageService.getExamsBySantriId(santri.id));
@@ -58,6 +59,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   // Edit Wali Contact Modal State
   const [currentSantri, setCurrentSantri] = useState<Santri>(santri);
   const [isEditWaliModalOpen, setIsEditWaliModalOpen] = useState(false);
+  const [isRaporModalOpen, setIsRaporModalOpen] = useState(false);
 
   useEffect(() => {
     setCurrentSantri(santri);
@@ -85,6 +87,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   const totalLines = santri.totalLinesMemorized || 1500;
   const totalTarget = 9060;
   const pagesCompleted = (totalLines / 15).toFixed(1);
+  const totalPagesTarget = (totalTarget / 15).toFixed(0);
+  const percentage = Math.min(100, Math.round((totalLines / totalTarget) * 100));
   const remainingLines = Math.max(0, totalTarget - totalLines);
   const remainingDays = 650;
   const requiredDailyLines = Math.ceil(remainingLines / remainingDays);
@@ -96,7 +100,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
       gsap.fromTo(
         '.detail-tab-pane',
         { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out' }
+        { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out', clearProps: 'transform,opacity' }
       );
     }, detailContainerRef);
 
@@ -106,7 +110,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   const today = getTodayDateKey();
   const isSentToday = currentSantri.lastDailyReportSentDate === today;
 
-  // WhatsApp Digest Generator (Laporan Harian Mutaba'ah)
+  // WhatsApp Digest Generator
   const waDigestMessage = useMemo(() => {
     return waGatewayService.buildDailyProgressMessage(currentSantri);
   }, [currentSantri, records]);
@@ -177,7 +181,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
       label: 'Defisit Setoran',
       badgeClass: 'bg-red-50 text-red-700 border-red-200',
       icon: XCircle,
-      subText: `Kurang ${Math.max(0, santri.dailyTargetLines - santri.linesCompletedToday)} baris`
+      subText: 'Perlu tambahan setoran'
     },
     belum_setor: {
       label: 'Belum Setor',
@@ -191,20 +195,21 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
   return (
     <div ref={detailContainerRef} className="space-y-4">
-      {/* 1. Header Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
+      {/* 1. Header Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 bg-white border border-slate-200 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 shadow-xs">
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#0070BA] transition-colors group"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-[#0070BA] transition-colors group cursor-pointer self-start"
         >
           <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-[#EBF5FB] flex items-center justify-center text-slate-600 group-hover:text-[#0070BA] transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </div>
-          <span>Kembali ke Daftar Santri</span>
+          <span className="hidden sm:inline">Kembali ke Daftar Santri</span>
+          <span className="sm:hidden">Kembali</span>
         </button>
 
-        <div className="flex items-center gap-2">
-          {/* Tombol Ujian Tasmi' Santri */}
+        <div className="grid grid-cols-4 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+          {/* Ujian Tasmi' */}
           <Button
             type="button"
             variant="outline"
@@ -212,107 +217,113 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               setActiveTab('ujian');
               setIsTakingExam(true);
             }}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold h-10 px-3.5 border-amber-300 bg-amber-50/70 text-amber-900 hover:bg-amber-100 rounded-lg shadow-2xs cursor-pointer"
-            title="Uji Tasmi' / Kenaikan Juz untuk santri ini"
+            className="inline-flex items-center justify-center gap-1 text-xs font-semibold h-8.5 sm:h-9 px-2 sm:px-2.5 border-amber-300 bg-amber-50/70 text-amber-900 hover:bg-amber-100 rounded-lg cursor-pointer"
           >
-            <Award className="w-3.5 h-3.5 text-amber-700" />
-            <span>Ujian Tasmi'</span>
+            <Award className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+            <span className="hidden sm:inline">Ujian Tasmi'</span>
+            <span className="sm:hidden">Ujian</span>
           </Button>
 
-          {/* Tombol Modal WA Digest */}
+          {/* Cetak / Rapor PDF */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsRaporModalOpen(true)}
+            className="inline-flex items-center justify-center gap-1 text-xs font-semibold h-8.5 sm:h-9 px-2 sm:px-2.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
+          >
+            <Printer className="w-3.5 h-3.5 text-[#0070BA] shrink-0" />
+            <span className="hidden sm:inline">Cetak PDF</span>
+            <span className="sm:hidden">PDF</span>
+          </Button>
+
+          {/* Laporan WA */}
           <Button
             type="button"
             variant="outline"
             onClick={() => setIsWAModalOpen(true)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold h-10 px-3.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg shadow-2xs"
-            title="Kirim atau salin laporan progres ke Wali Santri via WA"
+            className="inline-flex items-center justify-center gap-1 text-xs font-semibold h-8.5 sm:h-9 px-2 sm:px-2.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
           >
-            <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Kirim Laporan WA</span>
+            <Share2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span className="hidden sm:inline">Laporan WA</span>
+            <span className="sm:hidden">Laporan</span>
           </Button>
 
-          {/* Tombol Input Setoran */}
+          {/* Input Setoran */}
           <Button
             type="button"
             onClick={() => onSetor(santri)}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs"
+            className="inline-flex items-center justify-center gap-1 text-xs font-semibold h-8.5 sm:h-9 px-2.5 sm:px-3.5 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs cursor-pointer"
           >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Input Setoran</span>
+            <BookOpen className="w-3.5 h-3.5 shrink-0" />
+            <span>Setor</span>
           </Button>
         </div>
       </div>
 
-      {/* 2. Hero Profile Banner */}
-      <Card className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          {/* Kolom Kiri: Profil & Meta Halaqoh */}
-          <div className="flex items-start gap-4 sm:gap-5">
-            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-2xl sm:text-3xl shrink-0 shadow-2xs">
+      {/* 2. Hero Profile Banner - Clean Enterprise Layout */}
+      <Card className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Info Utama Santri */}
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-lg sm:text-xl shrink-0 shadow-2xs">
               {santri.avatarInitials}
             </div>
 
-            <div className="min-w-0 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-snug truncate">
                   {santri.name}
                 </h1>
-                <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600">
+                <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-600 shrink-0">
                   NIS {santri.nis}
                 </span>
-                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-md border ${statusConfig.badgeClass}`}>
-                  <StatusIcon className="w-3.5 h-3.5" />
+                <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded border shrink-0 ${statusConfig.badgeClass}`}>
+                  <StatusIcon className="w-3 h-3" />
                   <span>{statusConfig.label}</span>
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500">
-                <span className="inline-flex items-center gap-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Halaqoh: <strong className="text-slate-800 font-semibold">{santri.halaqahName || 'Abu Bakar Ash-Shiddiq'}</strong></span>
-                </span>
+              <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
+                <span>Halaqoh: <strong className="text-slate-700 font-semibold">{santri.halaqahName || 'Abu Bakar'}</strong></span>
                 <span className="text-slate-300">•</span>
-                <span>Wali: <strong className="text-slate-800 font-semibold">{santri.parentName || 'Ayah/Bunda'}</strong> ({santri.parentPhone || 'No WA belum ada'})</span>
+                <span>Wali: <strong className="text-slate-700 font-semibold">{currentSantri.parentName || 'Belum diisi'}</strong></span>
                 <span className="text-slate-300">•</span>
-                <span>Surah Terakhir: <strong className="text-[#0070BA] font-semibold">{santri.lastSurah}</strong></span>
+                <span>Terakhir: <strong className="text-slate-700 font-semibold">{santri.lastSurah || '-'}</strong></span>
               </div>
             </div>
           </div>
 
-          {/* Kolom Kanan: 3 Kartu Key Performance Metrics */}
-          <div className="grid grid-cols-3 gap-2.5 sm:gap-3 shrink-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-            {/* Total Capaian */}
-            <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl px-4 py-3 min-w-[105px] text-center">
-              <span className="text-[11px] font-medium text-slate-500 block">Total Hafalan</span>
-              <span className="text-lg font-bold text-[#0070BA] block mt-0.5">{santri.juzAchieved}</span>
-              <span className="text-[10px] text-slate-500 block">~{pagesCompleted} Halaman</span>
+          {/* Quick Stats Strip */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 text-center min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 block truncate">Total Capaian</span>
+              <span className="text-sm sm:text-base font-bold text-[#0070BA] block mt-0.5 truncate">{santri.juzAchieved}</span>
+              <span className="text-[10px] text-slate-400 block truncate">~{pagesCompleted} Hal</span>
             </div>
 
-            {/* Target Harian */}
-            <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl px-4 py-3 min-w-[105px] text-center">
-              <span className="text-[11px] font-medium text-slate-500 block">Setoran Hari Ini</span>
-              <span className="text-lg font-bold text-slate-900 block mt-0.5">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 text-center min-w-0">
+              <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 block truncate">Hari Ini</span>
+              <span className="text-sm sm:text-base font-bold text-slate-900 block mt-0.5 truncate">
                 {santri.linesCompletedToday}
-                <span className="text-xs font-normal text-slate-400 ml-1">/ {santri.dailyTargetLines}</span>
+                <span className="text-[10px] sm:text-xs font-normal text-slate-400">/{santri.dailyTargetLines}</span>
               </span>
-              <span className="text-[10px] text-slate-500 block">baris</span>
+              <span className="text-[10px] text-slate-400 block">baris</span>
             </div>
 
-            {/* Status & Kelancaran */}
-            <div className={`border rounded-xl px-4 py-3 min-w-[110px] text-center ${
+            <div className={`border rounded-lg p-2.5 text-center min-w-0 ${
               santri.status === 'tercapai'
                 ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
                 : santri.status === 'tidak_tercapai'
                 ? 'bg-red-50/70 border-red-200 text-red-800'
                 : 'bg-amber-50/70 border-amber-200 text-amber-800'
             }`}>
-              <span className="text-[11px] font-medium opacity-80 block">Mutaba'ah</span>
-              <span className="text-sm font-bold block mt-1">
+              <span className="text-[10px] sm:text-[11px] font-medium opacity-80 block truncate">Mutaba'ah</span>
+              <span className="text-xs font-bold block mt-0.5 truncate">
                 {santri.status === 'tercapai' && '92% Mumtaz'}
                 {santri.status === 'tidak_tercapai' && 'Perlu I\'adah'}
-                {santri.status === 'belum_setor' && 'Talaqqi'}
+                {santri.status === 'belum_setor' && 'Belum Setor'}
               </span>
-              <span className="text-[10px] opacity-75 block truncate mt-0.5">
+              <span className="text-[9px] sm:text-[10px] opacity-75 block truncate">
                 {statusConfig.subText}
               </span>
             </div>
@@ -320,240 +331,275 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         </div>
       </Card>
 
-      {/* 3. Tab Navigasi Detail */}
-      <div className="border-b border-slate-200 bg-white rounded-t-xl px-2">
-        <div className="flex items-center gap-2 text-xs font-semibold overflow-x-auto">
+      {/* 3. Sub-Navigation Tabs (Grid 3 Kolom Responsif Tanpa Scrollbar di Mobile) */}
+      <div className="border-b border-slate-200 bg-white rounded-t-xl px-1 sm:px-3 overflow-hidden shadow-2xs">
+        <div className="grid grid-cols-3 sm:flex sm:items-center sm:gap-2 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
-            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`py-3 px-1 sm:px-3.5 border-b-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
               activeTab === 'overview'
                 ? 'border-[#0070BA] text-[#0070BA]'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Ringkasan &amp; Rekomendasi Pacing</span>
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="hidden sm:inline">Ringkasan &amp; Pacing</span>
+            <span className="sm:hidden text-[11px] truncate">Ringkasan</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('riwayat')}
-            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`py-3 px-1 sm:px-3.5 border-b-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
               activeTab === 'riwayat'
                 ? 'border-[#0070BA] text-[#0070BA]'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <History className="w-4 h-4" />
-            <span>Riwayat Setoran Halaqoh ({records.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('analisis')}
-            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-              activeTab === 'analisis'
-                ? 'border-[#0070BA] text-[#0070BA]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>Analisis Retensi &amp; Spaced Muroja'ah</span>
+            <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="hidden sm:inline">Riwayat Setoran ({records.length})</span>
+            <span className="sm:hidden text-[11px] truncate">Riwayat ({records.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('ujian')}
-            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            className={`py-3 px-1 sm:px-3.5 border-b-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
               activeTab === 'ujian'
                 ? 'border-[#0070BA] text-[#0070BA]'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Award className="w-4 h-4" />
-            <span>Ujian Tasmi' &amp; Kenaikan Juz ({examRecords.length})</span>
+            <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 text-amber-600" />
+            <span className="hidden sm:inline">Ujian Tasmi' ({examRecords.length})</span>
+            <span className="sm:hidden text-[11px] truncate">Ujian ({examRecords.length})</span>
           </button>
         </div>
       </div>
 
-      {/* 4. Tab 1: Overview & Rekomendasi Pacing */}
+      {/* 4. Tab 1: Ringkasan & Pacing */}
       {activeTab === 'overview' && (
-        <div className="detail-tab-pane grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Kolom Kiri: Pacing Card & Actionable Guidance */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Pacing Engine Card */}
-            <PacingCard
-              santriName={santri.name}
-              nis={santri.nis}
-              totalLinesMemorized={totalLines}
-              totalLinesTarget={totalTarget}
-              daysRemaining={remainingDays}
-              dailyTargetLines={santri.dailyTargetLines}
-              linesCompletedToday={santri.linesCompletedToday}
-              status={santri.status === 'tercapai' ? 'on_track' : 'behind'}
-              hideHeader={true}
-            />
+        <div className="detail-tab-pane space-y-4">
+          {/* Card A: Progres Kurikulum 30 Juz */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div>
+                <h3 className="font-bold text-sm text-slate-900">
+                  Progres Target 30 Juz
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Akumulasi capaian terhadap kurikulum khatam pesantren
+                </p>
+              </div>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${statusConfig.badgeClass}`}>
+                {santri.status === 'tercapai' ? 'On Track' : 'Dalam Bimbingan'}
+              </span>
+            </div>
 
-            {/* Rekomendasi Tindakan Musyrif */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
-              <div className="flex items-center justify-between pb-3 mb-3.5 border-b border-slate-100">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900">
-                      Rekomendasi Tindakan Musyrif
-                    </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Rencana aksi talaqqi &amp; pengulangan berbasis evaluasi harian
-                    </p>
-                  </div>
-                </div>
+            {/* Progress Bar Baris */}
+            <div>
+              <div className="flex justify-between text-xs font-medium text-slate-700 mb-1.5">
+                <span>{totalLines.toLocaleString()} dari {totalTarget.toLocaleString()} Baris ({pagesCompleted} / {totalPagesTarget} Hal)</span>
+                <span className="text-[#0070BA] font-bold">{percentage}%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="bg-[#0070BA] h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
+            </div>
+
+            {/* 4 Metrik Pacing */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/80">
+                <span className="text-[11px] text-slate-500 block">Sisa Target</span>
+                <span className="text-sm font-bold text-slate-900 mt-0.5 block">{remainingLines.toLocaleString()} Baris</span>
               </div>
 
-              <div className="space-y-3">
-                {/* Action Card 1: Ziyadah */}
-                <div className="p-3.5 rounded-xl border border-blue-100 bg-[#F4F9FD] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-[#0070BA] px-2 py-0.5 rounded">
-                        Ziyadah
-                      </span>
-                      <h4 className="font-bold text-xs text-slate-900">
-                        {santri.status === 'tercapai' ? 'Lanjutkan Ayat Baru Besok Pagi' : 'Tuntaskan Target Sesi Sore'}
-                      </h4>
-                    </div>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {santri.status === 'tercapai'
-                        ? `Target hari ini telah tuntas. Kunci hafalan ${santri.lastSurah} dengan tasmi' mandiri 2x sebelum berpindah ke surah berikutnya.`
-                        : `Terdapat defisit ${Math.max(0, santri.dailyTargetLines - santri.linesCompletedToday)} baris. Berikan slot setoran khusus pada sesi halaqoh berikutnya.`}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={() => onSetor(santri)}
-                    className="self-start sm:self-center text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white shrink-0 h-9 px-3.5 rounded-lg shadow-2xs"
-                  >
-                    Setor Sekarang
-                  </Button>
-                </div>
+              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/80">
+                <span className="text-[11px] text-slate-500 block">Target Harian</span>
+                <span className="text-sm font-bold text-slate-900 mt-0.5 block">{santri.dailyTargetLines} Baris</span>
+              </div>
 
-                {/* Action Card 2: Spaced Repetition Muroja'ah */}
-                <div className="p-3.5 rounded-xl border border-amber-100 bg-[#FFFDF7] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
-                        Muroja'ah Rutin
-                      </span>
-                      <h4 className="font-bold text-xs text-slate-900">
-                        Ulangi Juz 29 (Hal. 562–564)
-                      </h4>
-                    </div>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Sistem mendeteksi rentang halaman ini terakhir dimuroja'ah beberapa hari lalu. Sangat krusial disimak ulang pekan ini.
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onSetor(santri)}
-                    className="self-start sm:self-center text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 shrink-0 h-9 px-3.5 rounded-lg"
-                  >
-                    Simak Muroja'ah
-                  </Button>
-                </div>
+              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/80">
+                <span className="text-[11px] text-slate-500 block">Est. Waktu Khatam</span>
+                <span className="text-sm font-bold text-[#0070BA] mt-0.5 block">~{remainingDays} Hari</span>
+              </div>
+
+              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/80">
+                <span className="text-[11px] text-slate-500 block">Kebutuhan Laju</span>
+                <span className="text-sm font-bold text-emerald-700 mt-0.5 block">{requiredDailyLines} Baris/Hari</span>
               </div>
             </div>
           </div>
 
-          {/* Kolom Kanan: Rapor Ringkas & Kontak Wali Santri */}
-          <div className="space-y-4">
-            {/* Kartu Kontak Wali Santri & WhatsApp */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3.5">
-              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                  <MessageSquare className="w-4 h-4 text-emerald-600" />
-                  <span>Kontak Wali Santri</span>
-                </div>
-                {/* Tombol Edit Kontak Wali Santri */}
-                <button
-                  type="button"
-                  onClick={() => setIsEditWaliModalOpen(true)}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#0070BA] hover:text-[#005C9E] transition-colors"
-                  title="Edit Nama & No WhatsApp Wali"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                  <span>Edit Kontak</span>
-                </button>
+          {/* Section B: 2-Kolom Seimbang */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Kolom Kiri: Panduan & Rekomendasi Sesi */}
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="pb-2.5 border-b border-slate-100">
+                <h3 className="font-bold text-sm text-slate-900">
+                  Rekomendasi Tindakan Sesi
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Fokus talaqqi dan pengulangan berikutnya
+                </p>
               </div>
 
-              <div className="space-y-2 text-xs">
-                <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
-                  <span className="text-[11px] text-slate-400 block">Nama Wali / Orang Tua:</span>
-                  <span className="font-bold text-slate-900 text-sm mt-0.5 block">
-                    {currentSantri.parentName || 'Belum diisi'}
-                  </span>
-                </div>
-
-                <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
-                  <span className="text-[11px] text-slate-400 block">Nomor WhatsApp:</span>
-                  <span className="font-mono font-bold text-slate-900 mt-0.5 block">
-                    {currentSantri.parentPhone || 'Nomor WhatsApp belum terdaftar'}
-                  </span>
-                </div>
-              </div>
-
-              {currentSantri.parentPhone && (
-                <div className="pt-1 flex flex-col gap-2">
-                  <a
-                    href={waGatewayService.getDirectWALink(currentSantri.parentPhone, `Assalamu'alaikum Warahmatullah Bpk/Ibu ${currentSantri.parentName || ''}...`)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition-colors"
+              <div className="space-y-2.5">
+                {/* Ziyadah Card */}
+                <div className="p-3 rounded-lg border border-blue-100 bg-[#F4F9FD] flex items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-[#0070BA] px-1.5 py-0.5 rounded">
+                      Ziyadah
+                    </span>
+                    <h4 className="font-bold text-xs text-slate-900">
+                      {santri.status === 'tercapai' ? 'Lanjutkan Ayat Baru Besok Pagi' : 'Tuntaskan Target Sesi Sore'}
+                    </h4>
+                    <p className="text-[11px] text-slate-600">
+                      {santri.status === 'tercapai'
+                        ? `Kunci hafalan ${santri.lastSurah} dengan tasmi' mandiri 2x.`
+                        : `Defisit ${Math.max(0, santri.dailyTargetLines - santri.linesCompletedToday)} baris. Berikan slot sesi khusus.`}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => onSetor(santri)}
+                    className="text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white shrink-0 h-8 px-3 rounded-lg cursor-pointer"
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Chat WhatsApp Wali</span>
-                    <ExternalLink className="w-3 h-3 ml-0.5 opacity-75" />
-                  </a>
+                    Setor
+                  </Button>
+                </div>
 
+                {/* Muroja'ah Card */}
+                <div className="p-3 rounded-lg border border-amber-100 bg-[#FFFDF7] flex items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                      Muroja'ah
+                    </span>
+                    <h4 className="font-bold text-xs text-slate-900">
+                      Ulangi Juz 29 (Hal. 562–564)
+                    </h4>
+                    <p className="text-[11px] text-slate-600">
+                      Halaman ini perlu disimak ulang untuk menjaga kelancaran mutqin.
+                    </p>
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsWAModalOpen(true)}
-                    className="w-full text-xs text-slate-700 border-slate-200 hover:bg-slate-50"
+                    onClick={() => onSetor(santri)}
+                    className="text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 shrink-0 h-8 px-3 rounded-lg cursor-pointer"
                   >
-                    Kirim Laporan Mutaba'ah
+                    Simak
                   </Button>
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Kartu Parameter Akademik */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
-                <h3 className="font-bold text-sm text-slate-900">
-                  Statistik Mutaba'ah
-                </h3>
-                <span className="text-[11px] font-medium text-slate-400">Target 30 Juz</span>
+            {/* Kolom Kanan: Kontak Wali & Retensi */}
+            <div className="space-y-4">
+              {/* Kontak Wali Santri */}
+              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                    <MessageSquare className="w-4 h-4 text-emerald-600" />
+                    <span>Kontak Wali Santri</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditWaliModalOpen(true)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0070BA] hover:text-[#005C9E] cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Edit Kontak</span>
+                  </button>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-2 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <span className="text-[11px] text-slate-400 block">Nama Wali / Orang Tua:</span>
+                      <span className="font-bold text-slate-900 text-sm block mt-0.5">{currentSantri.parentName || 'Belum diisi'}</span>
+                    </div>
+                    <span className="font-mono text-xs font-semibold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">
+                      {currentSantri.parentPhone || 'No WA belum ada'}
+                    </span>
+                  </div>
+
+                  {isSentToday ? (
+                    <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 bg-emerald-50/80 px-2 py-1 rounded border border-emerald-200">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>Laporan hari ini terkirim ({currentSantri.lastDailyReportSentTime || 'Hari ini'})</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>Laporan harian belum dikirimkan hari ini</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tombol Aksi Kirim */}
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  {currentSantri.parentPhone ? (
+                    <a
+                      href={waGatewayService.getDirectWALink(currentSantri.parentPhone, `Assalamu'alaikum Bpk/Ibu ${currentSantri.parentName || ''}`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold text-xs transition-colors cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Chat WA</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-slate-100 text-slate-400 font-semibold text-xs cursor-not-allowed"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Chat WA</span>
+                    </button>
+                  )}
+
+                  <Button
+                    type="button"
+                    onClick={() => setIsWAModalOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs shadow-xs cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>{isSentToday ? 'Kirim Ulang' : 'Kirim Laporan WA'}</span>
+                  </Button>
+                </div>
               </div>
 
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
-                  <span className="text-slate-500 font-medium">Sisa Target Hafalan</span>
-                  <span className="font-bold text-slate-800">{remainingLines.toLocaleString()} Baris</span>
+              {/* Retensi Hafalan */}
+              <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h3 className="font-bold text-sm text-slate-900">
+                    Kualitas Retensi Hafalan
+                  </h3>
+                  <span className="text-[11px] text-slate-400">Analisis Muroja'ah</span>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
-                  <span className="text-slate-500 font-medium">Est. Waktu Khatam</span>
-                  <span className="font-bold text-[#0070BA]">~{remainingDays} Hari ({Math.round(remainingDays / 30)} Bulan)</span>
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
-                  <span className="text-slate-500 font-medium">Target Harian Ideal</span>
-                  <span className="font-bold text-emerald-700">{requiredDailyLines} Baris / Hari</span>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                    <span className="text-[10px] text-slate-400 block">Kekuatan Retensi</span>
+                    <span className="text-sm font-bold text-emerald-700 mt-0.5 block">88.4%</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                    <span className="text-[10px] text-slate-400 block">Perlu Refresh</span>
+                    <span className="text-sm font-bold text-amber-700 mt-0.5 block">Juz 29</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+                    <span className="text-[10px] text-slate-400 block">Rasio Z : M</span>
+                    <span className="text-sm font-bold text-[#0070BA] mt-0.5 block">1 : 3.5</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -561,27 +607,27 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         </div>
       )}
 
-      {/* 5. Tab 2: Riwayat Setoran (Real Log Mutaba'ah) */}
+      {/* 5. Tab 2: Riwayat Setoran */}
       {activeTab === 'riwayat' && (
-        <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div>
-              <h3 className="font-bold text-base text-slate-900">
-                Log Catatan Mutaba'ah Halaqoh
+              <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                Log Riwayat Setoran
               </h3>
               <p className="text-xs text-slate-500">
-                Data real setoran hafalan baru (Ziyadah) dan pengulangan (Muroja'ah) tersimpan
+                Daftar rekaman talaqqi harian santri
               </p>
             </div>
 
             {/* Filter Jenis Setoran */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg text-xs">
               <button
                 type="button"
                 onClick={() => setSetoranFilter('all')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                className={`px-3 py-1 font-semibold rounded-md transition-colors cursor-pointer ${
                   setoranFilter === 'all'
-                    ? 'bg-white text-slate-900 shadow-xs'
+                    ? 'bg-white text-slate-900 shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -590,9 +636,9 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               <button
                 type="button"
                 onClick={() => setSetoranFilter('ziyadah')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                className={`px-3 py-1 font-semibold rounded-md transition-colors cursor-pointer ${
                   setoranFilter === 'ziyadah'
-                    ? 'bg-white text-[#0070BA] shadow-xs'
+                    ? 'bg-white text-[#0070BA] shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -601,9 +647,9 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               <button
                 type="button"
                 onClick={() => setSetoranFilter('murojaah')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                className={`px-3 py-1 font-semibold rounded-md transition-colors cursor-pointer ${
                   setoranFilter === 'murojaah'
-                    ? 'bg-white text-amber-700 shadow-xs'
+                    ? 'bg-white text-amber-700 shadow-2xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -617,149 +663,190 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
                 <History className="w-6 h-6" />
               </div>
-              <h4 className="font-bold text-sm text-slate-700">Belum Ada Catatan Setoran</h4>
+              <h4 className="font-bold text-sm text-slate-700">Belum Ada Riwayat Setoran</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Santri belum memiliki riwayat mutaba'ah untuk kategori ini. Klik tombol di bawah untuk memasukkan setoran perdana.
+                Santri belum memiliki catatan setoran pada filter ini.
               </p>
               <Button
                 onClick={() => onSetor(santri)}
-                className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-semibold h-9.5 px-4 rounded-lg shadow-xs"
+                className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-semibold h-9 px-4 rounded-lg shadow-xs cursor-pointer"
               >
                 Input Setoran Sekarang
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px]">
-                  <tr>
-                    <th className="py-3 px-4">Waktu Sesi</th>
-                    <th className="py-3 px-4">Jenis</th>
-                    <th className="py-3 px-4">Surah &amp; Ayat</th>
-                    <th className="py-3 px-4">Posisi Halaman/Baris</th>
-                    <th className="py-3 px-4">Jumlah Baris</th>
-                    <th className="py-3 px-4">Kelancaran</th>
-                    <th className="py-3 px-4">Status WA</th>
-                    <th className="py-3 px-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredRecords.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 px-4 font-medium text-slate-900 whitespace-nowrap">
-                        {r.formattedDate}
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-700">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
+                    <tr>
+                      <th className="py-2.5 px-3">Waktu Sesi</th>
+                      <th className="py-2.5 px-3">Jenis</th>
+                      <th className="py-2.5 px-3">Surah &amp; Posisi</th>
+                      <th className="py-2.5 px-3">Jumlah Baris</th>
+                      <th className="py-2.5 px-3">Mutu Kelancaran</th>
+                      <th className="py-2.5 px-3">Status WA</th>
+                      <th className="py-2.5 px-3 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredRecords.map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-2.5 px-3 font-medium text-slate-900 whitespace-nowrap">
+                          {r.formattedDate}
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          {r.type === 'ziyadah' ? (
+                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-blue-50 text-[#0070BA] border border-blue-200">
+                              ZIYADAH
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                              MUROJA'AH
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <span className="font-bold text-slate-900 block">{r.surahName}</span>
+                          <span className="text-[10px] text-slate-400 block">
+                            Juz {r.juz} • Hal. {r.pageStart === r.pageEnd ? r.pageStart : `${r.pageStart}–${r.pageEnd}`}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 font-bold text-[#0070BA] whitespace-nowrap">
+                          {r.totalLines} Baris
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          {r.grade === 'mumtaz' && (
+                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              MUMTAZ
+                            </span>
+                          )}
+                          {r.grade === 'jayyid' && (
+                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              JAYYID
+                            </span>
+                          )}
+                          {r.grade === 'iadah' && (
+                            <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-red-50 text-red-700 border border-red-200 inline-flex items-center gap-1">
+                              <XCircle className="w-3 h-3" />
+                              I'ADAH
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          {r.waStatus === 'sent' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                              <Check className="w-3 h-3" />
+                              <span>Terkirim</span>
+                            </span>
+                          ) : r.waStatus === 'failed' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">
+                              <XCircle className="w-3 h-3" />
+                              <span>Gagal</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400">
+                              Belum Terkirim
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                          <button
+                            type="button"
+                            disabled={sendingWAId === r.id || !santri.parentPhone}
+                            onClick={() => handleSendRecordWA(r)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50 cursor-pointer"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>{sendingWAId === r.id ? 'Mengirim...' : 'Kirim WA'}</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card List View */}
+              <div className="md:hidden space-y-2.5">
+                {filteredRecords.map((r) => (
+                  <div key={r.id} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
                         {r.type === 'ziyadah' ? (
-                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-blue-50 text-[#0070BA] border border-blue-200">
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-blue-100 text-[#0070BA] border border-blue-200">
                             ZIYADAH
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-100 text-amber-800 border border-amber-200">
                             MUROJA'AH
                           </span>
                         )}
-                      </td>
-                      <td className="py-3 px-4 font-bold text-slate-900">
-                        {r.surahName}
-                        <span className="block text-[10px] font-normal text-slate-400">Juz {r.juz}</span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
-                        Hal. {r.pageStart === r.pageEnd ? r.pageStart : `${r.pageStart}–${r.pageEnd}`} (B {r.lineStart}–{r.lineEnd})
-                      </td>
-                      <td className="py-3 px-4 font-bold text-[#0070BA] whitespace-nowrap">
-                        {r.totalLines} Baris
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="text-[11px] text-slate-500">{r.formattedDate}</span>
+                      </div>
+                      <span className="font-bold text-xs text-[#0070BA]">{r.totalLines} Baris</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60">
+                      <div>
+                        <span className="font-bold text-xs text-slate-900 block">{r.surahName}</span>
+                        <span className="text-[10px] text-slate-400">Juz {r.juz} • Hal. {r.pageStart === r.pageEnd ? r.pageStart : `${r.pageStart}–${r.pageEnd}`}</span>
+                      </div>
+                      <div>
                         {r.grade === 'mumtaz' && (
-                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                            <Check className="w-3 h-3" />
                             MUMTAZ
                           </span>
                         )}
                         {r.grade === 'jayyid' && (
-                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
                             JAYYID
                           </span>
                         )}
                         {r.grade === 'iadah' && (
-                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-red-50 text-red-700 border border-red-200">
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-red-50 text-red-700 border border-red-200 inline-flex items-center gap-1">
+                            <XCircle className="w-3 h-3" />
                             I'ADAH
                           </span>
                         )}
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60">
+                      <div>
                         {r.waStatus === 'sent' ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                            <Check className="w-3 h-3" />
-                            <span>Terkirim</span>
-                          </span>
-                        ) : r.waStatus === 'failed' ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
-                            <XCircle className="w-3 h-3" />
-                            <span>Gagal</span>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700">
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            <span>WA Terkirim</span>
                           </span>
                         ) : (
-                          <span className="text-[10px] font-medium text-slate-400">
-                            Belum Terkirim
-                          </span>
+                          <span className="text-[10px] text-slate-400">WA Belum Terkirim</span>
                         )}
-                      </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <button
-                          type="button"
-                          disabled={sendingWAId === r.id || !santri.parentPhone}
-                          onClick={() => handleSendRecordWA(r)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50"
-                          title="Kirim atau kirim ulang rincian setoran ke WhatsApp Wali Santri"
-                        >
-                          <Send className="w-3 h-3" />
-                          <span>{sendingWAId === r.id ? 'Mengirim...' : 'Kirim WA'}</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={sendingWAId === r.id || !santri.parentPhone}
+                        onClick={() => handleSendRecordWA(r)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        <Send className="w-3 h-3" />
+                        <span>{sendingWAId === r.id ? 'Mengirim...' : 'Kirim WA'}</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
 
-      {/* 6. Tab 3: Analisis Retensi & Spaced Repetition */}
-      {activeTab === 'analisis' && (
-        <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-5">
-          <div>
-            <h3 className="font-bold text-base text-slate-900">
-              Analisis Retensi Hafalan &amp; Spaced Repetition
-            </h3>
-            <p className="text-xs text-slate-500">
-              Peta pengulangan hafalan untuk mencegah lupa (nisyan) berbasis interval kurva memori Ebbinghaus
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">Kekuatan Hafalan Rata-Rata</span>
-              <div className="text-2xl font-extrabold text-emerald-700">88.4%</div>
-              <p className="text-[11px] text-slate-500">Kategori Kuat (Retensi &gt; 30 Hari)</p>
-            </div>
-
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">Juz Perlu Refresh Segera</span>
-              <div className="text-2xl font-extrabold text-amber-700">Juz 29</div>
-              <p className="text-[11px] text-slate-500">Terakhir disimak &gt; 7 hari yang lalu</p>
-            </div>
-
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase">Rasio Ziyadah : Muroja'ah</span>
-              <div className="text-2xl font-extrabold text-[#0070BA]">1 : 3.5</div>
-              <p className="text-[11px] text-slate-500">Memenuhi standar kurikulum pesantren</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 6. Tab 4: Ujian Tasmi' & Kenaikan Juz */}
+      {/* 6. Tab 3: Ujian Tasmi' */}
       {activeTab === 'ujian' && (
         <div className="detail-tab-pane space-y-4">
           {/* Mode Ujian Aktif */}
@@ -775,76 +862,65 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               />
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Header Tab Ujian */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                 <div>
-                  <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                    <Award className="w-4 h-4 text-amber-600" />
-                    <span>Ujian Tasmi' &amp; Evaluasi Kenaikan Juz</span>
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                    Riwayat Ujian Tasmi' Kenaikan Juz
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Evaluasi kelancaran sekali duduk dengan Digital Tap Counter (toleransi salah &amp; bobot tajwid/fashahah).
+                  <p className="text-xs text-slate-500">
+                    Pengujian sekali duduk dengan digital tap counter
                   </p>
                 </div>
 
                 <Button
                   type="button"
                   onClick={() => setIsTakingExam(true)}
-                  className="h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-semibold rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
+                  className="h-9 px-3.5 bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0 self-start sm:self-center"
                 >
                   <Award className="w-3.5 h-3.5" />
                   <span>Mulai Ujian Baru</span>
                 </Button>
               </div>
 
-              {/* Riwayat Ujian Tasmi' */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Riwayat Hasil Ujian Santri ({examRecords.length})
-                  </h4>
-                  <span className="text-[11px] text-slate-500">
-                    Standar Lulus: Nilai &ge; 75 &amp; Fatal &le; 3 kali
-                  </span>
-                </div>
-
-                {examRecords.length === 0 ? (
-                  <div className="text-center py-10 space-y-2">
-                    <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
-                      <Award className="w-6 h-6" />
-                    </div>
-                    <p className="text-xs font-semibold text-slate-700">Belum ada riwayat ujian tasmi' untuk {santri.name}</p>
-                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                      Gunakan tombol "Mulai Ujian Baru" di atas untuk menguji kenaikan juz atau tasmi' berkala santri.
-                    </p>
+              {examRecords.length === 0 ? (
+                <div className="py-10 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                    <Award className="w-5 h-5" />
                   </div>
-                ) : (
-                  <div className="overflow-x-auto">
+                  <h4 className="font-bold text-xs text-slate-700">Belum Ada Riwayat Ujian</h4>
+                  <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                    Klik tombol di atas untuk memulai pengujian tasmi' santri ini.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left text-xs text-slate-700">
-                      <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] border-b border-slate-200">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
                         <tr>
                           <th className="py-2.5 px-3">Tanggal</th>
                           <th className="py-2.5 px-3">Juz Diuji</th>
                           <th className="py-2.5 px-3 text-center">Skor Akhir</th>
                           <th className="py-2.5 px-3 text-center">Hasil</th>
-                          <th className="py-2.5 px-3">Evaluasi Kesalahan</th>
-                          <th className="py-2.5 px-3">Penguji &amp; Catatan</th>
+                          <th className="py-2.5 px-3">Ketukan / Salah</th>
+                          <th className="py-2.5 px-3">Penguji</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {examRecords.map((exam) => (
                           <tr key={exam.id} className="hover:bg-slate-50/70">
-                            <td className="py-3 px-3 font-medium text-slate-900 whitespace-nowrap">
+                            <td className="py-2.5 px-3 font-medium text-slate-900 whitespace-nowrap">
                               {exam.date}
                             </td>
-                            <td className="py-3 px-3 font-bold text-[#0070BA]">
+                            <td className="py-2.5 px-3 font-bold text-[#0070BA]">
                               Juz {exam.juz}
                             </td>
-                            <td className="py-3 px-3 text-center font-mono font-extrabold text-sm text-slate-900">
+                            <td className="py-2.5 px-3 text-center font-mono font-bold text-sm text-slate-900">
                               {exam.finalScore}
                             </td>
-                            <td className="py-3 px-3 text-center">
+                            <td className="py-2.5 px-3 text-center">
                               <Badge
                                 variant="outline"
                                 className={`text-[10px] font-bold px-2 py-0.5 ${
@@ -853,131 +929,156 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                                     : 'bg-red-50 text-red-700 border-red-300'
                                 }`}
                               >
-                                {exam.isPassed ? 'LULUS / MEMENUHI' : 'BELUM MEMENUHI'}
+                                {exam.isPassed ? 'LULUS' : 'MENGULANG'}
                               </Badge>
                             </td>
-                            <td className="py-3 px-3 text-[11px] text-slate-600">
-                              <div>Ketukan: <strong>{exam.ketukan}</strong> | Dibetulkan: <strong>{exam.dibetulkan}</strong></div>
-                              <div className="text-slate-400 text-[10px]">Tajwid: {exam.tajwidScore} • Fashahah: {exam.fashahahScore}</div>
+                            <td className="py-2.5 px-3 text-slate-600">
+                              <span>Ketukan: {exam.ketukan}x • Salah: {exam.dibetulkan}x</span>
                             </td>
-                            <td className="py-3 px-3 text-[11px]">
-                              <span className="font-semibold text-slate-800 block">{exam.musyrif}</span>
-                              {exam.notes ? (
-                                <span className="text-slate-500 italic block mt-0.5 max-w-xs">{exam.notes}</span>
-                              ) : (
-                                <span className="text-slate-400">-</span>
-                              )}
+                            <td className="py-2.5 px-3 text-slate-800 font-medium">
+                              {exam.musyrif}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                )}
-              </div>
+
+                  {/* Mobile Card List View */}
+                  <div className="md:hidden space-y-2.5">
+                    {examRecords.map((exam) => (
+                      <div key={exam.id} className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-xs text-[#0070BA]">Juz {exam.juz}</span>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold px-2 py-0.5 ${
+                              exam.isPassed
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                : 'bg-red-50 text-red-700 border-red-300'
+                            }`}
+                          >
+                            {exam.isPassed ? 'LULUS' : 'MENGULANG'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                          <span className="text-[11px] text-slate-500">{exam.date}</span>
+                          <span className="font-mono font-bold text-slate-900">Skor: {exam.finalScore}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 flex justify-between items-center pt-1 border-t border-slate-200/60">
+                          <span>Ketukan: {exam.ketukan}x • Salah: {exam.dibetulkan}x</span>
+                          <span className="text-slate-500 text-[10px]">{exam.musyrif}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
       )}
 
       {/* 7. MODAL: Kirim Laporan WhatsApp Digest */}
-      {isWAModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full overflow-hidden space-y-4 p-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                <Share2 className="w-4 h-4 text-emerald-600" />
-                <span>Format Laporan WhatsApp Wali Santri</span>
+      {isWAModalOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full overflow-hidden space-y-4 p-5">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                  <Share2 className="w-4 h-4 text-emerald-600" />
+                  <span>Format Laporan WhatsApp Wali Santri</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsWAModalOpen(false);
+                    setWaSendFeedback(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsWAModalOpen(false);
-                  setWaSendFeedback(null);
-                }}
-                className="text-slate-400 hover:text-slate-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
-            {waSendFeedback && (
-              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{waSendFeedback}</span>
-              </div>
-            )}
+              {waSendFeedback && (
+                <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{waSendFeedback}</span>
+                </div>
+              )}
 
-            <p className="text-xs text-slate-500">
-              Teks ringkasan progres santri siap kirim ke Wali ({santri.parentName || 'Wali Santri'} - {santri.parentPhone || 'No WA belum ada'}):
-            </p>
+              <p className="text-xs text-slate-500">
+                Teks ringkasan progres santri siap kirim ke Wali ({santri.parentName || 'Wali Santri'} - {santri.parentPhone || 'No WA belum ada'}):
+              </p>
 
-            <textarea
-              readOnly
-              value={waDigestMessage}
-              rows={8}
-              className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
-            />
+              <textarea
+                readOnly
+                value={waDigestMessage}
+                rows={8}
+                className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
+              />
 
-            {/* Info Status 1 Pesan / Hari */}
-            {isSentToday && (
-              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Laporan hari ini sudah terkirim ke wali pada <strong>{santri.lastDailyReportSentTime || 'Hari ini'}</strong>.</span>
+              {/* Info Status 1 Pesan / Hari */}
+              {isSentToday && (
+                <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Laporan hari ini sudah terkirim ke wali pada <strong>{santri.lastDailyReportSentTime || 'Hari ini'}</strong>.</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCopyWADigest}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer"
+                >
+                  {copyFeedback ? 'Tersalin ke Clipboard!' : 'Salin Teks'}
+                </button>
+
+                <div className="flex items-center gap-2">
+                  {santri.parentPhone && (
+                    <a
+                      href={waGatewayService.getDirectWALink(santri.parentPhone, waDigestMessage)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-semibold"
+                    >
+                      <span>Direct WA</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+
+                  {isSentToday ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isSendingGateway || !santri.parentPhone}
+                      onClick={() => handleSendViaGateway(true)}
+                      className="text-xs border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB] flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Ulang'}</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      disabled={isSendingGateway || !santri.parentPhone}
+                      onClick={() => handleSendViaGateway(false)}
+                      className="text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Laporan Harian WA'}</span>
+                    </Button>
+                  )}
                 </div>
               </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
-              <button
-                type="button"
-                onClick={handleCopyWADigest}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold"
-              >
-                {copyFeedback ? 'Tersalin ke Clipboard!' : 'Salin Teks'}
-              </button>
-
-              <div className="flex items-center gap-2">
-                {santri.parentPhone && (
-                  <a
-                    href={waGatewayService.getDirectWALink(santri.parentPhone, waDigestMessage)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-semibold"
-                  >
-                    <span>Direct WA</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-
-                {isSentToday ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isSendingGateway || !santri.parentPhone}
-                    onClick={() => handleSendViaGateway(true)}
-                    className="text-xs border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB] flex items-center gap-1.5"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Ulang'}</span>
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    disabled={isSendingGateway || !santri.parentPhone}
-                    onClick={() => handleSendViaGateway(false)}
-                    className="text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Laporan Harian WA'}</span>
-                  </Button>
-                )}
-              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
 
       {/* 8. MODAL: Edit Kontak Wali Santri */}
       <EditWaliModal
@@ -986,6 +1087,196 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         santri={currentSantri}
         onSuccess={(updated) => setCurrentSantri(updated)}
       />
+
+      {/* 9. MODAL: Rapor Resmi Santri (Siap Cetak / Ekspor PDF Langsung) */}
+      {isRaporModalOpen &&
+        createPortal(
+          <div className="print-modal-backdrop fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
+            <div className="print-modal-container bg-white border border-slate-200 rounded-xl shadow-xl max-w-2xl w-full my-6 overflow-hidden">
+              {/* Modal Actions Bar (Sembunyi saat cetak) */}
+              <div className="print-modal-header flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-slate-50 no-print">
+                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-[#0070BA]" />
+                  Format Cetak / Ekspor PDF Rapor Santri
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => window.print()}
+                    className="h-8 px-3 text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Ekspor ke PDF / Cetak</span>
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setIsRaporModalOpen(false)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Official Report Document Body */}
+              <div className="print-page p-6 sm:p-8 space-y-5 text-slate-900 text-xs bg-white">
+                {/* Kop Pesantren */}
+                <div className="text-center pb-4 border-b-2 border-slate-900 space-y-1 avoid-break">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#0070BA] text-white font-extrabold text-base mb-1">
+                    IT
+                  </div>
+                  <h3 className="font-extrabold text-base uppercase tracking-wider text-slate-900">
+                    PESANTREN TAHFIDZ TERPADU ITQAN
+                  </h3>
+                  <p className="text-[11px] text-slate-600">
+                    Lembaga Pembinaan Al-Qur'an &amp; Mutaba'ah Berkelanjutan • Terakreditasi Kemenag
+                  </p>
+                  <p className="text-[10px] text-slate-500">
+                    Jl. Pesantren No. 101, Kompleks Masjid Jami' • Telp: (021) 8876-5432
+                  </p>
+                  <div className="pt-2 font-bold text-sm tracking-wide text-[#0070BA] uppercase">
+                    LEMBAR MUTABA'AH BULANAN SANTRI
+                  </div>
+                  <div className="text-[11px] text-slate-500 font-medium">
+                    Periode: September 2026 • Tahun Akademik 2026/2027
+                  </div>
+                </div>
+
+                {/* Data Santri */}
+                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 avoid-break">
+                  <div className="space-y-1">
+                    <div className="flex">
+                      <span className="w-24 text-slate-500">Nama Santri</span>
+                      <span className="font-bold text-slate-900">: {currentSantri.name}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-24 text-slate-500">NIS</span>
+                      <span className="font-mono font-semibold text-slate-800">: {currentSantri.nis}</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-24 text-slate-500">Halaqoh</span>
+                      <span className="text-slate-800 font-medium">: {currentSantri.halaqahName || 'Abu Bakar Ash-Shiddiq'}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex">
+                      <span className="w-24 text-slate-500">Musyrif</span>
+                      <span className="text-slate-800 font-medium">: Ust. Abdullah</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-24 text-slate-500">Target Program</span>
+                      <span className="text-slate-800 font-medium">: 30 Juz</span>
+                    </div>
+                    <div className="flex">
+                      <span className="w-24 text-slate-500">Status Pacing</span>
+                      <span className="font-bold text-[#0070BA]">: {currentSantri.status === 'tercapai' ? 'ON TRACK' : 'DALAM BIMBINGAN'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rekap Capaian Tabel */}
+                <div className="space-y-2 avoid-break">
+                  <h5 className="font-bold text-xs uppercase tracking-wider text-slate-800">
+                    I. Capaian Hafalan Al-Qur'an
+                  </h5>
+                  <table className="w-full text-left border border-slate-200">
+                    <thead className="bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                      <tr>
+                        <th className="p-2 border-b border-slate-200">Parameter Evaluasi</th>
+                        <th className="p-2 border-b border-slate-200 text-right">Target</th>
+                        <th className="p-2 border-b border-slate-200 text-right">Realisasi</th>
+                        <th className="p-2 border-b border-slate-200 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 text-[11px]">
+                      <tr>
+                        <td className="p-2 font-medium">Total Akumulasi Hafalan</td>
+                        <td className="p-2 text-right">9.060 Baris</td>
+                        <td className="p-2 text-right font-bold text-[#0070BA]">{currentSantri.juzAchieved} ({totalLines} Baris)</td>
+                        <td className="p-2 text-center text-emerald-700 font-semibold">Aktif</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 font-medium">Setoran Hari Ini</td>
+                        <td className="p-2 text-right">{currentSantri.dailyTargetLines} Baris</td>
+                        <td className="p-2 text-right font-bold">{currentSantri.linesCompletedToday} Baris</td>
+                        <td className="p-2 text-center text-emerald-700 font-semibold">
+                          {currentSantri.linesCompletedToday >= currentSantri.dailyTargetLines ? 'Tercapai' : 'Defisit'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 font-medium">Total Sesi Tercatat</td>
+                        <td className="p-2 text-right">-</td>
+                        <td className="p-2 text-right font-bold">{records.length} Sesi</td>
+                        <td className="p-2 text-center text-slate-700 font-semibold">Terekam</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 font-medium">Ujian Tasmi' Kenaikan Juz</td>
+                        <td className="p-2 text-right">≥ 75 Poin</td>
+                        <td className="p-2 text-right font-bold">{examRecords.length} Kali Pengujian</td>
+                        <td className="p-2 text-center font-semibold">
+                          {examRecords.some(e => e.isPassed) ? 'Lulus' : 'Dalam Proses'}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Penilaian Mutu Kelancaran */}
+                <div className="space-y-2 avoid-break">
+                  <h5 className="font-bold text-xs uppercase tracking-wider text-slate-800">
+                    II. Mutu &amp; Kualitas Bacaan
+                  </h5>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50">
+                      <span className="text-[10px] text-emerald-700 block">Mumtaz (Lancar)</span>
+                      <span className="text-base font-bold text-emerald-800">
+                        {records.length > 0 ? Math.round((records.filter(r => r.grade === 'mumtaz').length / records.length) * 100) : 92}%
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-lg border border-amber-200 bg-amber-50">
+                      <span className="text-[10px] text-amber-700 block">Jayyid (Cukup)</span>
+                      <span className="text-base font-bold text-amber-800">
+                        {records.length > 0 ? Math.round((records.filter(r => r.grade === 'jayyid').length / records.length) * 100) : 8}%
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-lg border border-red-200 bg-red-50">
+                      <span className="text-[10px] text-red-700 block">I'adah (Diulang)</span>
+                      <span className="text-base font-bold text-red-800">
+                        {records.length > 0 ? Math.round((records.filter(r => r.grade === 'iadah').length / records.length) * 100) : 0}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Catatan Musyrif */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1 avoid-break">
+                  <span className="font-bold text-slate-900 block">Catatan &amp; Arahan Musyrif:</span>
+                  <p className="text-slate-600 leading-relaxed text-[11px]">
+                    Alhamdulillah, ananda menunjukkan disiplin tinggi dalam talaqqi harian. Pertahankan kelancaran makhraj huruf dan tingkatkan muroja'ah mandiri sebelum shalat fardhu.
+                  </p>
+                </div>
+
+                {/* Tanda Tangan */}
+                <div className="grid grid-cols-2 gap-8 pt-4 text-center avoid-break">
+                  <div className="space-y-12">
+                    <span className="text-slate-600 block">Koordinator Tahfidz,</span>
+                    <span className="font-bold text-slate-900 block border-t border-slate-300 pt-1">
+                      Ust. Hamzah Al-Hafidz, Lc.
+                    </span>
+                  </div>
+                  <div className="space-y-12">
+                    <span className="text-slate-600 block">Musyrif Halaqoh,</span>
+                    <span className="font-bold text-slate-900 block border-t border-slate-300 pt-1">
+                      Ust. Abdullah
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
     </div>
   );
 };

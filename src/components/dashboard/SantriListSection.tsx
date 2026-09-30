@@ -65,7 +65,7 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
       {/* Section Header: Switcher beside title (Left) & Searchbar beside Add button (Right) */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-border">
         {/* Left Side: Title & Status Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-base text-foreground whitespace-nowrap">
               Daftar Santri Halaqoh
@@ -75,51 +75,55 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
             </Badge>
           </div>
 
-          {/* Switcher Filter (Semua, Tercapai, Tidak Tercapai, Belum Setor) */}
-          <div className="flex items-center bg-muted/60 p-0.5 sm:p-1 rounded-lg border border-border text-xs overflow-x-auto no-scrollbar">
+          {/* Switcher Filter (Responsif: 4 Kolom di Mobile, Flex di Desktop) */}
+          <div className="grid grid-cols-4 sm:flex items-center bg-muted/60 p-0.5 sm:p-1 rounded-lg border border-border text-xs w-full sm:w-auto overflow-hidden">
             <button
               type="button"
               onClick={() => onFilterChange('all')}
-              className={`px-2.5 sm:px-3 py-1 rounded-md font-medium transition-all whitespace-nowrap shrink-0 ${
+              className={`px-1.5 sm:px-3 py-1 rounded-md text-center transition-all truncate cursor-pointer ${
                 activeFilter === 'all'
                   ? 'bg-background text-foreground font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              Semua ({santriList.length})
+              <span className="hidden sm:inline">Semua ({santriList.length})</span>
+              <span className="sm:hidden text-[11px]">Semua ({santriList.length})</span>
             </button>
             <button
               type="button"
               onClick={() => onFilterChange('tercapai')}
-              className={`px-2.5 sm:px-3 py-1 rounded-md font-medium transition-all whitespace-nowrap shrink-0 ${
+              className={`px-1.5 sm:px-3 py-1 rounded-md text-center transition-all truncate cursor-pointer ${
                 activeFilter === 'tercapai'
                   ? 'bg-background text-emerald-700 font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              Tercapai ({countTercapai})
+              <span className="hidden sm:inline">Tercapai ({countTercapai})</span>
+              <span className="sm:hidden text-[11px]">Tercapai ({countTercapai})</span>
             </button>
             <button
               type="button"
               onClick={() => onFilterChange('tidak_tercapai')}
-              className={`px-2.5 sm:px-3 py-1 rounded-md font-medium transition-all whitespace-nowrap shrink-0 ${
+              className={`px-1.5 sm:px-3 py-1 rounded-md text-center transition-all truncate cursor-pointer ${
                 activeFilter === 'tidak_tercapai'
                   ? 'bg-background text-red-700 font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              Tidak Tercapai ({countTidak})
+              <span className="hidden sm:inline">Tidak Tercapai ({countTidak})</span>
+              <span className="sm:hidden text-[11px]">Defisit ({countTidak})</span>
             </button>
             <button
               type="button"
               onClick={() => onFilterChange('belum_setor')}
-              className={`px-2.5 sm:px-3 py-1 rounded-md font-medium transition-all whitespace-nowrap shrink-0 ${
+              className={`px-1.5 sm:px-3 py-1 rounded-md text-center transition-all truncate cursor-pointer ${
                 activeFilter === 'belum_setor'
                   ? 'bg-background text-amber-700 font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              Belum Setor ({countBelum})
+              <span className="hidden sm:inline">Belum Setor ({countBelum})</span>
+              <span className="sm:hidden text-[11px]">Belum ({countBelum})</span>
             </button>
           </div>
         </div>

@@ -74,7 +74,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full rounded-xl sm:rounded-2xl p-4 sm:p-6">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-8 h-8 rounded-lg bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center">
@@ -135,39 +135,6 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
             </div>
           </div>
 
-          {/* Kontak Wali Santri untuk WhatsApp */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
-            <span className="text-[11px] font-bold text-[#0070BA] uppercase tracking-wider block">
-              Data Wali Santri (Notifikasi WhatsApp)
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Nama Ayah / Ibu / Wali
-                </label>
-                <Input
-                  type="text"
-                  value={parentName}
-                  onChange={(e) => setParentName(e.target.value)}
-                  placeholder="Contoh: Bpk. Ruslan Abdullah"
-                  className="text-xs h-10 bg-white"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  No. WhatsApp Wali <span className="text-emerald-700 font-semibold">(WA)</span>
-                </label>
-                <Input
-                  type="tel"
-                  value={parentPhone}
-                  onChange={(e) => setParentPhone(e.target.value)}
-                  placeholder="081234567890"
-                  className="text-xs h-10 bg-white"
-                />
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-900 mb-1">
@@ -179,7 +146,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                 max={30}
                 value={dailyTargetLines}
                 onChange={(e) => setDailyTargetLines(Number(e.target.value))}
-                className="text-xs h-10"
+                className="text-xs h-9"
               />
             </div>
 
@@ -192,8 +159,42 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                 value={lastSurah}
                 onChange={(e) => setLastSurah(e.target.value)}
                 placeholder="An-Naba 1-40"
-                className="text-xs h-10"
+                className="text-xs h-9"
               />
+            </div>
+          </div>
+
+          {/* Kontak Wali Santri (Walsan) */}
+          <div className="border-t border-slate-100 pt-3 space-y-2">
+            <span className="block text-xs font-bold text-slate-800">
+              Kontak Wali Santri
+            </span>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-900 mb-1">
+                  Nama Ayah / Ibu / Wali
+                </label>
+                <Input
+                  type="text"
+                  value={parentName}
+                  onChange={(e) => setParentName(e.target.value)}
+                  placeholder="Contoh: Bpk. Ruslan Abdullah"
+                  className="text-xs h-9"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-900 mb-1">
+                  No. WhatsApp Wali
+                </label>
+                <Input
+                  type="tel"
+                  value={parentPhone}
+                  onChange={(e) => setParentPhone(e.target.value)}
+                  placeholder="081234567890"
+                  className="text-xs h-9"
+                />
+              </div>
             </div>
           </div>
 

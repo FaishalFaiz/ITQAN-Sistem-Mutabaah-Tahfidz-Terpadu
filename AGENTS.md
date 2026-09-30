@@ -23,8 +23,8 @@
 - **NO Heavy Styling**: Zero heavy drop shadows, zero tacky gradients, zero glassmorphism.
 
 ## 3. Git Workflow Rules
-- **Batch Commits Only**: Commit only ONCE at the end of executing the user's complete request/cycle with a concise summary message. Do NOT commit after every single file edit.
-- **NO Git Push**: NEVER execute `git push` unless the user explicitly asks for it.
+- **NO Git Commit**: NEVER execute `git commit` automatically unless the user explicitly commands it in that exact prompt. Keep all changes unstaged or staged in the working directory for user review.
+- **NO Git Push**: NEVER execute `git push` under any circumstances unless explicitly ordered by the user.
 
 ## 4. Verification & Testing Policy
 - **NO Browser Tool Execution**: NEVER run `browser_subagent` or open browser tools to self-verify UI.
