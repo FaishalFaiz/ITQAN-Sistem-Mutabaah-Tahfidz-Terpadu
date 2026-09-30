@@ -4,6 +4,7 @@ import { TapCounterExam } from '../halaqah/TapCounterExam';
 import { PacingCard } from '../visualization/PacingCard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { LaporanPage } from './LaporanPage';
 import type { NavItemKey, Santri } from './types';
 
 interface OtherViewProps {
@@ -45,27 +46,11 @@ export const OtherView: React.FC<OtherViewProps> = ({
       </div>
 
       {currentView === 'laporan' && (
-        <Card title="Laporan & Ringkasan Capaian Halaqoh" subtitle="Rekapitulasi mutabaah mingguan dan bulanan">
-          <div className="space-y-4 text-sm text-slate-700">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="text-xs text-slate-500 block">Total Baris Terkumpul</span>
-                <span className="text-2xl font-bold text-[#0070BA]">24.850 Baris</span>
-                <span className="text-xs text-emerald-600 block mt-1">+12% dari bulan lalu</span>
-              </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="text-xs text-slate-500 block">Rata-rata Kelancaran</span>
-                <span className="text-2xl font-bold text-emerald-700">92% Mumtaz</span>
-                <span className="text-xs text-slate-500 block mt-1">Evaluasi 12 santri</span>
-              </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <span className="text-xs text-slate-500 block">Halaqoh Aktif</span>
-                <span className="text-2xl font-bold text-slate-900">Abu Bakar</span>
-                <span className="text-xs text-slate-500 block mt-1">Sesi Pagi & Sore</span>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <LaporanPage
+          santriList={santriList}
+          onSetor={onSetor}
+          onDetail={onDetail}
+        />
       )}
 
       {currentView === 'santri' && (
