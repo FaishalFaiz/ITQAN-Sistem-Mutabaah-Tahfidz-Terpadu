@@ -8,7 +8,6 @@ import {
   MessageSquare, 
   Smartphone, 
   ExternalLink,
-  ShieldCheck,
   Check,
   Eye,
   Info,
@@ -42,7 +41,6 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
   onDataRefresh,
 }) => {
   const today = getTodayDateKey();
-  const config = storageService.getWAGatewayConfig();
   const settings = storageService.getHalaqahSettings();
 
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'sent'>('all');
@@ -191,19 +189,6 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
               </DialogDescription>
             </div>
 
-            {/* WA Gateway Indicator */}
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                WhatsApp Gateway
-              </span>
-              {config.limitOneMessagePerDay && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200" title="Aturan 1 pesan per hari aktif">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  1 Pesan / Hari
-                </span>
-              )}
-            </div>
           </div>
 
           {/* Quick Notice */}
