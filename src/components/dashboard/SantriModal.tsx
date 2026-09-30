@@ -14,12 +14,14 @@ interface SantriModalProps {
   type: 'setor' | 'detail' | null;
   santri: Santri | null;
   onClose: () => void;
+  onSaveSetor?: (santriId: string, linesAdded: number) => void;
 }
 
 export const SantriModal: React.FC<SantriModalProps> = ({
   type,
   santri,
   onClose,
+  onSaveSetor,
 }) => {
   if (!type || !santri) return null;
 
@@ -38,7 +40,11 @@ export const SantriModal: React.FC<SantriModalProps> = ({
         <div className="pt-2">
           {type === 'setor' ? (
             <div>
-              <FastSetoranForm onSuccess={onClose} />
+              <FastSetoranForm 
+                santri={santri} 
+                onSuccess={onClose} 
+                onSaveSetor={(lines) => onSaveSetor && onSaveSetor(santri.id, lines)}
+              />
             </div>
           ) : (
             <div className="space-y-4">

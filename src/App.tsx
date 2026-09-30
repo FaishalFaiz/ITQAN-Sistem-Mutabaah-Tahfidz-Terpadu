@@ -82,6 +82,22 @@ export function App() {
     setSelectedSantriForSetor(null);
   };
 
+  const handleSaveSetor = (santriId: string, linesAdded: number) => {
+    setSantriList((prev) =>
+      prev.map((s) => {
+        if (s.id !== santriId) return s;
+        const newLinesCompleted = (s.linesCompletedToday || 0) + linesAdded;
+        const isTercapai = newLinesCompleted >= s.dailyTargetLines;
+        return {
+          ...s,
+          linesCompletedToday: newLinesCompleted,
+          status: isTercapai ? 'tercapai' : 'tidak_tercapai',
+          totalLinesMemorized: (s.totalLinesMemorized || 0) + linesAdded,
+        };
+      })
+    );
+  };
+
   const handleAddSantri = (newSantri: Santri) => {
     setSantriList((prev) => [newSantri, ...prev]);
   };
@@ -356,6 +372,7 @@ export function App() {
         type={modalType}
         santri={selectedSantriForSetor}
         onClose={handleCloseModal}
+        onSaveSetor={handleSaveSetor}
       />
 
       {/* Add Santri Modal */}

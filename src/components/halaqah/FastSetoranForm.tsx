@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
+import type { Santri } from '../dashboard/types';
+
 interface FastSetoranFormProps {
+  santri?: Santri | null;
   onSuccess?: () => void;
+  onSaveSetor?: (linesAdded: number) => void;
 }
 
-export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({ onSuccess }) => {
-  const [selectedSantri, setSelectedSantri] = useState('1');
+export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({ 
+  santri, 
+  onSuccess,
+  onSaveSetor,
+}) => {
+  const [selectedSantri, setSelectedSantri] = useState(santri ? santri.id : '1');
   const [type, setType] = useState<'ziyadah' | 'murojaah'>('ziyadah');
   const [juz, setJuz] = useState(30);
   const [pageStart, setPageStart] = useState(582);
@@ -29,43 +35,58 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({ onSuccess }) =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
+    if (onSaveSetor) onSaveSetor(totalLines);
     setTimeout(() => {
       setSubmitted(false);
       if (onSuccess) onSuccess();
-    }, 1200);
+    }, 1000);
   };
 
   return (
-    <Card className="p-5 shadow-xs border-border">
-      <div className="flex items-center justify-between pb-4 mb-4 border-b border-border">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Input Setoran Cepat Halaqoh</h2>
-          <p className="text-xs text-muted-foreground">Target input &lt; 15 detik saat halaqoh aktif</p>
-        </div>
-        <Badge variant="info">Mode Cepat</Badge>
-      </div>
-
+    <div className="space-y-4">
       {submitted && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
           <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Setoran berhasil disimpan! Baris tersimpan: <b>{totalLines} baris</b>.</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 1. Pilih Santri */}
-        <div>
-          <label className="block text-xs font-semibold text-foreground mb-1.5">Nama Santri</label>
-          <select
-            value={selectedSantri}
-            onChange={(e) => setSelectedSantri(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
-          >
-            <option value="1">Muhammad Faiz (NIS: 2024001) - Target: 12 Baris</option>
-            <option value="2">Ahmad Zaki (NIS: 2024002) - Target: 15 Baris</option>
-            <option value="3">Farhan Ramadhan (NIS: 2024003) - Target: 10 Baris</option>
-          </select>
-        </div>
+        {/* 1. Identitas Santri (Otomatis jika modal dibuka dari santri terkait) */}
+        {santri ? (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] font-bold text-xs flex items-center justify-center shrink-0">
+                {santri.avatarInitials}
+              </div>
+              <div>
+                <span className="text-xs font-bold text-slate-900 block leading-tight">
+                  {santri.name}
+                </span>
+                <span className="text-[11px] text-slate-500 font-mono">
+                  NIS: {santri.nis} • Capaian: {santri.juzAchieved}
+                </span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] text-slate-400 block uppercase font-medium">Target Harian</span>
+              <span className="text-xs font-bold text-[#0070BA]">{santri.dailyTargetLines} Baris</span>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-xs font-semibold text-foreground mb-1.5">Nama Santri</label>
+            <select
+              value={selectedSantri}
+              onChange={(e) => setSelectedSantri(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+            >
+              <option value="1">Muhammad Faiz (NIS: 2024001) - Target: 12 Baris</option>
+              <option value="2">Ahmad Zaki (NIS: 2024002) - Target: 15 Baris</option>
+              <option value="3">Farhan Ramadhan (NIS: 2024003) - Target: 10 Baris</option>
+            </select>
+          </div>
+        )}
 
         {/* 2. Jenis Setoran (Toggle Cepat) */}
         <div>
@@ -207,6 +228,6 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({ onSuccess }) =
           Simpan Setoran Santri
         </Button>
       </form>
-    </Card>
+    </div>
   );
 };
