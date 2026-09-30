@@ -25,6 +25,8 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [nis, setNis] = useState('');
+  const [parentName, setParentName] = useState('');
+  const [parentPhone, setParentPhone] = useState('');
   const [juzAchieved, setJuzAchieved] = useState('1.0 Juz');
   const [dailyTargetLines, setDailyTargetLines] = useState(15);
   const [lastSurah, setLastSurah] = useState('An-Naba 1-15');
@@ -44,6 +46,8 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
       id: Date.now().toString(),
       name: name.trim(),
       nis: nis.trim() || `2024${Math.floor(100 + Math.random() * 900)}`,
+      parentName: parentName.trim() || `Wali ${name.trim()}`,
+      parentPhone: parentPhone.trim() || '',
       avatarInitials: initials,
       juzAchieved: juzAchieved.trim() || '1.0 Juz',
       dailyTargetLines: Number(dailyTargetLines) || 15,
@@ -52,6 +56,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
       lastSurah: lastSurah.trim() || 'Al-Fatihah 1-7',
       totalLinesMemorized: 15 * 15,
       totalLinesTarget: 9060,
+      halaqahName: 'Halaqoh Abu Bakar Ash-Shiddiq',
     };
 
     onAddSantri(newSantri);
@@ -60,6 +65,8 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
     // Reset form
     setName('');
     setNis('');
+    setParentName('');
+    setParentPhone('');
     setJuzAchieved('1.0 Juz');
     setDailyTargetLines(15);
     setLastSurah('An-Naba 1-15');
@@ -70,25 +77,25 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center">
               <UserPlus className="w-4 h-4" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle className="text-base font-bold text-slate-900">
                 Tambah Santri Baru
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                Masukkan santri ke daftar rombel halaqoh aktif
+              <DialogDescription className="text-xs text-slate-500">
+                Masukkan santri ke daftar rombel halaqoh aktif beserta kontak wali untuk notifikasi WhatsApp
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-3.5 pt-2">
           <div>
-            <label className="block text-xs font-semibold text-foreground mb-1.5">
-              Nama Lengkap Santri <span className="text-destructive">*</span>
+            <label className="block text-xs font-semibold text-slate-900 mb-1">
+              Nama Lengkap Santri <span className="text-red-500">*</span>
             </label>
             <Input
               type="text"
@@ -96,13 +103,13 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Contoh: Zaid bin Haritsah"
-              className="text-xs"
+              className="text-xs h-9"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">
+              <label className="block text-xs font-semibold text-slate-900 mb-1">
                 NIS (Nomor Induk)
               </label>
               <Input
@@ -110,12 +117,12 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                 value={nis}
                 onChange={(e) => setNis(e.target.value)}
                 placeholder="2024013"
-                className="text-xs"
+                className="text-xs h-9"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">
+              <label className="block text-xs font-semibold text-slate-900 mb-1">
                 Capaian Juz Awal
               </label>
               <Input
@@ -123,14 +130,47 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                 value={juzAchieved}
                 onChange={(e) => setJuzAchieved(e.target.value)}
                 placeholder="5.0 Juz"
-                className="text-xs"
+                className="text-xs h-9"
               />
+            </div>
+          </div>
+
+          {/* Kontak Wali Santri untuk WhatsApp */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+            <span className="text-[11px] font-bold text-[#0070BA] uppercase tracking-wider block">
+              Data Wali Santri (Notifikasi WhatsApp)
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Nama Ayah / Ibu / Wali
+                </label>
+                <Input
+                  type="text"
+                  value={parentName}
+                  onChange={(e) => setParentName(e.target.value)}
+                  placeholder="Contoh: Bpk. Ruslan Abdullah"
+                  className="text-xs h-8.5 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  No. WhatsApp Wali <span className="text-emerald-700 font-semibold">(WA)</span>
+                </label>
+                <Input
+                  type="tel"
+                  value={parentPhone}
+                  onChange={(e) => setParentPhone(e.target.value)}
+                  placeholder="081234567890"
+                  className="text-xs h-8.5 bg-white"
+                />
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">
+              <label className="block text-xs font-semibold text-slate-900 mb-1">
                 Target Baris / Hari
               </label>
               <Input
@@ -139,12 +179,12 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                 max={30}
                 value={dailyTargetLines}
                 onChange={(e) => setDailyTargetLines(Number(e.target.value))}
-                className="text-xs"
+                className="text-xs h-9"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1.5">
+              <label className="block text-xs font-semibold text-slate-900 mb-1">
                 Surah Terakhir
               </label>
               <Input
@@ -152,12 +192,12 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                 value={lastSurah}
                 onChange={(e) => setLastSurah(e.target.value)}
                 placeholder="An-Naba 1-40"
-                className="text-xs"
+                className="text-xs h-9"
               />
             </div>
           </div>
 
-          <DialogFooter className="pt-2 border-t border-border gap-2">
+          <DialogFooter className="pt-3 border-t border-slate-100 gap-2">
             <Button
               type="button"
               variant="outline"
@@ -170,9 +210,9 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
             <Button
               type="submit"
               size="sm"
-              className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs"
+              className="text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white"
             >
-              Simpan Santri
+              Simpan Santri Baru
             </Button>
           </DialogFooter>
         </form>

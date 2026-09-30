@@ -1,10 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { 
   ArrowLeft, 
   BookOpen, 
-  AlertCircle, 
-  Clock, 
-  Award, 
   History, 
   Share2, 
   Sparkles, 
@@ -12,13 +9,20 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
-  UserCheck
+  UserCheck,
+  Send,
+  Check,
+  ExternalLink,
+  X,
+  MessageSquare
 } from 'lucide-react';
 import gsap from 'gsap';
-import type { Santri } from './types';
+import type { Santri, SetoranRecord } from './types';
 import { PacingCard } from '../visualization/PacingCard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
+import { waGatewayService, type SendResult } from '../../services/waGatewayService';
 
 interface SantriDetailPageProps {
   santri: Santri;
@@ -33,6 +37,29 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'riwayat' | 'analisis'>('overview');
   const [copyFeedback, setCopyFeedback] = useState(false);
+  
+  // Real Setoran records state
+  const [records, setRecords] = useState<SetoranRecord[]>(() => storageService.getSetoranBySantriId(santri.id));
+  const [setoranFilter, setSetoranFilter] = useState<'all' | 'ziyadah' | 'murojaah'>('all');
+  const [sendingWAId, setSendingWAId] = useState<string | null>(null);
+
+  // WA Digest Modal State
+  const [isWAModalOpen, setIsWAModalOpen] = useState(false);
+  const [isSendingGateway, setIsSendingGateway] = useState(false);
+  const [waSendFeedback, setWaSendFeedback] = useState<string | null>(null);
+
+  const loadRecords = useCallback(() => {
+    setRecords(storageService.getSetoranBySantriId(santri.id));
+  }, [santri.id]);
+
+  useEffect(() => {
+    const handleDataChanged = () => {
+      loadRecords();
+    };
+
+    window.addEventListener(EVENT_DATA_CHANGED, handleDataChanged);
+    return () => window.removeEventListener(EVENT_DATA_CHANGED, handleDataChanged);
+  }, [loadRecords]);
 
   // Metrik kalkulasi
   const totalLines = santri.totalLinesMemorized || 1500;
@@ -57,19 +84,74 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   }, [activeTab]);
 
   // WhatsApp Digest Generator
-  const handleCopyWADigest = () => {
-    const text = `*LAPORAN MUTABA'AH TAHFIDZ SANTRI ITQAN*\n\n` +
-      `Nama: *${santri.name}* (NIS: ${santri.nis})\n` +
-      `Kelompok: Halaqoh Abu Bakar Ash-Shiddiq\n` +
+  const waDigestMessage = useMemo(() => {
+    return (
+      `*LAPORAN MUTABA'AH TAHFIDZ SANTRI ITQAN*\n\n` +
+      `Nama Santri: *${santri.name}* (NIS: ${santri.nis})\n` +
+      `Wali Santri: *${santri.parentName || 'Ayah/Bunda'}*\n` +
+      `Kelompok: ${santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq'}\n` +
       `Total Capaian: *${santri.juzAchieved}* (${totalLines} baris / ~${pagesCompleted} Halaman)\n` +
       `Target Hari Ini: ${santri.dailyTargetLines} Baris | Tercapai: ${santri.linesCompletedToday} Baris (${santri.status.toUpperCase()})\n` +
       `Surah Terakhir: *${santri.lastSurah}*\n\n` +
-      `_Pesan otomatis Sistem Mutaba'ah ITQAN - Pesantren Tahfidz Terpadu_`;
+      `_Pesan otomatis Sistem Mutaba'ah ITQAN - Pesantren Tahfidz Terpadu_`
+    );
+  }, [santri, totalLines, pagesCompleted]);
 
-    navigator.clipboard.writeText(text);
+  const handleCopyWADigest = () => {
+    navigator.clipboard.writeText(waDigestMessage);
     setCopyFeedback(true);
     setTimeout(() => setCopyFeedback(false), 2500);
   };
+
+  const handleSendViaGateway = async () => {
+    if (!santri.parentPhone) return;
+    setIsSendingGateway(true);
+    setWaSendFeedback(null);
+
+    const res: SendResult = await waGatewayService.sendMessage(
+      santri.parentPhone,
+      santri.parentName || `Wali ${santri.name}`,
+      waDigestMessage,
+      'broadcast'
+    );
+
+    setIsSendingGateway(false);
+    if (res.success) {
+      setWaSendFeedback('Berhasil terkirim via WhatsApp Gateway!');
+    } else if (res.fallbackUrl) {
+      setWaSendFeedback(res.notConfigured ? 'Gateway belum diatur. Mengalihkan ke Direct WA...' : 'Koneksi gateway gagal. Mengalihkan ke Direct WA...');
+      window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  // Kirim record setoran tunggal via WA
+  const handleSendRecordWA = async (record: SetoranRecord) => {
+    if (!santri.parentPhone) return;
+    setSendingWAId(record.id);
+
+    const messageText = waGatewayService.buildSetoranMessage(record, santri);
+    const res: SendResult = await waGatewayService.sendMessage(
+      santri.parentPhone,
+      santri.parentName || `Wali ${santri.name}`,
+      messageText,
+      'setoran'
+    );
+
+    setSendingWAId(null);
+    if (res.success) {
+      storageService.updateSetoranWAStatus(record.id, 'sent');
+      loadRecords();
+    } else if (res.fallbackUrl) {
+      storageService.updateSetoranWAStatus(record.id, 'failed');
+      loadRecords();
+      window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const filteredRecords = useMemo(() => {
+    if (setoranFilter === 'all') return records;
+    return records.filter((r) => r.type === setoranFilter);
+  }, [records, setoranFilter]);
 
   const statusConfig = {
     tercapai: {
@@ -82,7 +164,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
       label: 'Defisit Setoran',
       badgeClass: 'bg-red-50 text-red-700 border-red-200',
       icon: XCircle,
-      subText: `Kurang ${santri.dailyTargetLines - santri.linesCompletedToday} baris`
+      subText: `Kurang ${Math.max(0, santri.dailyTargetLines - santri.linesCompletedToday)} baris`
     },
     belum_setor: {
       label: 'Belum Setor',
@@ -109,17 +191,17 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
-          {/* Tombol Salin WA Digest */}
+          {/* Tombol Modal WA Digest */}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={handleCopyWADigest}
+            onClick={() => setIsWAModalOpen(true)}
             className="inline-flex items-center gap-1.5 text-xs font-semibold h-8.5 px-3 border-slate-200 text-slate-700 hover:bg-slate-50"
-            title="Salin ringkasan progres untuk dikirim ke Wali Santri via WA"
+            title="Kirim atau salin laporan progres ke Wali Santri via WA"
           >
             <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{copyFeedback ? 'Tersalin!' : 'Laporan WA Wali'}</span>
+            <span>Kirim Laporan WA</span>
           </Button>
 
           {/* Tombol Input Setoran */}
@@ -135,7 +217,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         </div>
       </div>
 
-      {/* 2. Hero Profile Banner (Executive Enterprise Look) */}
+      {/* 2. Hero Profile Banner */}
       <Card className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Kolom Kiri: Profil & Meta Halaqoh */}
@@ -161,12 +243,12 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-slate-500">
                 <span className="inline-flex items-center gap-1.5">
                   <UserCheck className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Halaqoh: <strong className="text-slate-800 font-semibold">Abu Bakar Ash-Shiddiq</strong></span>
+                  <span>Halaqoh: <strong className="text-slate-800 font-semibold">{santri.halaqahName || 'Abu Bakar Ash-Shiddiq'}</strong></span>
                 </span>
                 <span className="text-slate-300">•</span>
-                <span>Musyrif: <strong className="text-slate-800 font-semibold">Ust. Abdullah</strong></span>
+                <span>Wali: <strong className="text-slate-800 font-semibold">{santri.parentName || 'Ayah/Bunda'}</strong> ({santri.parentPhone || 'No WA belum ada'})</span>
                 <span className="text-slate-300">•</span>
-                <span>Setoran Terakhir: <strong className="text-[#0070BA] font-semibold">{santri.lastSurah}</strong></span>
+                <span>Surah Terakhir: <strong className="text-[#0070BA] font-semibold">{santri.lastSurah}</strong></span>
               </div>
             </div>
           </div>
@@ -212,7 +294,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         </div>
       </Card>
 
-      {/* 3. Tab Navigasi Detail (Clean Underline Style) */}
+      {/* 3. Tab Navigasi Detail */}
       <div className="border-b border-slate-200 bg-white rounded-t-xl px-2">
         <div className="flex items-center gap-2 text-xs font-semibold overflow-x-auto">
           <button
@@ -238,7 +320,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             }`}
           >
             <History className="w-4 h-4" />
-            <span>Riwayat Setoran Halaqoh</span>
+            <span>Riwayat Setoran Halaqoh ({records.length})</span>
           </button>
 
           <button
@@ -307,7 +389,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                     <p className="text-xs text-slate-600 leading-relaxed">
                       {santri.status === 'tercapai'
                         ? `Target hari ini telah tuntas. Kunci hafalan ${santri.lastSurah} dengan tasmi' mandiri 2x sebelum berpindah ke surah berikutnya.`
-                        : `Terdapat defisit ${santri.dailyTargetLines - santri.linesCompletedToday} baris. Berikan slot setoran khusus pada sesi halaqoh berikutnya.`}
+                        : `Terdapat defisit ${Math.max(0, santri.dailyTargetLines - santri.linesCompletedToday)} baris. Berikan slot setoran khusus pada sesi halaqoh berikutnya.`}
                     </p>
                   </div>
                   <Button
@@ -332,7 +414,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                       </h4>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Sistem mendeteksi rentang halaman ini terakhir dimuroja'ah 8 hari yang lalu dengan status I'adah. Sangat krusial disimak ulang pekan ini.
+                      Sistem mendeteksi rentang halaman ini terakhir dimuroja'ah beberapa hari lalu. Sangat krusial disimak ulang pekan ini.
                     </p>
                   </div>
                   <Button
@@ -345,39 +427,73 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                     Simak Muroja'ah
                   </Button>
                 </div>
-
-                {/* Action Card 3: Tiket Ujian Tasmi' */}
-                <div className="p-3.5 rounded-xl border border-emerald-100 bg-[#F4FDF8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                        Kesiapan Tasmi'
-                      </span>
-                      <h4 className="font-bold text-xs text-slate-900">
-                        Kelayakan Ujian Tasmi' Juz 30 (Sekali Duduk)
-                      </h4>
-                    </div>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      Akumulasi setoran Juz 30 telah lengkap 100%. Santri dapat didaftarkan tiket ujian kenaikan juz melalui koordinator tahfidz.
-                    </p>
-                  </div>
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-md shrink-0">
-                    Siap Ujian
-                  </span>
-                </div>
               </div>
             </div>
           </div>
 
-          {/* Kolom Kanan: Rapor Ringkas & Status Akademik */}
+          {/* Kolom Kanan: Rapor Ringkas & Kontak Wali Santri */}
           <div className="space-y-4">
+            {/* Kartu Kontak Wali Santri & WhatsApp */}
+            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3.5">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                  <MessageSquare className="w-4 h-4 text-emerald-600" />
+                  <span>Kontak Wali Santri</span>
+                </div>
+                <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  WA Ready
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
+                  <span className="text-[11px] text-slate-400 block">Nama Wali / Orang Tua:</span>
+                  <span className="font-bold text-slate-900 text-sm mt-0.5 block">
+                    {santri.parentName || 'Belum diisi'}
+                  </span>
+                </div>
+
+                <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
+                  <span className="text-[11px] text-slate-400 block">Nomor WhatsApp:</span>
+                  <span className="font-mono font-bold text-slate-900 mt-0.5 block">
+                    {santri.parentPhone || 'Nomor WhatsApp belum terdaftar'}
+                  </span>
+                </div>
+              </div>
+
+              {santri.parentPhone && (
+                <div className="pt-1 flex flex-col gap-2">
+                  <a
+                    href={waGatewayService.getDirectWALink(santri.parentPhone, `Assalamu'alaikum Warahmatullah Bpk/Ibu ${santri.parentName || ''}...`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition-colors"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Chat WhatsApp Wali</span>
+                    <ExternalLink className="w-3 h-3 ml-0.5 opacity-75" />
+                  </a>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsWAModalOpen(true)}
+                    className="w-full text-xs text-slate-700 border-slate-200 hover:bg-slate-50"
+                  >
+                    Kirim Laporan Mutaba'ah
+                  </Button>
+                </div>
+              )}
+            </div>
+
             {/* Kartu Parameter Akademik */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
                 <h3 className="font-bold text-sm text-slate-900">
                   Statistik Mutaba'ah
                 </h3>
-                <span className="text-[11px] font-medium text-slate-400">Kurikulum 3 Tahun</span>
+                <span className="text-[11px] font-medium text-slate-400">Target 30 Juz</span>
               </div>
 
               <div className="space-y-2 text-xs">
@@ -392,159 +508,285 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
-                  <span className="text-slate-500 font-medium">Kehadiran Halaqoh</span>
-                  <span className="font-bold text-slate-900">98% (28 dari 29 Sesi)</span>
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
                   <span className="text-slate-500 font-medium">Target Harian Ideal</span>
                   <span className="font-bold text-emerald-700">{requiredDailyLines} Baris / Hari</span>
                 </div>
               </div>
             </div>
-
-            {/* Kotak Pengingat Ujian Tasmi' */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-2.5">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
-                <Award className="w-4 h-4 text-[#0070BA]" />
-                <span>Riwayat Tiket Ujian Terakhir</span>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Tasmi' Juz 29 telah diselesaikan pada 12 Agustus 2026 dengan predikat <strong className="text-slate-900">Mumtaz (Nilai: 94.5)</strong>.
-              </p>
-              <div className="pt-1">
-                <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Sertifikat Terbit ber-QR Code</span>
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       )}
 
-      {/* 5. Tab 2: Riwayat Setoran */}
+      {/* 5. Tab 2: Riwayat Setoran (Real Log Mutaba'ah) */}
       {activeTab === 'riwayat' && (
         <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
-
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div>
               <h3 className="font-bold text-base text-slate-900">
                 Log Catatan Mutaba'ah Halaqoh
               </h3>
               <p className="text-xs text-slate-500">
-                Riwayat setoran hafalan baru (Ziyadah) dan pengulangan (Muroja'ah)
+                Data real setoran hafalan baru (Ziyadah) dan pengulangan (Muroja'ah) tersimpan
               </p>
             </div>
-            <span className="text-xs font-semibold text-slate-500">
-              Menampilkan 5 sesi terakhir
-            </span>
+
+            {/* Filter Jenis Setoran */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setSetoranFilter('all')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                  setoranFilter === 'all'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Semua ({records.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSetoranFilter('ziyadah')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                  setoranFilter === 'ziyadah'
+                    ? 'bg-white text-[#0070BA] shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Ziyadah ({records.filter(r => r.type === 'ziyadah').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSetoranFilter('murojaah')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                  setoranFilter === 'murojaah'
+                    ? 'bg-white text-amber-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Muroja'ah ({records.filter(r => r.type === 'murojaah').length})
+              </button>
+            </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px]">
-                <tr>
-                  <th className="py-3 px-4">Waktu &amp; Sesi</th>
-                  <th className="py-3 px-4">Jenis</th>
-                  <th className="py-3 px-4">Surah &amp; Ayat</th>
-                  <th className="py-3 px-4">Posisi Baris</th>
-                  <th className="py-3 px-4">Jumlah Baris</th>
-                  <th className="py-3 px-4">Kelancaran</th>
-                  <th className="py-3 px-4">Musyrif</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3 px-4 font-medium text-slate-900">Hari ini, 07:15 WIB</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-blue-50 text-[#0070BA] border border-blue-200">
-                      ZIYADAH
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-bold text-slate-900">{santri.lastSurah}</td>
-                  <td className="py-3 px-4 text-slate-500">Hal. 582 (B 1–15)</td>
-                  <td className="py-3 px-4 font-bold text-[#0070BA]">{santri.linesCompletedToday || 15} Baris</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      MUMTAZ
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-slate-600">Ust. Abdullah</td>
-                </tr>
-
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3 px-4 font-medium text-slate-900">Kemarin, 16:30 WIB</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
-                      MUROJA'AH
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-bold text-slate-900">An-Naziat 1-46</td>
-                  <td className="py-3 px-4 text-slate-500">Hal. 583–584</td>
-                  <td className="py-3 px-4 font-bold text-slate-800">30 Baris</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      MUMTAZ
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-slate-600">Ust. Abdullah</td>
-                </tr>
-
-                <tr className="hover:bg-slate-50 transition-colors">
-                  <td className="py-3 px-4 font-medium text-slate-900">26 Sep 2026, 07:10 WIB</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-blue-50 text-[#0070BA] border border-blue-200">
-                      ZIYADAH
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-bold text-slate-900">Abasa 1-42</td>
-                  <td className="py-3 px-4 text-slate-500">Hal. 585 (B 1–15)</td>
-                  <td className="py-3 px-4 font-bold text-[#0070BA]">15 Baris</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
-                      JAYYID
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-slate-600">Ust. Abdullah</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          {filteredRecords.length === 0 ? (
+            <div className="py-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+                <History className="w-6 h-6" />
+              </div>
+              <h4 className="font-bold text-sm text-slate-700">Belum Ada Catatan Setoran</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Santri belum memiliki riwayat mutaba'ah untuk kategori ini. Klik tombol di bawah untuk memasukkan setoran perdana.
+              </p>
+              <Button
+                size="sm"
+                onClick={() => onSetor(santri)}
+                className="bg-[#0070BA] text-white text-xs h-8"
+              >
+                Input Setoran Sekarang
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-[11px]">
+                  <tr>
+                    <th className="py-3 px-4">Waktu Sesi</th>
+                    <th className="py-3 px-4">Jenis</th>
+                    <th className="py-3 px-4">Surah &amp; Ayat</th>
+                    <th className="py-3 px-4">Posisi Halaman/Baris</th>
+                    <th className="py-3 px-4">Jumlah Baris</th>
+                    <th className="py-3 px-4">Kelancaran</th>
+                    <th className="py-3 px-4">Status WA</th>
+                    <th className="py-3 px-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredRecords.map((r) => (
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-4 font-medium text-slate-900 whitespace-nowrap">
+                        {r.formattedDate}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {r.type === 'ziyadah' ? (
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-blue-50 text-[#0070BA] border border-blue-200">
+                            ZIYADAH
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                            MUROJA'AH
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 font-bold text-slate-900">
+                        {r.surahName}
+                        <span className="block text-[10px] font-normal text-slate-400">Juz {r.juz}</span>
+                      </td>
+                      <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
+                        Hal. {r.pageStart === r.pageEnd ? r.pageStart : `${r.pageStart}–${r.pageEnd}`} (B {r.lineStart}–{r.lineEnd})
+                      </td>
+                      <td className="py-3 px-4 font-bold text-[#0070BA] whitespace-nowrap">
+                        {r.totalLines} Baris
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {r.grade === 'mumtaz' && (
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            MUMTAZ
+                          </span>
+                        )}
+                        {r.grade === 'jayyid' && (
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-amber-50 text-amber-700 border border-amber-200">
+                            JAYYID
+                          </span>
+                        )}
+                        {r.grade === 'iadah' && (
+                          <span className="px-2 py-0.5 rounded font-bold text-[10px] bg-red-50 text-red-700 border border-red-200">
+                            I'ADAH
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {r.waStatus === 'sent' ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                            <Check className="w-3 h-3" />
+                            <span>Terkirim</span>
+                          </span>
+                        ) : r.waStatus === 'failed' ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded">
+                            <XCircle className="w-3 h-3" />
+                            <span>Gagal</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-slate-400">
+                            Belum Terkirim
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <button
+                          type="button"
+                          disabled={sendingWAId === r.id || !santri.parentPhone}
+                          onClick={() => handleSendRecordWA(r)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50"
+                          title="Kirim atau kirim ulang rincian setoran ke WhatsApp Wali Santri"
+                        >
+                          <Send className="w-3 h-3" />
+                          <span>{sendingWAId === r.id ? 'Mengirim...' : 'Kirim WA'}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
-      {/* 7. Tab 4: Analisis Retensi & Spaced Repetition */}
+      {/* 6. Tab 3: Analisis Retensi & Spaced Repetition */}
       {activeTab === 'analisis' && (
         <div className="detail-tab-pane bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-5">
           <div>
             <h3 className="font-bold text-base text-slate-900">
-              Analisis Kurva Retensi Hafalan (Spaced Retention Engine)
+              Analisis Retensi Hafalan &amp; Spaced Repetition
             </h3>
             <p className="text-xs text-slate-500">
-              Mendeteksi titik kritis lupa berdasarkan interval hari dan evaluasi kelancaran sebelumnya
+              Peta pengulangan hafalan untuk mencegah lupa (nisyan) berbasis interval kurva memori Ebbinghaus
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl border border-red-200 bg-red-50/40 space-y-2">
-              <div className="flex items-center gap-2 text-red-800 font-bold text-xs">
-                <AlertCircle className="w-4 h-4 text-red-600" />
-                <span>Titik Lemah (I'adah Belum Tuntas)</span>
-              </div>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                • <b>Surah Al-Muthaffifin (Ayat 10–25)</b>: Terjadi ketukan tajwid &amp; makhraj berulang pada 3 sesi lalu. Wajib disimak talaqqi sebelum lanjut surah baru.
-              </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase">Kekuatan Hafalan Rata-Rata</span>
+              <div className="text-2xl font-extrabold text-emerald-700">88.4%</div>
+              <p className="text-[11px] text-slate-500">Kategori Kuat (Retensi &gt; 30 Hari)</p>
             </div>
 
-            <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/40 space-y-2">
-              <div className="flex items-center gap-2 text-amber-800 font-bold text-xs">
-                <Clock className="w-4 h-4 text-amber-600" />
-                <span>Peringatan Jeda Muroja'ah &gt; 7 Hari</span>
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase">Juz Perlu Refresh Segera</span>
+              <div className="text-2xl font-extrabold text-amber-700">Juz 29</div>
+              <p className="text-[11px] text-slate-500">Terakhir disimak &gt; 7 hari yang lalu</p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase">Rasio Ziyadah : Muroja'ah</span>
+              <div className="text-2xl font-extrabold text-[#0070BA]">1 : 3.5</div>
+              <p className="text-[11px] text-slate-500">Memenuhi standar kurikulum pesantren</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. MODAL: Kirim Laporan WhatsApp Digest */}
+      {isWAModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full overflow-hidden space-y-4 p-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                <Share2 className="w-4 h-4 text-emerald-600" />
+                <span>Format Laporan WhatsApp Wali Santri</span>
               </div>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                • <b>Juz 29 (Surah Al-Mulk s.d. Al-Mursalat)</b>: Belum pernah dimuroja'ahkan sejak 8 hari lalu. Jadwalkan tasmi' santri pekan ini.
-              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsWAModalOpen(false);
+                  setWaSendFeedback(null);
+                }}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {waSendFeedback && (
+              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{waSendFeedback}</span>
+              </div>
+            )}
+
+            <p className="text-xs text-slate-500">
+              Teks ringkasan progres santri siap kirim ke Wali ({santri.parentName || 'Wali Santri'} - {santri.parentPhone || 'No WA belum ada'}):
+            </p>
+
+            <textarea
+              readOnly
+              value={waDigestMessage}
+              rows={8}
+              className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
+            />
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <button
+                type="button"
+                onClick={handleCopyWADigest}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold"
+              >
+                {copyFeedback ? 'Tersalin ke Clipboard!' : 'Salin Teks'}
+              </button>
+
+              <div className="flex items-center gap-2">
+                {santri.parentPhone && (
+                  <a
+                    href={waGatewayService.getDirectWALink(santri.parentPhone, waDigestMessage)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold"
+                  >
+                    <span>Direct WA (wa.me)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+
+                <Button
+                  size="sm"
+                  disabled={isSendingGateway || !santri.parentPhone}
+                  onClick={handleSendViaGateway}
+                  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isSendingGateway ? 'Mengirim...' : 'Kirim via Gateway'}</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>

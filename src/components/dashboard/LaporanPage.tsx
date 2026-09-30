@@ -16,8 +16,11 @@ import {
   FileSpreadsheet,
   ChevronDown,
   Check,
+  Send,
+  ExternalLink,
 } from 'lucide-react';
 import type { Santri } from './types';
+import { waGatewayService, type SendResult } from '../../services/waGatewayService';
 import {
   generateSantriReports,
   MOCK_EXAM_RECORDS,
@@ -29,6 +32,7 @@ import {
   type ExamRecord,
 } from './laporanData';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface LaporanPageProps {
   santriList: Santri[];
@@ -60,6 +64,9 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   const [selectedExamDetail, setSelectedExamDetail] = useState<ExamRecord | null>(null);
   const [isWAModalOpen, setIsWAModalOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [broadcastTarget, setBroadcastTarget] = useState('081234567801');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [broadcastFeedback, setBroadcastFeedback] = useState<string | null>(null);
 
   // Month activity heatmap data
   const monthActivity = useMemo(() => generateMonthActivity(), []);
@@ -223,6 +230,27 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
     navigator.clipboard.writeText(waDigestMessage);
     setCopySuccess(true);
     setTimeout(() => setCopySuccess(false), 2500);
+  };
+
+  const handleSendBroadcastGateway = async () => {
+    if (!broadcastTarget.trim()) return;
+    setIsBroadcasting(true);
+    setBroadcastFeedback(null);
+
+    const res: SendResult = await waGatewayService.sendMessage(
+      broadcastTarget,
+      'Grup Wali / Halaqoh',
+      waDigestMessage,
+      'broadcast'
+    );
+
+    setIsBroadcasting(false);
+    if (res.success) {
+      setBroadcastFeedback('Berhasil dikirim melalui WhatsApp Gateway!');
+    } else if (res.fallbackUrl) {
+      setBroadcastFeedback(res.notConfigured ? 'Gateway belum diatur. Mengalihkan ke Direct WA...' : 'Koneksi gateway gagal. Mengalihkan ke Direct WA...');
+      window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
@@ -1469,44 +1497,81 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => setIsWAModalOpen(false)}
+                onClick={() => {
+                  setIsWAModalOpen(false);
+                  setBroadcastFeedback(null);
+                }}
                 className="text-slate-400 hover:text-slate-700"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
+            {broadcastFeedback && (
+              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{broadcastFeedback}</span>
+              </div>
+            )}
+
             <p className="text-xs text-slate-500">
-              Salin ringkasan laporan ini untuk dikirimkan langsung ke grup WhatsApp wali santri atau pembina asrama:
+              Salin atau kirimkan ringkasan laporan ini langsung ke grup WhatsApp wali santri atau nomor pembina:
             </p>
+
+            {/* Target Input */}
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                value={broadcastTarget}
+                onChange={(e) => setBroadcastTarget(e.target.value)}
+                placeholder="Nomor WA Tujuan / Grup"
+                className="text-xs h-8.5 bg-slate-50 flex-1"
+              />
+              <span className="text-[11px] text-slate-400 whitespace-nowrap">Target WA</span>
+            </div>
 
             <textarea
               readOnly
               value={waDigestMessage}
-              rows={12}
+              rows={9}
               className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
             />
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
               <span className="text-xs text-slate-400">
-                {copySuccess ? 'Berhasil tersalin ke clipboard!' : 'Siap dikirim'}
+                {copySuccess ? 'Berhasil disalin!' : 'Siap dikirimkan'}
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsWAModalOpen(false)}
-                  className="text-xs"
+                  onClick={handleCopyWA}
+                  className="text-xs h-8"
                 >
-                  Tutup
+                  {copySuccess ? <Check className="w-3.5 h-3.5 mr-1" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
+                  <span>Salin Teks</span>
                 </Button>
+
+                {broadcastTarget && (
+                  <a
+                    href={waGatewayService.getDirectWALink(broadcastTarget, waDigestMessage)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold h-8"
+                  >
+                    <span>Direct WA (wa.me)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+
                 <Button
                   size="sm"
-                  onClick={handleCopyWA}
-                  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
+                  disabled={isBroadcasting || !broadcastTarget}
+                  onClick={handleSendBroadcastGateway}
+                  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 h-8"
                 >
-                  {copySuccess ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-                  <span>{copySuccess ? 'Tersalin!' : 'Salin Teks WA'}</span>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isBroadcasting ? 'Mengirim...' : 'Kirim via Gateway'}</span>
                 </Button>
               </div>
             </div>

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, UserPlus, Search } from 'lucide-react';
+import { ArrowLeft, UserPlus, Search, MessageSquare, ExternalLink } from 'lucide-react';
 import { TapCounterExam } from '../halaqah/TapCounterExam';
 import { PacingCard } from '../visualization/PacingCard';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { LaporanPage } from './LaporanPage';
+import { PengaturanView } from './PengaturanView';
+import { waGatewayService } from '../../services/waGatewayService';
 import type { NavItemKey, Santri } from './types';
 
 interface OtherViewProps {
@@ -29,7 +29,8 @@ export const OtherView: React.FC<OtherViewProps> = ({
   const filteredSantri = santriList.filter((s) =>
     s.name.toLowerCase().includes(santriSearch.toLowerCase()) ||
     s.nis.includes(santriSearch) ||
-    s.lastSurah.toLowerCase().includes(santriSearch.toLowerCase())
+    s.lastSurah.toLowerCase().includes(santriSearch.toLowerCase()) ||
+    (s.parentName && s.parentName.toLowerCase().includes(santriSearch.toLowerCase()))
   );
 
   return (
@@ -57,8 +58,8 @@ export const OtherView: React.FC<OtherViewProps> = ({
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div>
-              <h3 className="font-bold text-base text-slate-900">Data Santri Halaqoh</h3>
-              <p className="text-xs text-slate-500">Total {santriList.length} santri terdaftar aktif</p>
+              <h3 className="font-bold text-base text-slate-900">Data Santri &amp; Kontak Wali</h3>
+              <p className="text-xs text-slate-500">Total {santriList.length} santri terdaftar aktif dalam rombel halaqoh</p>
             </div>
 
             <div className="flex items-center gap-2.5">
@@ -68,7 +69,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
                   type="text"
                   value={santriSearch}
                   onChange={(e) => setSantriSearch(e.target.value)}
-                  placeholder="Cari santri / NIS..."
+                  placeholder="Cari santri / wali / NIS..."
                   className="w-48 sm:w-56 text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
                 />
               </div>
@@ -91,8 +92,9 @@ export const OtherView: React.FC<OtherViewProps> = ({
                 <tr>
                   <th className="py-3 px-4">Nama Santri</th>
                   <th className="py-3 px-4">NIS</th>
+                  <th className="py-3 px-4">Kontak Wali (WA)</th>
                   <th className="py-3 px-4">Capaian Juz</th>
-                  <th className="py-3 px-4">Target / Hari</th>
+                  <th className="py-3 px-4">Target Hari Ini</th>
                   <th className="py-3 px-4">Terakhir Setor</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Aksi</th>
@@ -108,8 +110,26 @@ export const OtherView: React.FC<OtherViewProps> = ({
                       <span>{santri.name}</span>
                     </td>
                     <td className="py-3 px-4 font-mono text-slate-500">{santri.nis}</td>
+                    <td className="py-3 px-4">
+                      {santri.parentPhone ? (
+                        <a
+                          href={waGatewayService.getDirectWALink(santri.parentPhone, `Assalamu'alaikum Warahmatullah Bpk/Ibu ${santri.parentName || ''}...`)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 font-medium group"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{santri.parentName}</span>
+                          <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </a>
+                      ) : (
+                        <span className="text-slate-400 italic">Belum diisi</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4 font-bold text-[#0070BA]">{santri.juzAchieved}</td>
-                    <td className="py-3 px-4">{santri.dailyTargetLines} Baris</td>
+                    <td className="py-3 px-4">
+                      {santri.linesCompletedToday} / {santri.dailyTargetLines} Baris
+                    </td>
                     <td className="py-3 px-4 text-slate-600">{santri.lastSurah}</td>
                     <td className="py-3 px-4">
                       {santri.status === 'tercapai' && (
@@ -153,21 +173,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
       )}
 
       {currentView === 'pengaturan' && (
-        <Card title="Pengaturan Halaqoh & Kurikulum" subtitle="Konfigurasi target baris, jadwal, dan standar penilaian">
-          <div className="space-y-4 text-xs text-slate-700 max-w-xl">
-            <div>
-              <label className="block font-semibold text-slate-900 mb-1">Target Harian Standar (Baris / Hari)</label>
-              <input type="number" defaultValue={15} className="w-full rounded-lg border border-slate-300 p-2.5 bg-white" />
-            </div>
-            <div>
-              <label className="block font-semibold text-slate-900 mb-1">Nama Kelompok Halaqoh</label>
-              <input type="text" defaultValue="Halaqoh Abu Bakar Ash-Shiddiq" className="w-full rounded-lg border border-slate-300 p-2.5 bg-white" />
-            </div>
-            <div>
-              <Button size="sm">Simpan Pengaturan</Button>
-            </div>
-          </div>
-        </Card>
+        <PengaturanView />
       )}
 
       {currentView === 'dll-ujian' && (
@@ -181,7 +187,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
           <PacingCard
             santriName="Muhammad Faiz"
             nis="2024001"
-            totalLinesMemorized={1420}
+            totalLinesMemorized={2175}
             totalLinesTarget={9060}
             daysRemaining={650}
             dailyTargetLines={12}
@@ -191,11 +197,11 @@ export const OtherView: React.FC<OtherViewProps> = ({
           <PacingCard
             santriName="Ahmad Zaki"
             nis="2024002"
-            totalLinesMemorized={780}
+            totalLinesMemorized={1275}
             totalLinesTarget={9060}
             daysRemaining={650}
             dailyTargetLines={15}
-            linesCompletedToday={8}
+            linesCompletedToday={6}
             status="behind"
           />
         </div>

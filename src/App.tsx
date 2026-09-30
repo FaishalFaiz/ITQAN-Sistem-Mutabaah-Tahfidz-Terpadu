@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Menu, Calendar } from 'lucide-react';
-import { INITIAL_SANTRI_LIST } from './components/dashboard/mockData';
+import { storageService, EVENT_DATA_CHANGED } from './services/storageService';
 import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
 import { TrendChart } from './components/dashboard/TrendChart';
@@ -66,7 +66,15 @@ export function App() {
   // Filter state for Santri cards
   const [activeFilter, setActiveFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
 
-  const [santriList, setSantriList] = useState<Santri[]>(INITIAL_SANTRI_LIST);
+  const [santriList, setSantriList] = useState<Santri[]>(() => storageService.getSantriList());
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setSantriList(storageService.getSantriList());
+    };
+    window.addEventListener(EVENT_DATA_CHANGED, handleStorageChange);
+    return () => window.removeEventListener(EVENT_DATA_CHANGED, handleStorageChange);
+  }, []);
 
   const handleOpenSetor = (santri: Santri) => {
     setSelectedSantriForSetor(santri);
@@ -82,24 +90,13 @@ export function App() {
     setSelectedSantriForSetor(null);
   };
 
-  const handleSaveSetor = (santriId: string, linesAdded: number) => {
-    setSantriList((prev) =>
-      prev.map((s) => {
-        if (s.id !== santriId) return s;
-        const newLinesCompleted = (s.linesCompletedToday || 0) + linesAdded;
-        const isTercapai = newLinesCompleted >= s.dailyTargetLines;
-        return {
-          ...s,
-          linesCompletedToday: newLinesCompleted,
-          status: isTercapai ? 'tercapai' : 'tidak_tercapai',
-          totalLinesMemorized: (s.totalLinesMemorized || 0) + linesAdded,
-        };
-      })
-    );
+  const handleSaveSetor = () => {
+    setSantriList(storageService.getSantriList());
   };
 
   const handleAddSantri = (newSantri: Santri) => {
-    setSantriList((prev) => [newSantri, ...prev]);
+    const updated = storageService.addSantri(newSantri);
+    setSantriList(updated);
   };
 
   // Dynamic header title based on URL
