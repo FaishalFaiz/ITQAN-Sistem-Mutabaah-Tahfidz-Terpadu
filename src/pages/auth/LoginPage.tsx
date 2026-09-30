@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, ShieldCheck, BookOpen } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const LoginPage: React.FC = () => {
@@ -176,16 +176,6 @@ export const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          {/* Quick Demo Info */}
-          <div className="mt-6 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 space-y-1">
-            <div className="flex items-center gap-1.5 font-semibold text-slate-700">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Akun Demo Cepat</span>
-            </div>
-            <p className="text-[11px] text-slate-500">
-              Gunakan email &amp; sandi default yang telah terisi, lalu klik <b>Masuk ke Portal</b> untuk mulai eksplorasi.
-            </p>
-          </div>
 
           {/* Link ke Registrasi */}
           <div className="mt-6 text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
