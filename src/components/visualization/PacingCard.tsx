@@ -40,7 +40,7 @@ export const PacingCard: React.FC<PacingCardProps> = ({
               <h3 className="font-semibold text-slate-900 text-base">{santriName}</h3>
               <span className="text-xs text-slate-500 font-mono">({nis})</span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">Target Kurikulum 30 Juz / 3 Tahun</p>
+            <p className="text-xs text-slate-500 mt-0.5">Target Kurikulum 30 Juz</p>
           </div>
           <Badge variant={status === 'on_track' ? 'mumtaz' : 'iadah'}>
             {status === 'on_track' ? 'Sesuai Target (On Track)' : 'Tertinggal (Behind)'}
@@ -52,7 +52,7 @@ export const PacingCard: React.FC<PacingCardProps> = ({
         <div className="flex items-center justify-between pb-1 border-b border-slate-100">
           <div>
             <h3 className="font-bold text-sm text-slate-900">
-              Progres Kurikulum Tahfidz (30 Juz / 3 Tahun)
+              Progres Kurikulum Tahfidz (30 Juz)
             </h3>
             <p className="text-[11px] text-slate-500">
               Kalkulasi baris kumulatif menuju target khatam

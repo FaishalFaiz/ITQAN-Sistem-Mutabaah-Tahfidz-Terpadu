@@ -116,7 +116,7 @@ export function App() {
     if (p.startsWith('/laporan')) return 'Laporan & Ringkasan';
     if (p.startsWith('/pengaturan')) return 'Pengaturan';
     if (p.startsWith('/ujian')) return "Ujian Tasmi'";
-    if (p.startsWith('/pacing')) return 'Target Pacing 3 Tahun';
+    if (p.startsWith('/pacing')) return 'Target Hafalan Santri';
     return 'ITQAN';
   };
 
@@ -192,12 +192,12 @@ export function App() {
 
               {/* Sisi Kanan: Laporan Harian WA Button + Tanggal Real & Profil */}
               <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
-                {/* Tombol Akses Cepat Laporan Harian Wali (Fonnte) */}
+                {/* Tombol Akses Cepat Laporan Harian Wali */}
                 <button
                   type="button"
                   onClick={() => setIsDailyReportModalOpen(true)}
                   className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer"
-                  title="Kirim 1 Laporan Harian per Santri ke Wali via Fonnte"
+                  title="Kirim Laporan Harian ke Wali Santri"
                 >
                   <Send className="w-3.5 h-3.5 text-emerald-600" />
                   <span className="hidden sm:inline">Laporan Harian WA</span>

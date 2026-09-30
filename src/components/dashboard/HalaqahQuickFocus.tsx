@@ -161,7 +161,7 @@ export const HalaqahQuickFocus: React.FC<HalaqahQuickFocusProps> = ({
               </div>
               <div className="flex justify-between">
                 <span>Kesesuaian Target:</span>
-                <b className="text-emerald-700">On-Track Kurikulum 3 Tahun</b>
+                <b className="text-emerald-700">On-Track Sesuai Target</b>
               </div>
               <div className="flex justify-between">
                 <span>Santri Selesai:</span>

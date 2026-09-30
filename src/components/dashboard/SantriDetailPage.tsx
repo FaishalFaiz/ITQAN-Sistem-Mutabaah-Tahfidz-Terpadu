@@ -815,7 +815,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                     className="text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Laporan Harian (Fonnte)'}</span>
+                    <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Laporan Harian WA'}</span>
                   </Button>
                 )}
               </div>

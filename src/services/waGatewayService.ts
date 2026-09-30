@@ -314,9 +314,9 @@ export const waGatewayService = {
     const remainingLines = Math.max(0, (santri.totalLinesTarget || 9060) - (santri.totalLinesMemorized || 0));
     let statusPacing = '';
     if (linesToday >= santri.dailyTargetLines) {
-      statusPacing = '✅ On Track (Sesuai timeline akselerasi 3 tahun)';
+      statusPacing = '✅ On Track (Sesuai Target Harian)';
     } else {
-      statusPacing = '⚠️ Pacing Menurun (Disarankan menambah muroja\'ah mandiri)';
+      statusPacing = '⚠️ Di Bawah Target (Disarankan menambah muroja\'ah mandiri)';
     }
 
     // Catatan Musyrif

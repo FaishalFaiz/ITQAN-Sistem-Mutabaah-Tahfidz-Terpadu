@@ -91,7 +91,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
       if (result.success) {
         setStatusMessage({
           type: 'success',
-          text: `Alhamdulillah! Laporan harian untuk wali ${santri.name} berhasil terkirim via Fonnte.`,
+          text: `Alhamdulillah! Laporan harian untuk wali ${santri.name} berhasil terkirim ke WhatsApp.`,
         });
         onDataRefresh?.();
       } else if (result.alreadySentToday) {
@@ -179,7 +179,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                   <Smartphone className="w-4 h-4" />
                 </div>
                 <DialogTitle className="text-xl font-bold text-slate-900">
-                  Laporan Harian Wali Santri (Fonnte)
+                  Laporan Harian Wali Santri
                 </DialogTitle>
               </div>
               <DialogDescription className="text-xs text-slate-500 mt-1 flex items-center gap-2">
@@ -191,11 +191,11 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
               </DialogDescription>
             </div>
 
-            {/* Fonnte Endpoint Indicator */}
+            {/* WA Gateway Indicator */}
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Fonnte Gateway
+                WhatsApp Gateway
               </span>
               {config.limitOneMessagePerDay && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200" title="Aturan 1 pesan per hari aktif">
@@ -249,7 +249,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
         {batchProgress && (
           <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
             <div className="flex items-center justify-between text-xs font-semibold text-blue-900 mb-1">
-              <span>Mengirim via Fonnte ({batchProgress.current}/{batchProgress.total}): {batchProgress.currentName}...</span>
+              <span>Mengirim pesan ({batchProgress.current}/{batchProgress.total}): {batchProgress.currentName}...</span>
               <span>{Math.round((batchProgress.current / batchProgress.total) * 100)}%</span>
             </div>
             <div className="w-full bg-blue-200 h-2 rounded-full overflow-hidden">
@@ -437,7 +437,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                         ) : (
                           <Send className="w-3.5 h-3.5 mr-1" />
                         )}
-                        Kirim (Fonnte)
+                        Kirim WA
                       </Button>
                     )}
 

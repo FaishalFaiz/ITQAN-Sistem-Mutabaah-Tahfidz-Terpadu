@@ -328,7 +328,7 @@ Berikut ringkasan mutaba'ah & kemajuan ananda hari *{tanggal}*:
 📈 *AKUMULASI HAFALAN & KURIKULUM:*
 • Total Hafalan Saat Ini: *{totalHafalan}*
 • Sisa Target 30 Juz: *{sisaTarget} Baris*
-• Kepatuhan Target 3 Tahun: *{statusPacing}*
+• Status Capaian Target: *{statusPacing}*
 
 {catatanMusyrif}
 

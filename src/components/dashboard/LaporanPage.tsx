@@ -698,7 +698,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                   />
                 </div>
                 <span className="text-[10px] text-slate-500 block leading-tight">
-                  10 santri tepat waktu menuju target 30 juz 3 tahun, 2 santri dalam monitoring defisit.
+                  10 santri tepat waktu menuju target 30 juz, 2 santri dalam monitoring defisit.
                 </span>
               </div>
             </div>
@@ -1382,7 +1382,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                   </div>
                   <div className="flex">
                     <span className="w-24 text-slate-500">Target Program</span>
-                    <span className="text-slate-800 font-medium">: 30 Juz (3 Tahun)</span>
+                    <span className="text-slate-800 font-medium">: 30 Juz</span>
                   </div>
                   <div className="flex">
                     <span className="w-24 text-slate-500">Status Pacing</span>
