@@ -13,6 +13,8 @@ export interface Santri {
   lastSurah: string;
   avatarInitials: string;
   halaqahName?: string;
+  lastDailyReportSentDate?: string; // e.g. "2026-09-30"
+  lastDailyReportSentTime?: string; // e.g. "17:30 WIB"
 }
 
 export interface SetoranRecord {
@@ -45,6 +47,8 @@ export interface WAGatewayConfig {
   apiKey: string;
   senderNumber: string;
   autoSendOnSetoran: boolean;
+  limitOneMessagePerDay: boolean;
+  templateDailyProgress: string;
   templateZiyadah: string;
   templateMurojaah: string;
   templateHalaqahDigest: string;
@@ -55,7 +59,7 @@ export interface WALog {
   timestamp: string;
   recipientName: string;
   recipientPhone: string;
-  messageType: 'setoran' | 'broadcast' | 'test';
+  messageType: 'setoran' | 'broadcast' | 'test' | 'daily_report';
   status: 'success' | 'failed' | 'fallback_opened';
   statusText: string;
   snippet: string;

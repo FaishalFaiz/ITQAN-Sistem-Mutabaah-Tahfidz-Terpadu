@@ -17,6 +17,13 @@ const KEYS = {
 // Event for cross-component reactive updates
 export const EVENT_DATA_CHANGED = 'itqan_store_changed';
 
+export function getTodayDateKey(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function emitChange(detail?: string) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(EVENT_DATA_CHANGED, { detail }));
@@ -69,6 +76,33 @@ export const storageService = {
     return updated;
   },
 
+  markDailyReportSent(santriId: string): Santri | null {
+    const list = this.getSantriList();
+    const today = getTodayDateKey();
+    const timeFormatted = new Intl.DateTimeFormat('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date()) + ' WIB';
+
+    let updatedSantri: Santri | null = null;
+    const updatedList = list.map((s) => {
+      if (s.id === santriId) {
+        updatedSantri = {
+          ...s,
+          lastDailyReportSentDate: today,
+          lastDailyReportSentTime: timeFormatted,
+        };
+        return updatedSantri;
+      }
+      return s;
+    });
+
+    if (updatedSantri) {
+      this.saveSantriList(updatedList);
+    }
+    return updatedSantri;
+  },
+
   // ================= SETORAN =================
   getSetoranRecords(): SetoranRecord[] {
     try {
@@ -86,6 +120,22 @@ export const storageService = {
   getSetoranBySantriId(santriId: string): SetoranRecord[] {
     const records = this.getSetoranRecords();
     return records.filter((r) => r.santriId === santriId);
+  },
+
+  getTodaySetoranForSantri(santriId: string): SetoranRecord[] {
+    const today = getTodayDateKey();
+    const records = this.getSetoranRecords();
+    return records.filter(
+      (r) => r.santriId === santriId && (r.createdAt?.startsWith(today) || r.formattedDate?.includes('30 Sep 2026'))
+    );
+  },
+
+  getAllTodaySetoran(): SetoranRecord[] {
+    const today = getTodayDateKey();
+    const records = this.getSetoranRecords();
+    return records.filter(
+      (r) => (r.createdAt?.startsWith(today) || r.formattedDate?.includes('30 Sep 2026'))
+    );
   },
 
   addSetoranRecord(

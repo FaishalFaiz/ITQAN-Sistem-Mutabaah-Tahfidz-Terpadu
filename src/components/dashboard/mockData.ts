@@ -307,7 +307,34 @@ export const DEFAULT_WA_CONFIG: WAGatewayConfig = {
   endpointUrl: 'https://api.fonnte.com/send',
   apiKey: '',
   senderNumber: '6281234567890',
-  autoSendOnSetoran: true,
+  autoSendOnSetoran: false, // Default false agar fokus ke 1 pesan harian per wali
+  limitOneMessagePerDay: true, // Safeguard 1 pesan harian per wali
+  templateDailyProgress: `*LAPORAN HARIAN MUTABA'AH TAHFIDZ ITQAN*
+_Pesantren Tahfidz Terpadu_
+
+Assalamu'alaikum Wr. Wb.
+Yth. Wali dari *{nama}* (NIS: {nis}),
+
+Berikut ringkasan mutaba'ah & kemajuan ananda hari *{tanggal}*:
+
+📊 *TARGET HARI INI:*
+• Target Harian: *{targetHarian} Baris*
+• Capaian Setoran: *{tercapaiHariIni} Baris* (~{halamanHariIni} Halaman)
+• Status Capaian: *{statusHarian}*
+
+📖 *RINCIAN SESI HARI INI:*
+{rincianSesi}
+
+📈 *AKUMULASI HAFALAN & KURIKULUM:*
+• Total Hafalan Saat Ini: *{totalHafalan}*
+• Sisa Target 30 Juz: *{sisaTarget} Baris*
+• Kepatuhan Target 3 Tahun: *{statusPacing}*
+
+{catatanMusyrif}
+
+Jazakumullahu khairan atas doa dan bimbingan Ayah/Bunda untuk ananda di rumah.
+_Wassalamu'alaikum Wr. Wb._
+_Musyrif: {musyrif} ({halaqoh})_`,
   templateZiyadah: `*LAPORAN SETORAN ZIYADAH - ITQAN*
 _Pesantren Tahfidz Terpadu_
 

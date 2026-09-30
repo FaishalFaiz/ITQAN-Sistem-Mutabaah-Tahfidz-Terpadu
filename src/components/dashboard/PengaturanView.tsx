@@ -32,7 +32,7 @@ export const PengaturanView: React.FC = () => {
   const [settingsSaved, setSettingsSaved] = useState(false);
 
   // Template active tab
-  const [templateTab, setTemplateTab] = useState<'ziyadah' | 'murojaah' | 'digest'>('ziyadah');
+  const [templateTab, setTemplateTab] = useState<'daily' | 'ziyadah' | 'murojaah'>('daily');
 
   // Logs state
   const [logs, setLogs] = useState<WALog[]>(storageService.getWALogs());
@@ -216,19 +216,40 @@ export const PengaturanView: React.FC = () => {
             </div>
           </div>
 
-          {/* Sender Number & Auto Send Toggle */}
+          {/* Sender Number */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-900 mb-1">
+              Nomor Pengirim / Device ID (opsional)
+            </label>
+            <Input
+              type="text"
+              value={waConfig.senderNumber}
+              onChange={(e) => setWaConfig({ ...waConfig, senderNumber: e.target.value })}
+              placeholder="Contoh: 6281234567890"
+              className="text-xs h-9 bg-white max-w-sm"
+            />
+          </div>
+
+          {/* Toggles: Auto-send per setoran & 1 Pesan per Hari per Wali */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div>
-              <label className="block text-xs font-semibold text-slate-900 mb-1">
-                Nomor Pengirim / Device ID (opsional)
+            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
+              <div>
+                <span className="text-xs font-bold text-slate-900 block leading-tight">
+                  Batasi 1 Pesan / Hari Per Wali
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Konsolidasikan seluruh setoran harian (Ziyadah + Muroja'ah) dalam 1 pesan rekapitulasi harian.
+                </span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
+                <input
+                  type="checkbox"
+                  checked={waConfig.limitOneMessagePerDay}
+                  onChange={(e) => setWaConfig({ ...waConfig, limitOneMessagePerDay: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0070BA]"></div>
               </label>
-              <Input
-                type="text"
-                value={waConfig.senderNumber}
-                onChange={(e) => setWaConfig({ ...waConfig, senderNumber: e.target.value })}
-                placeholder="Contoh: 6281234567890"
-                className="text-xs h-9 bg-white"
-              />
             </div>
 
             <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
@@ -237,10 +258,10 @@ export const PengaturanView: React.FC = () => {
                   Auto-Send Saat Input Setoran
                 </span>
                 <span className="text-[11px] text-slate-500">
-                  Kirim notifikasi otomatis ke wali begitu setoran divalidasi
+                  Kirim notifikasi instan langsung begitu setoran baru dicatat musyrif.
                 </span>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
                 <input
                   type="checkbox"
                   checked={waConfig.autoSendOnSetoran}
@@ -330,11 +351,22 @@ export const PengaturanView: React.FC = () => {
         </div>
 
         {/* Tab Template */}
-        <div className="flex items-center gap-2 border-b border-slate-200">
+        <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => setTemplateTab('daily')}
+            className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all whitespace-nowrap ${
+              templateTab === 'daily'
+                ? 'border-[#0070BA] text-[#0070BA]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Template Laporan Harian (1 Pesan / Hari)
+          </button>
           <button
             type="button"
             onClick={() => setTemplateTab('ziyadah')}
-            className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all ${
+            className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all whitespace-nowrap ${
               templateTab === 'ziyadah'
                 ? 'border-[#0070BA] text-[#0070BA]'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -345,7 +377,7 @@ export const PengaturanView: React.FC = () => {
           <button
             type="button"
             onClick={() => setTemplateTab('murojaah')}
-            className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all ${
+            className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all whitespace-nowrap ${
               templateTab === 'murojaah'
                 ? 'border-[#0070BA] text-[#0070BA]'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -357,14 +389,23 @@ export const PengaturanView: React.FC = () => {
 
         {/* Editor Template */}
         <div>
-          {templateTab === 'ziyadah' ? (
+          {templateTab === 'daily' && (
+            <textarea
+              rows={11}
+              value={waConfig.templateDailyProgress}
+              onChange={(e) => setWaConfig({ ...waConfig, templateDailyProgress: e.target.value })}
+              className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#0070BA] focus:outline-none"
+            />
+          )}
+          {templateTab === 'ziyadah' && (
             <textarea
               rows={9}
               value={waConfig.templateZiyadah}
               onChange={(e) => setWaConfig({ ...waConfig, templateZiyadah: e.target.value })}
               className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#0070BA] focus:outline-none"
             />
-          ) : (
+          )}
+          {templateTab === 'murojaah' && (
             <textarea
               rows={9}
               value={waConfig.templateMurojaah}
@@ -376,22 +417,42 @@ export const PengaturanView: React.FC = () => {
           {/* Variabel Token Legend */}
           <div className="mt-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-600 space-y-1">
             <span className="font-bold text-slate-800 block">Daftar Tag Variabel Otomatis:</span>
-            <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{nama}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{nis}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{wali}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{surah}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{juz}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{halaman}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{barisAwal}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{barisAkhir}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{baris}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{nilai}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{capaianJuz}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{waktu}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{musyrif}'}</span>
-              <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{catatan}'}</span>
-            </div>
+            {templateTab === 'daily' ? (
+              <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{nama}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{nis}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{wali}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{tanggal}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{targetHarian}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{tercapaiHariIni}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{halamanHariIni}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{statusHarian}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{rincianSesi}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{totalHafalan}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{sisaTarget}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{statusPacing}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{catatanMusyrif}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{musyrif}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{halaqoh}'}</span>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{nama}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{nis}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{wali}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{surah}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{juz}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{halaman}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{barisAwal}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{barisAkhir}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{baris}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{nilai}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{capaianJuz}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{waktu}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{musyrif}'}</span>
+                <span className="bg-white border px-1.5 py-0.5 rounded text-[#0070BA]">{'{catatan}'}</span>
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import type { Santri, SetoranRecord } from '../components/dashboard/types';
-import { storageService } from './storageService';
+import { storageService, getTodayDateKey } from './storageService';
 
 export interface SendResult {
   success: boolean;
@@ -8,6 +8,7 @@ export interface SendResult {
   error?: string;
   fallbackUrl?: string;
   notConfigured?: boolean;
+  alreadySentToday?: boolean;
 }
 
 export const waGatewayService = {
@@ -117,7 +118,7 @@ export const waGatewayService = {
     recipientPhone: string,
     recipientName: string,
     message: string,
-    messageType: 'setoran' | 'broadcast' | 'test' = 'setoran'
+    messageType: 'setoran' | 'broadcast' | 'test' | 'daily_report' = 'setoran'
   ): Promise<SendResult> {
     const config = storageService.getWAGatewayConfig();
     const cleanPhone = this.normalizePhoneNumber(recipientPhone);
@@ -254,5 +255,195 @@ export const waGatewayService = {
       `_Pesan otomatis verifikasi sistem._`;
 
     return this.sendMessage(targetPhone, 'Musyrif (Test)', testMessage, 'test');
+  },
+
+  /**
+   * Menyusun pesan Laporan Harian (Daily Digest) untuk dikirim 1x per hari ke wali santri
+   */
+  buildDailyProgressMessage(santri: Santri): string {
+    const config = storageService.getWAGatewayConfig();
+    const settings = storageService.getHalaqahSettings();
+    const todayRecords = storageService.getTodaySetoranForSantri(santri.id);
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+
+    const linesToday = todayRecords.reduce((acc, r) => acc + r.totalLines, 0) || santri.linesCompletedToday;
+    const estPagesToday = (linesToday / 15).toFixed(1);
+
+    // Format rincian sesi harian
+    let rincianSesi = '';
+    if (todayRecords.length === 0) {
+      rincianSesi = `_Belum ada riwayat setoran masuk hari ini._`;
+    } else {
+      rincianSesi = todayRecords
+        .map((r, idx) => {
+          const typeTag = r.type === 'ziyadah' ? 'Ziyadah (Baru)' : "Muroja'ah (Ulang)";
+          const gradeStr =
+            r.grade === 'mumtaz'
+              ? 'Mumtaz ⭐'
+              : r.grade === 'jayyid'
+              ? 'Jayyid'
+              : "I'adah ⚠️";
+          const pageRange = r.pageStart === r.pageEnd ? `Hal. ${r.pageStart}` : `Hal. ${r.pageStart}–${r.pageEnd}`;
+          let entry = `${idx + 1}. *[${typeTag}]* ${r.surahName} (${pageRange}, ${r.totalLines} baris) • *${gradeStr}*`;
+          if (r.notes && r.notes.trim()) {
+            entry += `\n   ↳ _Catatan: ${r.notes}_`;
+          }
+          return entry;
+        })
+        .join('\n');
+    }
+
+    // Status harian
+    let statusHarian = '';
+    if (linesToday >= santri.dailyTargetLines) {
+      statusHarian = '✅ TERCAPAI (Target Terpenuhi)';
+    } else if (linesToday > 0) {
+      statusHarian = `⚠️ BELUM TERCAPAI (Kurang ${santri.dailyTargetLines - linesToday} Baris)`;
+    } else {
+      statusHarian = '⚪ BELUM SETOR HARI INI';
+    }
+
+    // Status Pacing kurikulum 30 Juz
+    const remainingLines = Math.max(0, (santri.totalLinesTarget || 9060) - (santri.totalLinesMemorized || 0));
+    let statusPacing = '';
+    if (linesToday >= santri.dailyTargetLines) {
+      statusPacing = '✅ On Track (Sesuai timeline akselerasi 3 tahun)';
+    } else {
+      statusPacing = '⚠️ Pacing Menurun (Disarankan menambah muroja\'ah mandiri)';
+    }
+
+    // Catatan Musyrif
+    let catatanMusyrif = '';
+    const hasIadah = todayRecords.some((r) => r.grade === 'iadah');
+    if (hasIadah) {
+      catatanMusyrif = `⚠️ *Pesan Musyrif untuk Wali:*\nAnanda memiliki ayat yang perlu diulang (i'adah) hari ini. Mohon berkenan mendampingi muroja'ah santai di rumah selama 15-20 menit ba'da maghrib agar besok lebih lancar.`;
+    } else if (todayRecords.length > 0 && linesToday >= santri.dailyTargetLines) {
+      catatanMusyrif = `✨ *Catatan Musyrif:*\nAlhamdulillah ananda sangat fokus dan bersemangat pada sesi mutaba'ah hari ini. Terus berikan apresiasi kepada ananda di rumah.`;
+    }
+
+    return this.formatMessage(config.templateDailyProgress, {
+      nama: santri.name,
+      nis: santri.nis,
+      wali: santri.parentName || 'Ayah/Bunda',
+      tanggal: dateStr,
+      targetHarian: santri.dailyTargetLines,
+      tercapaiHariIni: linesToday,
+      halamanHariIni: estPagesToday,
+      statusHarian,
+      rincianSesi,
+      totalHafalan: `${santri.juzAchieved} (${santri.totalLinesMemorized || 0} Baris)`,
+      sisaTarget: remainingLines,
+      statusPacing,
+      catatanMusyrif,
+      musyrif: settings.musyrifName || 'Ust. Abdullah',
+      halaqoh: santri.halaqahName || settings.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
+    });
+  },
+
+  /**
+   * Kirim 1 Laporan Harian untuk 1 santri ke nomor wali via WhatsApp Gateway
+   * Menegakkan aturan 1 pesan per hari per wali santri jika diaktifkan.
+   */
+  async sendDailyReport(santri: Santri, force = false): Promise<SendResult> {
+    const config = storageService.getWAGatewayConfig();
+    const today = getTodayDateKey();
+
+    if (!santri.parentPhone || !santri.parentPhone.trim()) {
+      return {
+        success: false,
+        message: `Nomor WhatsApp Wali untuk ${santri.name} belum terdaftar.`,
+      };
+    }
+
+    // Cek pembatasan 1 pesan per hari
+    if (config.limitOneMessagePerDay && !force && santri.lastDailyReportSentDate === today) {
+      return {
+        success: false,
+        alreadySentToday: true,
+        message: `Laporan harian untuk wali ${santri.name} SUDAH terkirim hari ini (${santri.lastDailyReportSentTime || 'Hari ini'}). Gunakan "Kirim Ulang" jika memang ingin mengirim ulang.`,
+      };
+    }
+
+    const message = this.buildDailyProgressMessage(santri);
+    const recipientName = santri.parentName ? `${santri.parentName} (Wali ${santri.name})` : `Wali ${santri.name}`;
+    const result = await this.sendMessage(santri.parentPhone, recipientName, message, 'daily_report');
+
+    // Jika sukses terkirim atau fallback dibuka, tandai sudah terkirim hari ini
+    if (result.success || result.fallbackUrl) {
+      storageService.markDailyReportSent(santri.id);
+    }
+
+    return result;
+  },
+
+  /**
+   * Kirim Laporan Harian secara Batch ke seluruh santri halaqah via Fonnte Gateway
+   * Menggunakan jeda 1.5 detik per pesan agar ramah rate-limit WhatsApp & Fonnte.
+   */
+  async sendBatchDailyReports(
+    santriList: Santri[],
+    options?: {
+      forceResend?: boolean;
+      onProgress?: (index: number, total: number, santri: Santri, result: SendResult) => void;
+    }
+  ): Promise<{ total: number; sent: number; skippedAlreadySent: number; failed: number }> {
+    const today = getTodayDateKey();
+    const config = storageService.getWAGatewayConfig();
+    let sentCount = 0;
+    let skippedCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < santriList.length; i++) {
+      const santri = santriList[i];
+
+      // Jika dibatasi 1 pesan per hari dan sudah terkirim hari ini (dan tidak dipaksa kirim ulang)
+      if (config.limitOneMessagePerDay && !options?.forceResend && santri.lastDailyReportSentDate === today) {
+        skippedCount++;
+        options?.onProgress?.(i + 1, santriList.length, santri, {
+          success: false,
+          alreadySentToday: true,
+          message: 'Dilewati: Sudah terkirim hari ini.',
+        });
+        continue;
+      }
+
+      // Jika nomor HP wali kosong
+      if (!santri.parentPhone || !santri.parentPhone.trim()) {
+        failedCount++;
+        options?.onProgress?.(i + 1, santriList.length, santri, {
+          success: false,
+          message: 'Nomor WhatsApp wali tidak tersedia.',
+        });
+        continue;
+      }
+
+      const result = await this.sendDailyReport(santri, options?.forceResend ?? false);
+      if (result.success) {
+        sentCount++;
+      } else {
+        failedCount++;
+      }
+
+      options?.onProgress?.(i + 1, santriList.length, santri, result);
+
+      // Delay 1.5s per request untuk keamanan antrian gateway Fonnte
+      if (i < santriList.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    }
+
+    return {
+      total: santriList.length,
+      sent: sentCount,
+      skippedAlreadySent: skippedCount,
+      failed: failedCount,
+    };
   },
 };

@@ -21,7 +21,7 @@ import type { Santri, SetoranRecord } from './types';
 import { PacingCard } from '../visualization/PacingCard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
+import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from '../../services/storageService';
 import { waGatewayService, type SendResult } from '../../services/waGatewayService';
 
 interface SantriDetailPageProps {
@@ -83,19 +83,13 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     return () => ctx.revert();
   }, [activeTab]);
 
-  // WhatsApp Digest Generator
+  const today = getTodayDateKey();
+  const isSentToday = santri.lastDailyReportSentDate === today;
+
+  // WhatsApp Digest Generator (Laporan Harian Mutaba'ah)
   const waDigestMessage = useMemo(() => {
-    return (
-      `*LAPORAN MUTABA'AH TAHFIDZ SANTRI ITQAN*\n\n` +
-      `Nama Santri: *${santri.name}* (NIS: ${santri.nis})\n` +
-      `Wali Santri: *${santri.parentName || 'Ayah/Bunda'}*\n` +
-      `Kelompok: ${santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq'}\n` +
-      `Total Capaian: *${santri.juzAchieved}* (${totalLines} baris / ~${pagesCompleted} Halaman)\n` +
-      `Target Hari Ini: ${santri.dailyTargetLines} Baris | Tercapai: ${santri.linesCompletedToday} Baris (${santri.status.toUpperCase()})\n` +
-      `Surah Terakhir: *${santri.lastSurah}*\n\n` +
-      `_Pesan otomatis Sistem Mutaba'ah ITQAN - Pesantren Tahfidz Terpadu_`
-    );
-  }, [santri, totalLines, pagesCompleted]);
+    return waGatewayService.buildDailyProgressMessage(santri);
+  }, [santri, records]);
 
   const handleCopyWADigest = () => {
     navigator.clipboard.writeText(waDigestMessage);
@@ -103,24 +97,23 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     setTimeout(() => setCopyFeedback(false), 2500);
   };
 
-  const handleSendViaGateway = async () => {
+  const handleSendViaGateway = async (force = false) => {
     if (!santri.parentPhone) return;
     setIsSendingGateway(true);
     setWaSendFeedback(null);
 
-    const res: SendResult = await waGatewayService.sendMessage(
-      santri.parentPhone,
-      santri.parentName || `Wali ${santri.name}`,
-      waDigestMessage,
-      'broadcast'
-    );
+    const res: SendResult = await waGatewayService.sendDailyReport(santri, force);
 
     setIsSendingGateway(false);
     if (res.success) {
-      setWaSendFeedback('Berhasil terkirim via WhatsApp Gateway!');
+      setWaSendFeedback('Alhamdulillah! Laporan harian berhasil terkirim ke wali santri via WhatsApp Gateway.');
+    } else if (res.alreadySentToday) {
+      setWaSendFeedback(`Laporan hari ini sudah terkirim (${santri.lastDailyReportSentTime || 'Hari ini'}). Anda dapat memilih Kirim Ulang bila diperlukan.`);
     } else if (res.fallbackUrl) {
       setWaSendFeedback(res.notConfigured ? 'Gateway belum diatur. Mengalihkan ke Direct WA...' : 'Koneksi gateway gagal. Mengalihkan ke Direct WA...');
       window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      setWaSendFeedback(res.message || 'Gagal mengirim via WhatsApp Gateway.');
     }
   };
 
@@ -755,6 +748,16 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
             />
 
+            {/* Info Status 1 Pesan / Hari */}
+            {isSentToday && (
+              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
+                <div className="flex items-center gap-1.5 font-medium">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Laporan hari ini sudah terkirim ke wali pada <strong>{santri.lastDailyReportSentTime || 'Hari ini'}</strong>.</span>
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
               <button
                 type="button"
@@ -770,22 +773,35 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                     href={waGatewayService.getDirectWALink(santri.parentPhone, waDigestMessage)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-semibold"
                   >
-                    <span>Direct WA (wa.me)</span>
+                    <span>Direct WA</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
 
-                <Button
-                  size="sm"
-                  disabled={isSendingGateway || !santri.parentPhone}
-                  onClick={handleSendViaGateway}
-                  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isSendingGateway ? 'Mengirim...' : 'Kirim via Gateway'}</span>
-                </Button>
+                {isSentToday ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isSendingGateway || !santri.parentPhone}
+                    onClick={() => handleSendViaGateway(true)}
+                    className="text-xs border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB] flex items-center gap-1.5"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Ulang'}</span>
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    disabled={isSendingGateway || !santri.parentPhone}
+                    onClick={() => handleSendViaGateway(false)}
+                    className="text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Laporan Harian (Fonnte)'}</span>
+                  </Button>
+                )}
               </div>
             </div>
           </div>

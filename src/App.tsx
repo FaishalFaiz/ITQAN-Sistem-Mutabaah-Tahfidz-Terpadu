@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Menu, Calendar } from 'lucide-react';
-import { storageService, EVENT_DATA_CHANGED } from './services/storageService';
+import { Menu, Calendar, Send } from 'lucide-react';
+import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
 import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
 import { TrendChart } from './components/dashboard/TrendChart';
@@ -9,6 +9,7 @@ import { SantriListSection } from './components/dashboard/SantriListSection';
 import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
 import { SantriModal } from './components/dashboard/SantriModal';
 import { AddSantriModal } from './components/dashboard/AddSantriModal';
+import { DailyReportModal } from './components/dashboard/DailyReportModal';
 import { SantriDetailPage } from './components/dashboard/SantriDetailPage';
 import { HalaqahQuickFocus } from './components/dashboard/HalaqahQuickFocus';
 import { OtherView } from './components/dashboard/OtherViews';
@@ -62,6 +63,9 @@ export function App() {
 
   // Modal state for Add Santri
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Modal state for Daily Report to Parents via Fonnte
+  const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
 
   // Filter state for Santri cards
   const [activeFilter, setActiveFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
@@ -120,6 +124,11 @@ export function App() {
   const tercapaiCount = santriList.filter((s) => s.status === 'tercapai').length;
   const tidakTercapaiCount = santriList.filter((s) => s.status === 'tidak_tercapai').length;
   const belumSetorCount = santriList.filter((s) => s.status === 'belum_setor').length;
+
+  const todayKey = getTodayDateKey();
+  const pendingDailyReportsCount = santriList.filter(
+    (s) => s.lastDailyReportSentDate !== todayKey && s.parentPhone && s.parentPhone.trim().length > 5
+  ).length;
 
   // Auth routes (render standalone full page)
   if (location.pathname === '/login') {
@@ -181,8 +190,25 @@ export function App() {
                 </div>
               </div>
 
-              {/* Sisi Kanan: Tanggal Real & Profil */}
+              {/* Sisi Kanan: Laporan Harian WA Button + Tanggal Real & Profil */}
               <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
+                {/* Tombol Akses Cepat Laporan Harian Wali (Fonnte) */}
+                <button
+                  type="button"
+                  onClick={() => setIsDailyReportModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer"
+                  title="Kirim 1 Laporan Harian per Santri ke Wali via Fonnte"
+                >
+                  <Send className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="hidden sm:inline">Laporan Harian WA</span>
+                  <span className="sm:hidden">Laporan WA</span>
+                  {pendingDailyReportsCount > 0 && (
+                    <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-600 text-white font-bold leading-none">
+                      {pendingDailyReportsCount}
+                    </span>
+                  )}
+                </button>
+
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
                   <Calendar className="w-3.5 h-3.5 text-slate-500" />
                   <span className="font-semibold text-slate-800">
@@ -379,6 +405,14 @@ export function App() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAddSantri={handleAddSantri}
+      />
+
+      {/* Daily Report to Parents Modal (1 message per day via Fonnte) */}
+      <DailyReportModal
+        isOpen={isDailyReportModalOpen}
+        onClose={() => setIsDailyReportModalOpen(false)}
+        santriList={santriList}
+        onDataRefresh={() => setSantriList(storageService.getSantriList())}
       />
     </div>
   );
