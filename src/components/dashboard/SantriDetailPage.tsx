@@ -13,8 +13,9 @@ import {
   Send,
   Check,
   ExternalLink,
-  X,
-  MessageSquare
+  MessageSquare,
+  Edit2,
+  X
 } from 'lucide-react';
 import gsap from 'gsap';
 import type { Santri, SetoranRecord } from './types';
@@ -23,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from '../../services/storageService';
 import { waGatewayService, type SendResult } from '../../services/waGatewayService';
+import { EditWaliModal } from './EditWaliModal';
 
 interface SantriDetailPageProps {
   santri: Santri;
@@ -48,6 +50,14 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   const [isSendingGateway, setIsSendingGateway] = useState(false);
   const [waSendFeedback, setWaSendFeedback] = useState<string | null>(null);
 
+  // Edit Wali Contact Modal State
+  const [currentSantri, setCurrentSantri] = useState<Santri>(santri);
+  const [isEditWaliModalOpen, setIsEditWaliModalOpen] = useState(false);
+
+  useEffect(() => {
+    setCurrentSantri(santri);
+  }, [santri]);
+
   const loadRecords = useCallback(() => {
     setRecords(storageService.getSetoranBySantriId(santri.id));
   }, [santri.id]);
@@ -55,11 +65,15 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   useEffect(() => {
     const handleDataChanged = () => {
       loadRecords();
+      const updated = storageService.getSantriById(santri.id);
+      if (updated) {
+        setCurrentSantri(updated);
+      }
     };
 
     window.addEventListener(EVENT_DATA_CHANGED, handleDataChanged);
     return () => window.removeEventListener(EVENT_DATA_CHANGED, handleDataChanged);
-  }, [loadRecords]);
+  }, [loadRecords, santri.id]);
 
   // Metrik kalkulasi
   const totalLines = santri.totalLinesMemorized || 1500;
@@ -84,12 +98,12 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   }, [activeTab]);
 
   const today = getTodayDateKey();
-  const isSentToday = santri.lastDailyReportSentDate === today;
+  const isSentToday = currentSantri.lastDailyReportSentDate === today;
 
   // WhatsApp Digest Generator (Laporan Harian Mutaba'ah)
   const waDigestMessage = useMemo(() => {
-    return waGatewayService.buildDailyProgressMessage(santri);
-  }, [santri, records]);
+    return waGatewayService.buildDailyProgressMessage(currentSantri);
+  }, [currentSantri, records]);
 
   const handleCopyWADigest = () => {
     navigator.clipboard.writeText(waDigestMessage);
@@ -98,17 +112,17 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   };
 
   const handleSendViaGateway = async (force = false) => {
-    if (!santri.parentPhone) return;
+    if (!currentSantri.parentPhone) return;
     setIsSendingGateway(true);
     setWaSendFeedback(null);
 
-    const res: SendResult = await waGatewayService.sendDailyReport(santri, force);
+    const res: SendResult = await waGatewayService.sendDailyReport(currentSantri, force);
 
     setIsSendingGateway(false);
     if (res.success) {
       setWaSendFeedback('Alhamdulillah! Laporan harian berhasil terkirim ke wali santri via WhatsApp Gateway.');
     } else if (res.alreadySentToday) {
-      setWaSendFeedback(`Laporan hari ini sudah terkirim (${santri.lastDailyReportSentTime || 'Hari ini'}). Anda dapat memilih Kirim Ulang bila diperlukan.`);
+      setWaSendFeedback(`Laporan hari ini sudah terkirim (${currentSantri.lastDailyReportSentTime || 'Hari ini'}). Anda dapat memilih Kirim Ulang bila diperlukan.`);
     } else if (res.fallbackUrl) {
       setWaSendFeedback(res.notConfigured ? 'Gateway belum diatur. Mengalihkan ke Direct WA...' : 'Koneksi gateway gagal. Mengalihkan ke Direct WA...');
       window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer');
@@ -433,31 +447,38 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                   <MessageSquare className="w-4 h-4 text-emerald-600" />
                   <span>Kontak Wali Santri</span>
                 </div>
-                <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  WA Ready
-                </span>
+                {/* Tombol Edit Kontak Wali Santri */}
+                <button
+                  type="button"
+                  onClick={() => setIsEditWaliModalOpen(true)}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#0070BA] hover:text-[#005C9E] transition-colors"
+                  title="Edit Nama & No WhatsApp Wali"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Edit Kontak</span>
+                </button>
               </div>
 
               <div className="space-y-2 text-xs">
                 <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
                   <span className="text-[11px] text-slate-400 block">Nama Wali / Orang Tua:</span>
                   <span className="font-bold text-slate-900 text-sm mt-0.5 block">
-                    {santri.parentName || 'Belum diisi'}
+                    {currentSantri.parentName || 'Belum diisi'}
                   </span>
                 </div>
 
                 <div className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg">
                   <span className="text-[11px] text-slate-400 block">Nomor WhatsApp:</span>
                   <span className="font-mono font-bold text-slate-900 mt-0.5 block">
-                    {santri.parentPhone || 'Nomor WhatsApp belum terdaftar'}
+                    {currentSantri.parentPhone || 'Nomor WhatsApp belum terdaftar'}
                   </span>
                 </div>
               </div>
 
-              {santri.parentPhone && (
+              {currentSantri.parentPhone && (
                 <div className="pt-1 flex flex-col gap-2">
                   <a
-                    href={waGatewayService.getDirectWALink(santri.parentPhone, `Assalamu'alaikum Warahmatullah Bpk/Ibu ${santri.parentName || ''}...`)}
+                    href={waGatewayService.getDirectWALink(currentSantri.parentPhone, `Assalamu'alaikum Warahmatullah Bpk/Ibu ${currentSantri.parentName || ''}...`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition-colors"
@@ -807,6 +828,14 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           </div>
         </div>
       )}
+
+      {/* 8. MODAL: Edit Kontak Wali Santri */}
+      <EditWaliModal
+        isOpen={isEditWaliModalOpen}
+        onClose={() => setIsEditWaliModalOpen(false)}
+        santri={currentSantri}
+        onSuccess={(updated) => setCurrentSantri(updated)}
+      />
     </div>
   );
 };

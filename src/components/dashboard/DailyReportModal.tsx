@@ -11,11 +11,13 @@ import {
   ShieldCheck,
   Check,
   Eye,
-  Info
+  Info,
+  Edit2
 } from 'lucide-react';
 import type { Santri } from './types';
 import { storageService, getTodayDateKey } from '../../services/storageService';
 import { waGatewayService, type SendResult } from '../../services/waGatewayService';
+import { EditWaliModal } from './EditWaliModal';
 import {
   Dialog,
   DialogContent,
@@ -45,6 +47,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
 
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'sent'>('all');
   const [selectedPreviewSantri, setSelectedPreviewSantri] = useState<Santri | null>(null);
+  const [editingWaliSantri, setEditingWaliSantri] = useState<Santri | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [batchProgress, setBatchProgress] = useState<{
     isRunning: boolean;
@@ -164,6 +167,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
         {/* Header */}
@@ -329,12 +333,21 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                         <span className="font-semibold text-sm text-slate-900">{santri.name}</span>
                         <span className="text-xs text-slate-400">NIS: {santri.nis}</span>
                       </div>
-                      <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                      <div className="text-xs text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                         <span>Wali: <strong className="text-slate-700">{santri.parentName || 'Ayah/Bunda'}</strong></span>
                         <span>•</span>
                         <span>WA: <strong className={hasPhone ? 'text-slate-800' : 'text-red-500 font-medium'}>
                           {hasPhone ? santri.parentPhone : 'Belum diisi'}
                         </strong></span>
+                        <button
+                          type="button"
+                          onClick={() => setEditingWaliSantri(santri)}
+                          className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-[#0070BA] hover:underline ml-1"
+                          title="Edit nama atau no WA wali santri"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          <span>Edit</span>
+                        </button>
                       </div>
                       {/* Capaian Hari Ini */}
                       <div className="flex items-center gap-2 mt-1.5">
@@ -519,5 +532,14 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Modal Edit Kontak Wali Santri */}
+    <EditWaliModal
+      isOpen={Boolean(editingWaliSantri)}
+      onClose={() => setEditingWaliSantri(null)}
+      santri={editingWaliSantri}
+      onSuccess={() => onDataRefresh?.()}
+    />
+    </>
   );
 };

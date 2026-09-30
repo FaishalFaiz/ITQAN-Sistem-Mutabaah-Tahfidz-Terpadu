@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, UserPlus, Search, MessageSquare, ExternalLink } from 'lucide-react';
+import { ArrowLeft, UserPlus, Search, MessageSquare, ExternalLink, Edit2 } from 'lucide-react';
 import { TapCounterExam } from '../halaqah/TapCounterExam';
 import { PacingCard } from '../visualization/PacingCard';
 import { LaporanPage } from './LaporanPage';
 import { PengaturanView } from './PengaturanView';
+import { EditWaliModal } from './EditWaliModal';
 import { waGatewayService } from '../../services/waGatewayService';
 import type { NavItemKey, Santri } from './types';
 
@@ -25,6 +26,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
   onOpenAddModal,
 }) => {
   const [santriSearch, setSantriSearch] = useState('');
+  const [editingWaliSantri, setEditingWaliSantri] = useState<Santri | null>(null);
 
   const filteredSantri = santriList.filter((s) =>
     s.name.toLowerCase().includes(santriSearch.toLowerCase()) ||
@@ -109,22 +111,33 @@ export const OtherView: React.FC<OtherViewProps> = ({
                       </span>
                       <span>{santri.name}</span>
                     </td>
-                    <td className="py-3 px-4 font-mono text-slate-500">{santri.nis}</td>
                     <td className="py-3 px-4">
-                      {santri.parentPhone ? (
-                        <a
-                          href={waGatewayService.getDirectWALink(santri.parentPhone, `Assalamu'alaikum Warahmatullah Bpk/Ibu ${santri.parentName || ''}...`)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 font-medium group"
+                      <div className="flex items-center gap-1.5">
+                        {santri.parentPhone ? (
+                          <a
+                            href={waGatewayService.getDirectWALink(santri.parentPhone, `Assalamu'alaikum Warahmatullah Bpk/Ibu ${santri.parentName || ''}...`)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 font-medium group"
+                            title="Chat WhatsApp Wali"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{santri.parentName}</span>
+                            <span className="text-slate-400 font-mono text-[10px]">({santri.parentPhone})</span>
+                            <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </a>
+                        ) : (
+                          <span className="text-slate-400 italic">Belum diisi</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setEditingWaliSantri(santri)}
+                          className="p-1 rounded text-slate-400 hover:text-[#0070BA] hover:bg-slate-100 transition-colors ml-1"
+                          title="Edit Kontak Wali Santri"
                         >
-                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>{santri.parentName}</span>
-                          <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </a>
-                      ) : (
-                        <span className="text-slate-400 italic">Belum diisi</span>
-                      )}
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                     <td className="py-3 px-4 font-bold text-[#0070BA]">{santri.juzAchieved}</td>
                     <td className="py-3 px-4">
@@ -206,6 +219,13 @@ export const OtherView: React.FC<OtherViewProps> = ({
           />
         </div>
       )}
+
+      {/* Modal Edit Kontak Wali Santri */}
+      <EditWaliModal
+        isOpen={Boolean(editingWaliSantri)}
+        onClose={() => setEditingWaliSantri(null)}
+        santri={editingWaliSantri}
+      />
     </div>
   );
 };
