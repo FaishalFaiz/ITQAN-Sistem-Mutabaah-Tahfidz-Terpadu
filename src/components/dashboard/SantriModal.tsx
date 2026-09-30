@@ -27,13 +27,13 @@ export const SantriModal: React.FC<SantriModalProps> = ({
 
   return (
     <Dialog open={Boolean(type && santri)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-2 border-b border-border">
-          <DialogTitle className="text-base font-bold text-foreground">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+        <DialogHeader className="pb-3 border-b border-slate-100">
+          <DialogTitle className="text-lg font-bold text-slate-900">
             {type === 'setor' ? `Input Setoran: ${santri.name}` : `Detail Capaian: ${santri.name}`}
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            NIS: {santri.nis} • Capaian: {santri.juzAchieved}
+          <DialogDescription className="text-xs text-slate-500">
+            NIS: {santri.nis} • Capaian Saat Ini: {santri.juzAchieved} • Wali: {santri.parentName || '-'} ({santri.parentPhone || 'No WA belum ada'})
           </DialogDescription>
         </DialogHeader>
 
