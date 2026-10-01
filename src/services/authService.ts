@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { emitChange } from './storageService';
 
 export interface MusyrifUser {
   id: string;
@@ -9,6 +10,15 @@ export interface MusyrifUser {
 const LOCAL_USER_KEY = 'itqan_current_musyrif';
 
 export const authService = {
+  // Ambil user yang tersimpan di localStorage secara sinkron
+  getStoredUser(): MusyrifUser | null {
+    try {
+      const raw = localStorage.getItem(LOCAL_USER_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  },
+
   // Ambil user musyrif yang sedang login di Supabase
   async getCurrentUser(): Promise<MusyrifUser | null> {
     if (!isSupabaseConfigured) {
@@ -18,11 +28,13 @@ export const authService = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        return {
+        const musyrifUser: MusyrifUser = {
           id: user.id,
           email: user.email || '',
           fullName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Musyrif',
         };
+        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(musyrifUser));
+        return musyrifUser;
       }
     } catch (err) {
       console.error('Gagal mengecek session Supabase:', err);
@@ -64,6 +76,7 @@ export const authService = {
           fullName: data.user.user_metadata?.full_name || email.split('@')[0],
         };
         localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(user));
+        emitChange('user_logged_in');
         return { success: true, user };
       }
 
@@ -121,5 +134,6 @@ export const authService = {
       }
     }
     localStorage.removeItem(LOCAL_USER_KEY);
+    emitChange('user_logged_out');
   },
 };

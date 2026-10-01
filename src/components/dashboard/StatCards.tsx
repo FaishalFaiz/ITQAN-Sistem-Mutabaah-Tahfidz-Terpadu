@@ -11,9 +11,9 @@ interface StatCardsProps {
 }
 
 export const StatCards: React.FC<StatCardsProps> = ({
-  tercapaiCount = 10,
-  tidakTercapaiCount = 1,
-  belumSetorCount = 1,
+  tercapaiCount = 0,
+  tidakTercapaiCount = 0,
+  belumSetorCount = 0,
   activeFilter = 'all',
   onFilterChange,
 }) => {
@@ -21,9 +21,13 @@ export const StatCards: React.FC<StatCardsProps> = ({
   const formatNum = (num: number) => (num < 10 ? `0${num}` : `${num}`);
 
   useEffect(() => {
+    if (!containerRef.current) return;
+    const boxes = containerRef.current.querySelectorAll('.stat-box');
+    if (!boxes || boxes.length === 0) return;
+
     const ctx = gsap.context(() => {
       gsap.fromTo(
-        '.stat-box',
+        boxes,
         { opacity: 0, y: 16, scale: 0.98 },
         {
           opacity: 1,

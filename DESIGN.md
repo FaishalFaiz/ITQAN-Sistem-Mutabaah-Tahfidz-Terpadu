@@ -45,18 +45,38 @@ Semua kode warna menggunakan format solid tanpa efek transisi/gradien:
 
 ---
 
-## 3. Tipografi: Inter
+## 3. Tipografi & Sistem Font / Typography & Font System
 
-Menggunakan jenis huruf **Inter** di seluruh antarmuka untuk memastikan angka dan teks terbaca jelas dalam berbagai ukuran:
+Sistem tipografi ITQAN menggunakan kombinasi dua font utama dari Google Fonts: **Inter** untuk antarmuka umum dan **JetBrains Mono** untuk data teknis / angka / ID.
 
-| Tingkatan | Ukuran (Tailwind) | Ketebalan (Weight) | Penggunaan |
-|:---|:---|:---|:---|
-| **Judul Halaman** | `text-2xl` (24px) | `font-bold` (700) | Judul portal, nama aplikasi |
-| **Sub-Judul / Header** | `text-lg` (18px) | `font-semibold` (600) | Judul seksi, nama kelompok halaqoh |
-| **Label Formulir** | `text-sm` (14px) | `font-medium` (500) | Label input NIS, password, pilihan surah |
-| **Isi Teks / Tabel** | `text-sm` (14px) | `font-normal` (400) | Data tabel, riwayat setoran, catatan |
-| **Teks Bantuan / Hint** | `text-xs` (12px) | `font-normal` (400) | Petunjuk form, jam setoran |
-| **Angka Counter Ujian** | `text-3xl` (30px) | `font-bold` (700) | Angka hitungan ketukan dan salah bacaan |
+*The ITQAN typography system utilizes two primary Google Fonts: **Inter** for general UI and **JetBrains Mono** for technical data / code / IDs.*
+
+### 3.1. Sumber Font (HTML Entry Load) / Font Loading (`index.html`)
+- **Inter** (Weight: 400, 500, 600, 700, 800) — Font utama untuk semua teks UI, judul, tombol, dan tabel. (*Primary font for general UI text, headings, buttons, and tables.*)
+- **JetBrains Mono** (Weight: 400, 500) — Font monospace khusus untuk badge teknis, kode, prefix URL, ID santri/NIS, dan angka status. (*Monospace font for technical badges, code, URL prefixes, student IDs, and numeric metrics.*)
+
+```html
+<!-- Google Fonts Entry (/index.html) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+```
+
+### 3.2. Prinsip Penggunaan Font dalam UI / Font Usage Rules
+1. **Sans-Serif (`font-sans`)**: Digunakan secara global untuk hampir seluruh elemen UI utama, navigasi, judul halaman, isi teks, dan tombol aksi. (*Used globally for main UI elements, navigation, page titles, body text, and action buttons.*)
+2. **Serif (`font-serif`)**: Mengarah ke font Inter untuk keselarasan visual jika kelas serif digunakan. (*Mapped to Inter for visual consistency whenever serif classes are invoked.*)
+3. **Monospace (`font-mono`)**: Digunakan khusus untuk label teknis/eyebrow, kode sistem, prefix URL (misal `tautan.site/`), NIS, serta ID dan angka kualifikasi. (*Dedicated for technical labels/eyebrows, system code, URL prefixes, Student IDs, and status metrics.*)
+
+### 3.3. Panduan Ukuran & Ketebalan / Size & Weight Scale
+
+| Tingkatan / Level | Tailwind Class | Weight | Penggunaan (ID) | Usage (EN) |
+|:---|:---|:---|:---|:---|
+| **Judul Halaman / Page Title** | `text-2xl` (24px) | `font-bold` (700) | Judul portal, nama aplikasi | Portal title, main app heading |
+| **Sub-Judul / Section Header** | `text-lg` (18px) | `font-semibold` (600) | Judul seksi, nama halaqoh | Section headers, halaqah group names |
+| **Label Form / Input Label** | `text-sm` (14px) | `font-medium` (500) | Label input NIS, password | Form labels, input headers |
+| **Isi Teks / Body & Table** | `text-sm` (14px) | `font-normal` (400) | Data tabel, riwayat setoran | Table cells, deposit history, notes |
+| **Bantuan / Hint Text** | `text-xs` (12px) | `font-normal` (400) | Petunjuk input, timestamp | Form hints, sub-captions, timestamps |
+| **Data Teknis / Technical Metric** | `text-xs / sm` | `font-mono` | NIS, Kode Unik, Tautan/URL | Student ID/NIS, system codes, URLs |
 
 ---
 
@@ -110,6 +130,8 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {
         brand: {

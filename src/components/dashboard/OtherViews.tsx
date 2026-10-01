@@ -399,28 +399,38 @@ export const OtherView: React.FC<OtherViewProps> = ({
       )}
 
       {currentView === 'pacing' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <PacingCard
-            santriName="Muhammad Faiz"
-            nis="2024001"
-            totalLinesMemorized={2175}
-            totalLinesTarget={9060}
-            daysRemaining={650}
-            dailyTargetLines={12}
-            linesCompletedToday={15}
-            status="on_track"
-          />
-          <PacingCard
-            santriName="Ahmad Zaki"
-            nis="2024002"
-            totalLinesMemorized={1275}
-            totalLinesTarget={9060}
-            daysRemaining={650}
-            dailyTargetLines={15}
-            linesCompletedToday={6}
-            status="behind"
-          />
-        </div>
+        santriList.length === 0 ? (
+          <div className="text-center py-12 px-4 text-slate-500 text-xs bg-white rounded-xl border border-dashed border-slate-200 space-y-3">
+            <p className="font-bold text-slate-800 text-sm">Belum Ada Data Target Hafalan Santri</p>
+            <p className="max-w-md mx-auto text-slate-500">
+              Belum ada santri terdaftar di halaqoh Anda. Tambahkan santri baru untuk mulai memantau laju hafalan (pacing) santri menuju target 30 juz.
+            </p>
+            <button
+              type="button"
+              onClick={onOpenAddModal}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0070BA] text-white text-xs font-semibold hover:bg-[#005C9E] cursor-pointer shadow-xs"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>Tambah Santri Baru</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {santriList.map((s) => (
+              <PacingCard
+                key={s.id}
+                santriName={s.name}
+                nis={s.nis}
+                totalLinesMemorized={s.totalLinesMemorized || 0}
+                totalLinesTarget={s.totalLinesTarget || 9060}
+                daysRemaining={650}
+                dailyTargetLines={s.dailyTargetLines || 15}
+                linesCompletedToday={s.linesCompletedToday || 0}
+                status={s.status === 'tercapai' ? 'on_track' : 'behind'}
+              />
+            ))}
+          </div>
+        )
       )}
 
       {/* Modal Edit Kontak Wali Santri */}

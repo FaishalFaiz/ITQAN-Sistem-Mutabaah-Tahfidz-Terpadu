@@ -38,9 +38,13 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
   });
 
   useEffect(() => {
+    if (!sectionRef.current) return;
+    const cards = sectionRef.current.querySelectorAll('.santri-card-item');
+    if (!cards || cards.length === 0) return;
+
     const ctx = gsap.context(() => {
       gsap.fromTo(
-        '.santri-card-item',
+        cards,
         { opacity: 0, y: 16, scale: 0.98 },
         {
           opacity: 1,
@@ -155,7 +159,28 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
       </div>
 
       {/* Grid Kartu Santri */}
-      {filtered.length === 0 ? (
+      {santriList.length === 0 ? (
+        <div className="text-center py-14 px-4 text-muted-foreground text-xs bg-slate-50/60 rounded-xl border border-dashed border-border space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center mx-auto">
+            <UserPlus className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="font-bold text-foreground text-sm">Belum Ada Santri di Halaqoh Ini</p>
+            <p className="text-muted-foreground mt-1 max-w-md mx-auto">
+              Daftar santri masih kosong (0 santri). Daftarkan santri pertama ke rombel Anda untuk memulai mutaba'ah hafalan Al-Qur'an.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onOpenAddModal}
+            className="inline-flex items-center gap-1.5 h-9 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs cursor-pointer shadow-xs"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            <span>Tambah Santri Pertama</span>
+          </Button>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-xs bg-muted/20 rounded-xl border border-dashed border-border space-y-2">
           <p className="font-semibold text-foreground text-sm">Tidak ada santri yang cocok</p>
           <p>Coba ubah kata kunci pencarian atau ganti filter status di atas.</p>

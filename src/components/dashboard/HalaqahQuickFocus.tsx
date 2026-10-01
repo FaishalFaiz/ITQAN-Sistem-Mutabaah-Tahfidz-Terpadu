@@ -31,9 +31,13 @@ export const HalaqahQuickFocus: React.FC<HalaqahQuickFocusProps> = ({
   const progressPercent = Math.min(100, Math.round((totalLinesToday / (totalTargetLines || 1)) * 100));
 
   useEffect(() => {
+    if (!containerRef.current) return;
+    const items = containerRef.current.querySelectorAll('.focus-queue-item');
+    if (!items || items.length === 0) return;
+
     const ctx = gsap.context(() => {
       gsap.fromTo(
-        '.focus-queue-item',
+        items,
         { opacity: 0, x: -12 },
         {
           opacity: 1,
@@ -68,7 +72,11 @@ export const HalaqahQuickFocus: React.FC<HalaqahQuickFocusProps> = ({
 
         <CardContent className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
           <div className="space-y-2">
-            {priorityList.length === 0 ? (
+            {santriList.length === 0 ? (
+              <div className="py-6 px-4 text-center text-xs text-slate-500 bg-slate-50/70 rounded-lg border border-dashed border-slate-200">
+                Belum ada santri terdaftar di halaqoh ini. Tambahkan santri baru untuk memulai pencatatan target setoran.
+              </div>
+            ) : priorityList.length === 0 ? (
               <div className="py-4 text-center text-xs text-emerald-700 bg-emerald-50 rounded-lg border border-emerald-200">
                 MasyaAllah! Seluruh santri telah menuntaskan target setoran hari ini.
               </div>

@@ -73,22 +73,31 @@ export function App() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
 
   const [santriList, setSantriList] = useState<Santri[]>(() => storageService.getSantriList());
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
+    return Boolean(authService.getStoredUser());
+  });
 
   // Verifikasi status login musyrif dari Supabase
   useEffect(() => {
+    let isMounted = true;
     authService.getCurrentUser().then((user) => {
-      setIsAuthenticated(Boolean(user));
+      if (isMounted) {
+        setIsAuthenticated(Boolean(user));
+        setSantriList(storageService.getSantriList());
+      }
     });
-  }, [location.pathname]);
 
-  useEffect(() => {
     const handleStorageChange = () => {
+      const stored = authService.getStoredUser();
+      setIsAuthenticated(Boolean(stored));
       setSantriList(storageService.getSantriList());
     };
     window.addEventListener(EVENT_DATA_CHANGED, handleStorageChange);
-    return () => window.removeEventListener(EVENT_DATA_CHANGED, handleStorageChange);
-  }, []);
+    return () => {
+      isMounted = false;
+      window.removeEventListener(EVENT_DATA_CHANGED, handleStorageChange);
+    };
+  }, [location.pathname]);
 
 
   const handleOpenSetor = (santri: Santri) => {
@@ -187,15 +196,15 @@ export function App() {
   }, [location.pathname]);
 
   // Auth routes (render standalone full page)
-  if (location.pathname === '/login') {
-    return <LoginPage />;
-  }
-  if (location.pathname === '/signup') {
-    return <SignupPage />;
+  if (location.pathname === '/login' || location.pathname === '/signup') {
+    if (isAuthenticated === true || Boolean(authService.getStoredUser())) {
+      return <Navigate to="/beranda" replace />;
+    }
+    return location.pathname === '/login' ? <LoginPage /> : <SignupPage />;
   }
 
-  // Jika belum login, alihkan ke /login
-  if (isAuthenticated === false) {
+  // Jika belum login dan tidak ada sesi tersimpan di localStorage, alihkan ke /login
+  if (isAuthenticated === false && !authService.getStoredUser()) {
     return <Navigate to="/login" replace />;
   }
 

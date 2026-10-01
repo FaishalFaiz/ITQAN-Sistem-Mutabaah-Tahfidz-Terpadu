@@ -1,12 +1,11 @@
 import type { Santri, SetoranRecord, WAGatewayConfig, WALog, HalaqahSettings, ExamRecord } from '../components/dashboard/types';
 import { 
-  INITIAL_SANTRI_LIST, 
-  INITIAL_SETORAN_RECORDS, 
   DEFAULT_WA_CONFIG, 
   DEFAULT_HALAQAH_SETTINGS 
 } from '../components/dashboard/mockData';
 
-const KEYS = {
+// Base keys
+const BASE_KEYS = {
   SANTRI: 'itqan_santri_list',
   SETORAN: 'itqan_setoran_records',
   WA_CONFIG: 'itqan_wa_gateway_config',
@@ -25,24 +24,72 @@ export function getTodayDateKey(date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-function emitChange(detail?: string) {
+export function emitChange(detail?: string) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(EVENT_DATA_CHANGED, { detail }));
   }
 }
 
+// Purge legacy global dummy data once so it never leaks across accounts
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('itqan_santri_list');
+    localStorage.removeItem('itqan_setoran_records');
+    localStorage.removeItem('itqan_exam_records');
+    localStorage.removeItem('itqan_wa_logs');
+  } catch {}
+}
+
 export const storageService = {
-  // ================= SANTRI =================
+  // Mendapatkan identitas user musyrif aktif saat ini untuk isolasi data
+  getActiveUserScope(): string {
+    if (typeof window === 'undefined') return 'guest';
+    try {
+      // 1. Cek dari session musyrif lokal yang tersimpan
+      const rawUser = localStorage.getItem('itqan_current_musyrif');
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        if (u?.id) return `u_${u.id}`;
+        if (u?.email) return `u_${u.email.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+      }
+
+      // 2. Cek token Supabase Auth di localStorage
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+          const raw = localStorage.getItem(k);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const user = parsed?.user;
+            if (user?.id) {
+              return `u_${user.id}`;
+            }
+          }
+        }
+      }
+    } catch {}
+    return 'u_default';
+  },
+
+  // Dapatkan key yang terisolasi khusus untuk akun musyrif yang sedang aktif
+  getScopedKey(baseKey: string): string {
+    const scope = this.getActiveUserScope();
+    return `${baseKey}_${scope}`;
+  },
+
+  // ================= SANTRI (START DARI 0) =================
   getSantriList(): Santri[] {
     try {
-      const data = localStorage.getItem(KEYS.SANTRI);
+      const key = this.getScopedKey(BASE_KEYS.SANTRI);
+      const data = localStorage.getItem(key);
       if (!data) {
-        localStorage.setItem(KEYS.SANTRI, JSON.stringify(INITIAL_SANTRI_LIST));
-        return INITIAL_SANTRI_LIST;
+        // Setiap akun baru selalu mulai dari 0 santri
+        localStorage.setItem(key, JSON.stringify([]));
+        return [];
       }
       return JSON.parse(data);
     } catch {
-      return INITIAL_SANTRI_LIST;
+      return [];
     }
   },
 
@@ -52,7 +99,8 @@ export const storageService = {
   },
 
   saveSantriList(list: Santri[]): void {
-    localStorage.setItem(KEYS.SANTRI, JSON.stringify(list));
+    const key = this.getScopedKey(BASE_KEYS.SANTRI);
+    localStorage.setItem(key, JSON.stringify(list));
     emitChange('santri_list_updated');
   },
 
@@ -104,17 +152,18 @@ export const storageService = {
     return updatedSantri;
   },
 
-  // ================= SETORAN =================
+  // ================= SETORAN (START DARI 0) =================
   getSetoranRecords(): SetoranRecord[] {
     try {
-      const data = localStorage.getItem(KEYS.SETORAN);
+      const key = this.getScopedKey(BASE_KEYS.SETORAN);
+      const data = localStorage.getItem(key);
       if (!data) {
-        localStorage.setItem(KEYS.SETORAN, JSON.stringify(INITIAL_SETORAN_RECORDS));
-        return INITIAL_SETORAN_RECORDS;
+        localStorage.setItem(key, JSON.stringify([]));
+        return [];
       }
       return JSON.parse(data);
     } catch {
-      return INITIAL_SETORAN_RECORDS;
+      return [];
     }
   },
 
@@ -127,7 +176,7 @@ export const storageService = {
     const today = getTodayDateKey();
     const records = this.getSetoranRecords();
     return records.filter(
-      (r) => r.santriId === santriId && (r.createdAt?.startsWith(today) || r.formattedDate?.includes('30 Sep 2026'))
+      (r) => r.santriId === santriId && r.createdAt?.startsWith(today)
     );
   },
 
@@ -135,7 +184,7 @@ export const storageService = {
     const today = getTodayDateKey();
     const records = this.getSetoranRecords();
     return records.filter(
-      (r) => (r.createdAt?.startsWith(today) || r.formattedDate?.includes('30 Sep 2026'))
+      (r) => r.createdAt?.startsWith(today)
     );
   },
 
@@ -158,10 +207,11 @@ export const storageService = {
       formattedDate: `${timeFormatted} WIB`,
     };
 
-    // 1. Simpan record
+    // 1. Simpan record ke database lokal musyrif aktif
+    const key = this.getScopedKey(BASE_KEYS.SETORAN);
     const records = this.getSetoranRecords();
     const updatedRecords = [record, ...records];
-    localStorage.setItem(KEYS.SETORAN, JSON.stringify(updatedRecords));
+    localStorage.setItem(key, JSON.stringify(updatedRecords));
 
     // 2. Update status & metrik santri
     const santriList = this.getSantriList();
@@ -199,6 +249,7 @@ export const storageService = {
   },
 
   updateSetoranWAStatus(recordId: string, waStatus: 'sent' | 'failed' | 'not_sent'): void {
+    const key = this.getScopedKey(BASE_KEYS.SETORAN);
     const records = this.getSetoranRecords();
     const updated = records.map((r) =>
       r.id === recordId
@@ -209,16 +260,17 @@ export const storageService = {
           }
         : r
     );
-    localStorage.setItem(KEYS.SETORAN, JSON.stringify(updated));
+    localStorage.setItem(key, JSON.stringify(updated));
     emitChange('setoran_wa_status_updated');
   },
 
   // ================= WA GATEWAY CONFIG =================
   getWAGatewayConfig(): WAGatewayConfig {
     try {
-      const data = localStorage.getItem(KEYS.WA_CONFIG);
+      const key = this.getScopedKey(BASE_KEYS.WA_CONFIG);
+      const data = localStorage.getItem(key);
       if (!data) {
-        localStorage.setItem(KEYS.WA_CONFIG, JSON.stringify(DEFAULT_WA_CONFIG));
+        localStorage.setItem(key, JSON.stringify(DEFAULT_WA_CONFIG));
         return DEFAULT_WA_CONFIG;
       }
       return JSON.parse(data);
@@ -228,14 +280,16 @@ export const storageService = {
   },
 
   saveWAGatewayConfig(config: WAGatewayConfig): void {
-    localStorage.setItem(KEYS.WA_CONFIG, JSON.stringify(config));
+    const key = this.getScopedKey(BASE_KEYS.WA_CONFIG);
+    localStorage.setItem(key, JSON.stringify(config));
     emitChange('wa_config_updated');
   },
 
   // ================= WA LOGS =================
   getWALogs(): WALog[] {
     try {
-      const data = localStorage.getItem(KEYS.WA_LOGS);
+      const key = this.getScopedKey(BASE_KEYS.WA_LOGS);
+      const data = localStorage.getItem(key);
       if (!data) return [];
       return JSON.parse(data);
     } catch {
@@ -254,25 +308,39 @@ export const storageService = {
         minute: '2-digit',
       }).format(new Date()),
     };
+    const key = this.getScopedKey(BASE_KEYS.WA_LOGS);
     const logs = this.getWALogs();
-    const updated = [log, ...logs.slice(0, 49)]; // Simpan 50 log terakhir
-    localStorage.setItem(KEYS.WA_LOGS, JSON.stringify(updated));
+    const updated = [log, ...logs.slice(0, 49)];
+    localStorage.setItem(key, JSON.stringify(updated));
     emitChange('wa_log_added');
     return log;
   },
 
   clearWALogs(): void {
-    localStorage.setItem(KEYS.WA_LOGS, JSON.stringify([]));
+    const key = this.getScopedKey(BASE_KEYS.WA_LOGS);
+    localStorage.setItem(key, JSON.stringify([]));
     emitChange('wa_logs_cleared');
   },
 
   // ================= HALAQAH SETTINGS =================
   getHalaqahSettings(): HalaqahSettings {
     try {
-      const data = localStorage.getItem(KEYS.SETTINGS);
+      const key = this.getScopedKey(BASE_KEYS.SETTINGS);
+      const data = localStorage.getItem(key);
       if (!data) {
-        localStorage.setItem(KEYS.SETTINGS, JSON.stringify(DEFAULT_HALAQAH_SETTINGS));
-        return DEFAULT_HALAQAH_SETTINGS;
+        let customSettings = { ...DEFAULT_HALAQAH_SETTINGS };
+        const rawUser = localStorage.getItem('itqan_current_musyrif');
+        if (rawUser) {
+          try {
+            const u = JSON.parse(rawUser);
+            if (u?.fullName) {
+              customSettings.musyrifName = u.fullName;
+              customSettings.halaqahName = `Halaqoh ${u.fullName}`;
+            }
+          } catch {}
+        }
+        localStorage.setItem(key, JSON.stringify(customSettings));
+        return customSettings;
       }
       return JSON.parse(data);
     } catch {
@@ -281,14 +349,16 @@ export const storageService = {
   },
 
   saveHalaqahSettings(settings: HalaqahSettings): void {
-    localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
+    const key = this.getScopedKey(BASE_KEYS.SETTINGS);
+    localStorage.setItem(key, JSON.stringify(settings));
     emitChange('halaqah_settings_updated');
   },
 
   // ================= UJIAN TASMI' =================
   getExamRecords(): ExamRecord[] {
     try {
-      const data = localStorage.getItem(KEYS.EXAMS);
+      const key = this.getScopedKey(BASE_KEYS.EXAMS);
+      const data = localStorage.getItem(key);
       if (!data) return [];
       return JSON.parse(data);
     } catch {
@@ -313,20 +383,25 @@ export const storageService = {
         minute: '2-digit',
       }).format(new Date()) + ' WIB',
     };
+    const key = this.getScopedKey(BASE_KEYS.EXAMS);
     const list = this.getExamRecords();
     const updated = [record, ...list];
-    localStorage.setItem(KEYS.EXAMS, JSON.stringify(updated));
+    localStorage.setItem(key, JSON.stringify(updated));
     emitChange('exam_record_added');
     return record;
   },
 
-  // ================= RESET / BERSIHKAN DATA =================
+  // ================= RESET / BERSIHKAN DATA AKUN INI =================
   resetDatabase(): void {
-    localStorage.setItem(KEYS.SANTRI, JSON.stringify([]));
-    localStorage.setItem(KEYS.SETORAN, JSON.stringify([]));
-    localStorage.setItem(KEYS.WA_LOGS, JSON.stringify([]));
-    localStorage.setItem(KEYS.EXAMS, JSON.stringify([]));
+    const santriKey = this.getScopedKey(BASE_KEYS.SANTRI);
+    const setoranKey = this.getScopedKey(BASE_KEYS.SETORAN);
+    const logsKey = this.getScopedKey(BASE_KEYS.WA_LOGS);
+    const examsKey = this.getScopedKey(BASE_KEYS.EXAMS);
+
+    localStorage.setItem(santriKey, JSON.stringify([]));
+    localStorage.setItem(setoranKey, JSON.stringify([]));
+    localStorage.setItem(logsKey, JSON.stringify([]));
+    localStorage.setItem(examsKey, JSON.stringify([]));
     emitChange('database_reset');
   },
 };
-

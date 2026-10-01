@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, User, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authService } from '@/services/authService';
-import { isSupabaseConfigured } from '@/lib/supabase';
 
 export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -71,18 +70,6 @@ export const SignupPage: React.FC = () => {
 
         {/* Card Form */}
         <div className="bg-white py-8 px-5 sm:px-8 border border-slate-200 rounded-2xl shadow-xs">
-          {!isSupabaseConfigured && (
-            <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col gap-1">
-              <span className="font-bold flex items-center gap-1.5">
-                <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
-                Supabase Belum Dikonfigurasi
-              </span>
-              <p className="text-[11px] text-amber-800 leading-relaxed">
-                Pendaftaran akun musyrif terhubung langsung ke Supabase Auth. Mohon isi variabel <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">VITE_SUPABASE_URL</code> dan <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">VITE_SUPABASE_ANON_KEY</code> di file <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">.env</code>.
-              </p>
-            </div>
-          )}
-
           {errorMsg && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />

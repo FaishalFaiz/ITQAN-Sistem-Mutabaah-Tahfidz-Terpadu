@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authService } from '@/services/authService';
-import { isSupabaseConfigured } from '@/lib/supabase';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,34 +49,6 @@ export const LoginPage: React.FC = () => {
 
         {/* Card Form */}
         <div className="bg-white py-8 px-5 sm:px-8 border border-slate-200 rounded-2xl shadow-xs">
-          {/* Header Info Khusus Musyrif */}
-          <div className="mb-6 p-3 rounded-lg bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] text-xs font-semibold flex items-center justify-between">
-            <span>Akses Masuk: Musyrif Halaqoh</span>
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
-                isSupabaseConfigured
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-amber-100 text-amber-800'
-              }`}
-            >
-              {isSupabaseConfigured ? 'Supabase Auth' : 'Env Supabase Kosong'}
-            </span>
-          </div>
-
-          {!isSupabaseConfigured && (
-            <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col gap-1">
-              <span className="font-bold flex items-center gap-1.5">
-                <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
-                Supabase Belum Dikonfigurasi
-              </span>
-              <p className="text-[11px] text-amber-800 leading-relaxed">
-                Isi <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">VITE_SUPABASE_URL</code> dan{' '}
-                <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">VITE_SUPABASE_ANON_KEY</code> pada file <code className="font-mono bg-amber-100 px-1 py-0.5 rounded">.env</code> agar login dapat diverifikasi langsung oleh database Supabase Anda.
-              </p>
-            </div>
-          )}
-
-
           {errorMessage && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />

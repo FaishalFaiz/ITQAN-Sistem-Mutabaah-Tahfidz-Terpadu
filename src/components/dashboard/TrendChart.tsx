@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BarChart3 } from 'lucide-react';
 import gsap from 'gsap';
+import { storageService, EVENT_DATA_CHANGED } from '@/services/storageService';
+import type { SetoranRecord } from './types';
 
 interface BarDataPoint {
   label: string;
@@ -11,8 +13,8 @@ interface BarDataPoint {
   date: string;
 }
 
-// Data 7 Hari dalam Pekan Ini
-const PEKAN_DATA: BarDataPoint[] = [
+// Template Hari dalam Pekan Ini
+const PEKAN_TEMPLATE: BarDataPoint[] = [
   { label: 'Sen', fullLabel: 'Senin', ziyadah: 95, murojaah: 40, target: 140, date: '22 Sep' },
   { label: 'Sel', fullLabel: 'Selasa', ziyadah: 115, murojaah: 65, target: 140, date: '23 Sep' },
   { label: 'Rab', fullLabel: 'Rabu', ziyadah: 80, murojaah: 40, target: 140, date: '24 Sep' },
@@ -22,8 +24,8 @@ const PEKAN_DATA: BarDataPoint[] = [
   { label: 'Ahd', fullLabel: 'Ahad (Hari ini)', ziyadah: 145, murojaah: 80, target: 140, date: '28 Sep' },
 ];
 
-// Data 4 Pekan dalam Bulan Ini
-const BULAN_DATA: BarDataPoint[] = [
+// Template Pekan dalam Bulan Ini
+const BULAN_TEMPLATE: BarDataPoint[] = [
   { label: 'Pekan 1', fullLabel: 'Pekan 1', ziyadah: 580, murojaah: 310, target: 700, date: '1–7 Sep' },
   { label: 'Pekan 2', fullLabel: 'Pekan 2', ziyadah: 620, murojaah: 290, target: 700, date: '8–14 Sep' },
   { label: 'Pekan 3', fullLabel: 'Pekan 3', ziyadah: 540, murojaah: 350, target: 700, date: '15–21 Sep' },
@@ -34,8 +36,23 @@ export const TrendChart: React.FC = () => {
   const [activeRange, setActiveRange] = useState<'pekan' | 'bulan'>('pekan');
   const [hoveredIdx, setHoveredIdx] = useState<number>(6);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [records, setRecords] = useState<SetoranRecord[]>(() => storageService.getSetoranRecords());
 
-  const currentData = activeRange === 'pekan' ? PEKAN_DATA : BULAN_DATA;
+  useEffect(() => {
+    const handleUpdate = () => {
+      setRecords(storageService.getSetoranRecords());
+    };
+    window.addEventListener(EVENT_DATA_CHANGED, handleUpdate);
+    return () => window.removeEventListener(EVENT_DATA_CHANGED, handleUpdate);
+  }, []);
+
+  const hasRecords = records.length > 0;
+  const currentData = (activeRange === 'pekan' ? PEKAN_TEMPLATE : BULAN_TEMPLATE).map((item) => {
+    if (!hasRecords) {
+      return { ...item, ziyadah: 0, murojaah: 0, target: 0 };
+    }
+    return item;
+  });
   const maxScale = activeRange === 'pekan' ? 250 : 1400;
   const targetThreshold = activeRange === 'pekan' ? 140 : 700;
   const gridLine1 = activeRange === 'pekan' ? 100 : 500;
@@ -44,14 +61,17 @@ export const TrendChart: React.FC = () => {
   // Reset indeks terpilih saat rentang berubah
   const handleRangeChange = (range: 'pekan' | 'bulan') => {
     setActiveRange(range);
-    setHoveredIdx(range === 'pekan' ? PEKAN_DATA.length - 1 : BULAN_DATA.length - 1);
+    setHoveredIdx(range === 'pekan' ? PEKAN_TEMPLATE.length - 1 : BULAN_TEMPLATE.length - 1);
   };
 
   useEffect(() => {
+    if (!containerRef.current) return;
+    const pillars = containerRef.current.querySelectorAll('.chart-bar-pillar');
+    if (!pillars || pillars.length === 0) return;
+
     const ctx = gsap.context(() => {
-      // Animasi balok bertingkat saat inisialisasi / pergantian toggle
       gsap.fromTo(
-        '.chart-bar-pillar',
+        pillars,
         { scaleY: 0, transformOrigin: 'bottom' },
         {
           scaleY: 1,
@@ -84,7 +104,7 @@ export const TrendChart: React.FC = () => {
             </div>
             <div>
               <h3 className="font-bold text-sm sm:text-base text-slate-900 leading-tight">
-                Tren Capaian Mutabaah (Ziyadah &amp; Muroja'ah)
+                Tren Capaian Setoran
               </h3>
               <p className="text-[11px] text-slate-500">
                 {activeRange === 'pekan'
@@ -298,12 +318,14 @@ export const TrendChart: React.FC = () => {
               <span className="text-slate-600 font-medium">Target: {activeItem.target} Baris</span>
               <span
                 className={`font-bold px-2 py-0.5 rounded text-[11px] ${
-                  isSurpassing
+                  !hasRecords
+                    ? 'text-slate-600 bg-slate-100 border border-slate-200'
+                    : isSurpassing
                     ? 'text-emerald-700 bg-emerald-100/80 border border-emerald-200'
                     : 'text-amber-700 bg-amber-100/80 border border-amber-200'
                 }`}
               >
-                {isSurpassing ? 'Melampaui Target' : 'Di Bawah Target'}
+                {!hasRecords ? 'Belum Ada Setoran' : isSurpassing ? 'Melampaui Target' : 'Di Bawah Target'}
               </span>
             </div>
           </div>
