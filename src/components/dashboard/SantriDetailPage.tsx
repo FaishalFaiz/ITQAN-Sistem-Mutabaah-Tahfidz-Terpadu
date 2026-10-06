@@ -23,7 +23,7 @@ import type { Santri, SetoranRecord } from './types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from '../../services/storageService';
-import { waGatewayService, type SendResult } from '../../services/waGatewayService';
+import { waGatewayService } from '../../services/waGatewayService';
 import { EditWaliModal } from './EditWaliModal';
 import { RaporPrintModal } from './RaporPrintModal';
 
@@ -44,12 +44,9 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   // Real Setoran records state
   const [records, setRecords] = useState<SetoranRecord[]>(() => storageService.getSetoranBySantriId(santri.id));
   const [setoranFilter, setSetoranFilter] = useState<'all' | 'ziyadah' | 'murojaah'>('all');
-  const [sendingWAId, setSendingWAId] = useState<string | null>(null);
 
   // WA Digest Modal State
   const [isWAModalOpen, setIsWAModalOpen] = useState(false);
-  const [isSendingGateway, setIsSendingGateway] = useState(false);
-  const [waSendFeedback, setWaSendFeedback] = useState<string | null>(null);
 
   // Edit Wali Contact Modal State
   const [currentSantri, setCurrentSantri] = useState<Santri>(santri);
@@ -111,7 +108,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   // WhatsApp Digest Generator
   const waDigestMessage = useMemo(() => {
     return waGatewayService.buildDailyProgressMessage(currentSantri);
-  }, [currentSantri, records]);
+  }, [currentSantri]);
 
   const handleCopyWADigest = () => {
     navigator.clipboard.writeText(waDigestMessage);
@@ -119,48 +116,21 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     setTimeout(() => setCopyFeedback(false), 2500);
   };
 
-  const handleSendViaGateway = async (force = false) => {
+  const handleOpenWADigestDirect = () => {
     if (!currentSantri.parentPhone) return;
-    setIsSendingGateway(true);
-    setWaSendFeedback(null);
-
-    const res: SendResult = await waGatewayService.sendDailyReport(currentSantri, force);
-
-    setIsSendingGateway(false);
-    if (res.success) {
-      setWaSendFeedback('Alhamdulillah! Laporan harian berhasil terkirim ke WhatsApp wali santri.');
-    } else if (res.alreadySentToday) {
-      setWaSendFeedback(`Laporan hari ini sudah terkirim (${currentSantri.lastDailyReportSentTime || 'Hari ini'}). Anda dapat memilih Kirim Ulang bila diperlukan.`);
-    } else if (res.fallbackUrl) {
-      setWaSendFeedback('Menghubungkan langsung ke WhatsApp...');
-      window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      setWaSendFeedback(res.message || 'Gagal mengirim pesan WhatsApp.');
-    }
+    storageService.markDailyReportSent(currentSantri.id);
+    const updated = storageService.getSantriById(currentSantri.id);
+    if (updated) setCurrentSantri(updated);
+    waGatewayService.openDirectWA(currentSantri.parentPhone, waDigestMessage);
   };
 
-  // Kirim record setoran tunggal via WA
-  const handleSendRecordWA = async (record: SetoranRecord) => {
-    if (!santri.parentPhone) return;
-    setSendingWAId(record.id);
-
-    const messageText = waGatewayService.buildSetoranMessage(record, santri);
-    const res: SendResult = await waGatewayService.sendMessage(
-      santri.parentPhone,
-      santri.parentName || `Wali ${santri.name}`,
-      messageText,
-      'setoran'
-    );
-
-    setSendingWAId(null);
-    if (res.success) {
-      storageService.updateSetoranWAStatus(record.id, 'sent');
-      loadRecords();
-    } else if (res.fallbackUrl) {
-      storageService.updateSetoranWAStatus(record.id, 'failed');
-      loadRecords();
-      window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer');
-    }
+  // Kirim record setoran tunggal via WhatsApp (wa.me)
+  const handleSendRecordWA = (record: SetoranRecord) => {
+    if (!currentSantri.parentPhone) return;
+    const messageText = waGatewayService.buildSetoranMessage(record, currentSantri);
+    storageService.updateSetoranWAStatus(record.id, 'sent');
+    loadRecords();
+    waGatewayService.openDirectWA(currentSantri.parentPhone, messageText);
   };
 
   const filteredRecords = useMemo(() => {
@@ -724,12 +694,13 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                         <td className="py-2.5 px-3 text-right whitespace-nowrap">
                           <button
                             type="button"
-                            disabled={sendingWAId === r.id || !santri.parentPhone}
+                            disabled={!currentSantri.parentPhone}
                             onClick={() => handleSendRecordWA(r)}
                             className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50 cursor-pointer"
+                            title="Kirim catatan setoran via WhatsApp"
                           >
                             <Send className="w-3 h-3" />
-                            <span>{sendingWAId === r.id ? 'Mengirim...' : 'Kirim WA'}</span>
+                            <span>Kirim WA</span>
                           </button>
                         </td>
                       </tr>
@@ -798,12 +769,13 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                       </div>
                       <button
                         type="button"
-                        disabled={sendingWAId === r.id || !santri.parentPhone}
+                        disabled={!currentSantri.parentPhone}
                         onClick={() => handleSendRecordWA(r)}
                         className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50 cursor-pointer"
+                        title="Kirim catatan setoran via WhatsApp"
                       >
                         <Send className="w-3 h-3" />
-                        <span>{sendingWAId === r.id ? 'Mengirim...' : 'Kirim WA'}</span>
+                        <span>Kirim WA</span>
                       </button>
                     </div>
                   </div>
@@ -828,25 +800,15 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsWAModalOpen(false);
-                    setWaSendFeedback(null);
-                  }}
+                  onClick={() => setIsWAModalOpen(false)}
                   className="text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {waSendFeedback && (
-                <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{waSendFeedback}</span>
-                </div>
-              )}
-
               <p className="text-xs text-slate-500">
-                Teks ringkasan progres santri siap kirim ke Wali ({santri.parentName || 'Wali Santri'} - {santri.parentPhone || 'No WA belum ada'}):
+                Teks ringkasan progres santri siap kirim ke Wali ({currentSantri.parentName || 'Wali Santri'} - {currentSantri.parentPhone || 'No WA belum diisi'}):
               </p>
 
               <textarea
@@ -861,7 +823,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
                   <div className="flex items-center gap-1.5 font-medium">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Laporan hari ini sudah terkirim ke wali pada <strong>{santri.lastDailyReportSentTime || 'Hari ini'}</strong>.</span>
+                    <span>Laporan hari ini sudah ditandai terkirim ({currentSantri.lastDailyReportSentTime || 'Hari ini'}).</span>
                   </div>
                 </div>
               )}
@@ -876,38 +838,27 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 </button>
 
                 <div className="flex items-center gap-2">
-                  {santri.parentPhone && (
-                    <a
-                      href={waGatewayService.getDirectWALink(santri.parentPhone, waDigestMessage)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold"
-                    >
-                      <span>Buka WhatsApp</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
-
-                  {isSentToday ? (
+                  {currentSantri.parentPhone ? (
                     <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={isSendingGateway || !santri.parentPhone}
-                      onClick={() => handleSendViaGateway(true)}
-                      className="text-xs border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB] flex items-center gap-1.5 cursor-pointer"
+                      type="button"
+                      onClick={handleOpenWADigestDirect}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
                     >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Ulang'}</span>
+                      <span>Buka WhatsApp (wa.me)</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </Button>
                   ) : (
                     <Button
-                      size="sm"
-                      disabled={isSendingGateway || !santri.parentPhone}
-                      onClick={() => handleSendViaGateway(false)}
-                      className="text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5 cursor-pointer"
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setIsWAModalOpen(false);
+                        setIsEditWaliModalOpen(true);
+                      }}
+                      className="text-xs border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
                     >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>{isSendingGateway ? 'Mengirim...' : 'Kirim Otomatis'}</span>
+                      <Edit2 className="w-3.5 h-3.5 mr-1" />
+                      Atur No. HP Wali Dulu
                     </Button>
                   )}
                 </div>

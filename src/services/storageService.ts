@@ -1,6 +1,6 @@
-import type { Santri, SetoranRecord, WAGatewayConfig, WALog, HalaqahSettings, ExamRecord } from '../components/dashboard/types';
+import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings, ExamRecord } from '../components/dashboard/types';
 import { 
-  DEFAULT_WA_CONFIG, 
+  DEFAULT_WA_TEMPLATE_CONFIG, 
   DEFAULT_HALAQAH_SETTINGS 
 } from '../components/dashboard/mockData';
 
@@ -8,8 +8,7 @@ import {
 const BASE_KEYS = {
   SANTRI: 'itqan_santri_list',
   SETORAN: 'itqan_setoran_records',
-  WA_CONFIG: 'itqan_wa_gateway_config',
-  WA_LOGS: 'itqan_wa_logs',
+  WA_TEMPLATES: 'itqan_wa_template_config',
   SETTINGS: 'itqan_halaqah_settings',
   EXAMS: 'itqan_exam_records',
 };
@@ -264,62 +263,25 @@ export const storageService = {
     emitChange('setoran_wa_status_updated');
   },
 
-  // ================= WA GATEWAY CONFIG =================
-  getWAGatewayConfig(): WAGatewayConfig {
+  // ================= WA TEMPLATE CONFIG =================
+  getWATemplateConfig(): WATemplateConfig {
     try {
-      const key = this.getScopedKey(BASE_KEYS.WA_CONFIG);
+      const key = this.getScopedKey(BASE_KEYS.WA_TEMPLATES);
       const data = localStorage.getItem(key);
       if (!data) {
-        localStorage.setItem(key, JSON.stringify(DEFAULT_WA_CONFIG));
-        return DEFAULT_WA_CONFIG;
+        localStorage.setItem(key, JSON.stringify(DEFAULT_WA_TEMPLATE_CONFIG));
+        return DEFAULT_WA_TEMPLATE_CONFIG;
       }
       return JSON.parse(data);
     } catch {
-      return DEFAULT_WA_CONFIG;
+      return DEFAULT_WA_TEMPLATE_CONFIG;
     }
   },
 
-  saveWAGatewayConfig(config: WAGatewayConfig): void {
-    const key = this.getScopedKey(BASE_KEYS.WA_CONFIG);
+  saveWATemplateConfig(config: WATemplateConfig): void {
+    const key = this.getScopedKey(BASE_KEYS.WA_TEMPLATES);
     localStorage.setItem(key, JSON.stringify(config));
-    emitChange('wa_config_updated');
-  },
-
-  // ================= WA LOGS =================
-  getWALogs(): WALog[] {
-    try {
-      const key = this.getScopedKey(BASE_KEYS.WA_LOGS);
-      const data = localStorage.getItem(key);
-      if (!data) return [];
-      return JSON.parse(data);
-    } catch {
-      return [];
-    }
-  },
-
-  addWALog(input: Omit<WALog, 'id' | 'timestamp'>): WALog {
-    const log: WALog = {
-      ...input,
-      id: `walog-${Date.now()}`,
-      timestamp: new Intl.DateTimeFormat('id-ID', {
-        day: 'numeric',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(new Date()),
-    };
-    const key = this.getScopedKey(BASE_KEYS.WA_LOGS);
-    const logs = this.getWALogs();
-    const updated = [log, ...logs.slice(0, 49)];
-    localStorage.setItem(key, JSON.stringify(updated));
-    emitChange('wa_log_added');
-    return log;
-  },
-
-  clearWALogs(): void {
-    const key = this.getScopedKey(BASE_KEYS.WA_LOGS);
-    localStorage.setItem(key, JSON.stringify([]));
-    emitChange('wa_logs_cleared');
+    emitChange('wa_template_updated');
   },
 
   // ================= HALAQAH SETTINGS =================
@@ -395,12 +357,10 @@ export const storageService = {
   resetDatabase(): void {
     const santriKey = this.getScopedKey(BASE_KEYS.SANTRI);
     const setoranKey = this.getScopedKey(BASE_KEYS.SETORAN);
-    const logsKey = this.getScopedKey(BASE_KEYS.WA_LOGS);
     const examsKey = this.getScopedKey(BASE_KEYS.EXAMS);
 
     localStorage.setItem(santriKey, JSON.stringify([]));
     localStorage.setItem(setoranKey, JSON.stringify([]));
-    localStorage.setItem(logsKey, JSON.stringify([]));
     localStorage.setItem(examsKey, JSON.stringify([]));
     emitChange('database_reset');
   },

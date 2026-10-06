@@ -1,17 +1,11 @@
-import type { Santri, SetoranRecord, WAGatewayConfig, HalaqahSettings } from './types';
+import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings } from './types';
 
 // DATA AWAL KOSONG (ZERO DUMMY DATA)
 export const INITIAL_SANTRI_LIST: Santri[] = [];
 
 export const INITIAL_SETORAN_RECORDS: SetoranRecord[] = [];
 
-export const DEFAULT_WA_CONFIG: WAGatewayConfig = {
-  provider: 'fonnte',
-  endpointUrl: 'https://api.fonnte.com/send',
-  apiKey: '',
-  senderNumber: '',
-  autoSendOnSetoran: false,
-  limitOneMessagePerDay: true,
+export const DEFAULT_WA_TEMPLATE_CONFIG: WATemplateConfig = {
   templateDailyProgress: `*LAPORAN TAHFIDZ HARIAN - ITQAN*
 {tanggal}
 

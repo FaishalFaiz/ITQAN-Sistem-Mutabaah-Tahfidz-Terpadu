@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   CheckCircle2, 
   Send, 
-  AlertTriangle, 
   ExternalLink, 
   Check, 
   MessageSquare, 
@@ -14,7 +13,7 @@ import { Button } from '@/components/ui/button';
 
 import type { Santri } from '../dashboard/types';
 import { storageService } from '../../services/storageService';
-import { waGatewayService, type SendResult } from '../../services/waGatewayService';
+import { waGatewayService } from '../../services/waGatewayService';
 import { toast } from '@/components/ui/sonner';
 import { QURAN_SURAHS, JUZ_TO_START_SURAH, type SurahItem } from '../../data/quranData';
 
@@ -165,41 +164,22 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
       onSaveSetor(manualLines);
     }
 
-    // 2. Eksekusi Pengiriman WhatsApp jika diaktifkan
+    // 2. Jika opsi kirim WA dicentang dan santri memiliki no WA, siapkan link wa.me dan opsi salin
     if (sendWA && activeSantri.parentPhone) {
       const messageText = waGatewayService.buildSetoranMessage(result.record, result.updatedSantri);
-      const sendRes: SendResult = await waGatewayService.sendMessage(
-        activeSantri.parentPhone,
-        activeSantri.parentName || `Wali ${activeSantri.name}`,
-        messageText,
-        'setoran'
-      );
+      const waLink = waGatewayService.getDirectWALink(activeSantri.parentPhone, messageText);
+      storageService.updateSetoranWAStatus(result.record.id, 'sent');
 
-      if (sendRes.success) {
-        storageService.updateSetoranWAStatus(result.record.id, 'sent');
-        setWaFeedback({
-          status: 'success',
-          message: `Setoran tersimpan & pesan WA terkirim ke wali (${activeSantri.parentPhone}).`,
-        });
-        toast.success(`Setoran ${activeSantri.name} tersimpan`, {
-          description: `${manualLines} baris (${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"}) • WA terkirim`,
-        });
-        setTimeout(() => {
-          setIsSubmitting(false);
-          if (onSuccess) onSuccess();
-        }, 1100);
-      } else {
-        storageService.updateSetoranWAStatus(result.record.id, 'failed');
-        setWaFeedback({
-          status: 'fallback',
-          message: `Setoran tersimpan. Buka pesan WhatsApp:`,
-          fallbackUrl: sendRes.fallbackUrl,
-        });
-        toast.success(`Setoran ${activeSantri.name} tersimpan`, {
-          description: `${manualLines} baris tercatat. Siap kirim via WhatsApp.`,
-        });
-        setIsSubmitting(false);
-      }
+      setWaFeedback({
+        status: 'fallback',
+        message: `Setoran berhasil dicatat! Siap dikirim ke wali (${activeSantri.parentPhone}):`,
+        fallbackUrl: waLink,
+      });
+
+      toast.success(`Setoran ${activeSantri.name} tersimpan`, {
+        description: `${manualLines} baris (${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"}) • Teks WA siap dikirim`,
+      });
+      setIsSubmitting(false);
     } else {
       setWaFeedback({
         status: 'success',
@@ -226,12 +206,12 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
       )}
 
       {waFeedback.status === 'fallback' && (
-        <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-2">
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-950 rounded-xl text-xs space-y-2.5">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="font-bold">{waFeedback.message}</span>
           </div>
-          <div className="flex items-center gap-2 pt-0.5">
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
             {waFeedback.fallbackUrl && (
               <a
                 href={waFeedback.fallbackUrl}
@@ -245,7 +225,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-xs"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>Kirim via WhatsApp</span>
+                <span>Buka WhatsApp (wa.me)</span>
                 <ExternalLink className="w-3 h-3 ml-0.5" />
               </a>
             )}

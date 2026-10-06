@@ -15,12 +15,11 @@ import {
   FileSpreadsheet,
   ChevronDown,
   Check,
-  Send,
   ExternalLink,
 } from 'lucide-react';
 import type { Santri, SetoranRecord } from './types';
 import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
-import { waGatewayService, type SendResult } from '../../services/waGatewayService';
+import { waGatewayService } from '../../services/waGatewayService';
 import {
   generateSantriReports,
   getJuzDistribution,
@@ -84,8 +83,6 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   const [isWAModalOpen, setIsWAModalOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [broadcastTarget, setBroadcastTarget] = useState('081234567801');
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
-  const [broadcastFeedback, setBroadcastFeedback] = useState<string | null>(null);
 
   // Dynamic Weekly Trend data from real records
   const weeklyTrendData = useMemo(
@@ -286,25 +283,9 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
     setTimeout(() => setCopySuccess(false), 2500);
   };
 
-  const handleSendBroadcastGateway = async () => {
+  const handleOpenWABroadcast = () => {
     if (!broadcastTarget.trim()) return;
-    setIsBroadcasting(true);
-    setBroadcastFeedback(null);
-
-    const res: SendResult = await waGatewayService.sendMessage(
-      broadcastTarget,
-      'Grup Wali / Halaqoh',
-      waDigestMessage,
-      'broadcast'
-    );
-
-    setIsBroadcasting(false);
-    if (res.success) {
-      setBroadcastFeedback('Alhamdulillah! Pesan berhasil dikirim ke WhatsApp.');
-    } else if (res.fallbackUrl) {
-      setBroadcastFeedback('Membuka pesan di WhatsApp...');
-      window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer');
-    }
+    waGatewayService.openDirectWA(broadcastTarget, waDigestMessage);
   };
 
   return (
@@ -1092,22 +1073,12 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsWAModalOpen(false);
-                    setBroadcastFeedback(null);
-                  }}
+                  onClick={() => setIsWAModalOpen(false)}
                   className="text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-
-              {broadcastFeedback && (
-                <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{broadcastFeedback}</span>
-                </div>
-              )}
 
               <p className="text-xs text-slate-500">
                 Salin atau kirimkan ringkasan laporan ini langsung ke grup WhatsApp wali santri atau nomor pembina:
@@ -1134,10 +1105,11 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
               <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
                 <span className="text-xs text-slate-400">
-                  {copySuccess ? 'Berhasil disalin!' : 'Siap dikirimkan'}
+                  {copySuccess ? 'Berhasil disalin!' : 'Siap dikirimkan secara manual'}
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
+                    type="button"
                     variant="outline"
                     onClick={handleCopyWA}
                     className="text-xs font-semibold h-9 px-3 border-slate-200 rounded-lg cursor-pointer"
@@ -1146,26 +1118,24 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                     <span>Salin Teks</span>
                   </Button>
 
-                  {broadcastTarget && (
-                    <a
-                      href={waGatewayService.getDirectWALink(broadcastTarget, waDigestMessage)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold h-9"
+                  {broadcastTarget ? (
+                    <Button
+                      type="button"
+                      onClick={handleOpenWABroadcast}
+                      className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 h-9 px-3.5 rounded-lg shadow-xs cursor-pointer"
                     >
-                      <span>Buka WhatsApp</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                      <span>Buka WhatsApp (wa.me)</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      disabled
+                      className="text-xs font-semibold bg-slate-200 text-slate-400 h-9 px-3.5 rounded-lg"
+                    >
+                      Masukkan Nomor Tujuan
+                    </Button>
                   )}
-
-                  <Button
-                    disabled={isBroadcasting || !broadcastTarget}
-                    onClick={handleSendBroadcastGateway}
-                    className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 h-9 px-3.5 rounded-lg shadow-xs cursor-pointer"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>{isBroadcasting ? 'Mengirim...' : 'Kirim Otomatis'}</span>
-                  </Button>
                 </div>
               </div>
             </div>

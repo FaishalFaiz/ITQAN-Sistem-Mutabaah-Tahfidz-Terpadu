@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Send, 
   CheckCircle2, 
   Clock, 
   AlertCircle, 
-  RefreshCw, 
   MessageSquare, 
   Smartphone, 
   ExternalLink,
   Check,
   Eye,
   Info,
-  Edit2
+  Edit2,
+  Copy
 } from 'lucide-react';
 import type { Santri } from './types';
 import { storageService, getTodayDateKey } from '../../services/storageService';
-import { waGatewayService, type SendResult } from '../../services/waGatewayService';
+import { waGatewayService } from '../../services/waGatewayService';
 import { EditWaliModal } from './EditWaliModal';
 import {
   Dialog,
@@ -46,23 +45,15 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'sent'>('all');
   const [selectedPreviewSantri, setSelectedPreviewSantri] = useState<Santri | null>(null);
   const [editingWaliSantri, setEditingWaliSantri] = useState<Santri | null>(null);
-  const [sendingId, setSendingId] = useState<string | null>(null);
-  const [batchProgress, setBatchProgress] = useState<{
-    isRunning: boolean;
-    current: number;
-    total: number;
-    currentName: string;
-  } | null>(null);
   const [statusMessage, setStatusMessage] = useState<{
     type: 'success' | 'error' | 'info';
     text: string;
   } | null>(null);
 
-  // Sync state when dialog opens
+  // Reset state when dialog opens
   useEffect(() => {
     if (isOpen) {
       setStatusMessage(null);
-      setBatchProgress(null);
       setSelectedPreviewSantri(null);
     }
   }, [isOpen]);
@@ -80,88 +71,25 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
     return true;
   });
 
-  const handleSendSingle = async (santri: Santri, force = false) => {
-    setSendingId(santri.id);
-    setStatusMessage(null);
-
-    try {
-      const result: SendResult = await waGatewayService.sendDailyReport(santri, force);
-      if (result.success) {
-        setStatusMessage({
-          type: 'success',
-          text: `Alhamdulillah! Laporan harian untuk wali ${santri.name} berhasil terkirim ke WhatsApp.`,
-        });
-        onDataRefresh?.();
-      } else if (result.alreadySentToday) {
-        setStatusMessage({
-          type: 'info',
-          text: result.message,
-        });
-      } else if (result.fallbackUrl) {
-        setStatusMessage({
-          type: 'error',
-          text: 'Pesan belum terkirim otomatis. Anda dapat membuka WhatsApp secara langsung melalui tombol WhatsApp.',
-        });
-      } else {
-        setStatusMessage({
-          type: 'error',
-          text: result.message || 'Gagal mengirim pesan WhatsApp.',
-        });
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Terjadi kesalahan sistem';
-      setStatusMessage({ type: 'error', text: msg });
-    } finally {
-      setSendingId(null);
-    }
+  const handleOpenDirectWA = (santri: Santri) => {
+    if (!santri.parentPhone) return;
+    const msg = waGatewayService.buildDailyProgressMessage(santri);
+    storageService.markDailyReportSent(santri.id);
+    setStatusMessage({
+      type: 'success',
+      text: `Membuka WhatsApp untuk wali ${santri.name} dan status ditandai terkirim.`,
+    });
+    onDataRefresh?.();
+    waGatewayService.openDirectWA(santri.parentPhone, msg);
   };
 
-  const handleSendBatch = async () => {
-    const targets = santriList.filter(
-      (s) => s.lastDailyReportSentDate !== today && s.parentPhone && s.parentPhone.trim().length > 5
-    );
-
-    if (targets.length === 0) {
-      setStatusMessage({
-        type: 'info',
-        text: 'Semua wali santri yang memiliki nomor WhatsApp sudah menerima laporan harian hari ini.',
-      });
-      return;
-    }
-
-    setBatchProgress({
-      isRunning: true,
-      current: 0,
-      total: targets.length,
-      currentName: targets[0].name,
+  const handleCopySingle = (santri: Santri) => {
+    const msg = waGatewayService.buildDailyProgressMessage(santri);
+    navigator.clipboard.writeText(msg);
+    setStatusMessage({
+      type: 'success',
+      text: `Teks laporan untuk wali ${santri.name} berhasil disalin ke clipboard!`,
     });
-
-    try {
-      const summary = await waGatewayService.sendBatchDailyReports(targets, {
-        forceResend: false,
-        onProgress: (idx, total, currentSantri) => {
-          setBatchProgress({
-            isRunning: true,
-            current: idx,
-            total,
-            currentName: currentSantri.name,
-          });
-        },
-      });
-
-      setStatusMessage({
-        type: 'success',
-        text: `Pengiriman batch selesai! ${summary.sent} terkirim, ${summary.skippedAlreadySent} dilewati (sudah terkirim), ${summary.failed} gagal.`,
-      });
-      onDataRefresh?.();
-    } catch {
-      setStatusMessage({
-        type: 'error',
-        text: 'Pengiriman batch terhenti karena kendala koneksi.',
-      });
-    } finally {
-      setBatchProgress(null);
-    }
   };
 
   return (
@@ -188,7 +116,6 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                 <span className="font-semibold text-slate-700">Tanggal: {today}</span>
               </DialogDescription>
             </div>
-
           </div>
         </DialogHeader>
 
@@ -215,27 +142,10 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
             </div>
             <button
               onClick={() => setStatusMessage(null)}
-              className="text-slate-400 hover:text-slate-600 font-bold ml-2"
+              className="text-slate-400 hover:text-slate-600 font-bold ml-2 cursor-pointer"
             >
               ×
             </button>
-          </div>
-        )}
-
-        {/* Batch Progress Bar */}
-        {batchProgress && (
-          <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
-            <div className="flex items-center justify-between text-xs font-semibold text-blue-900 mb-1">
-              <span>Mengirim pesan ({batchProgress.current}/{batchProgress.total}): {batchProgress.currentName}...</span>
-              <span>{Math.round((batchProgress.current / batchProgress.total) * 100)}%</span>
-            </div>
-            <div className="w-full bg-blue-200 h-2 rounded-full overflow-hidden">
-              <div 
-                className="bg-[#0070BA] h-full transition-all duration-300"
-                style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
-              ></div>
-            </div>
-            <p className="text-[11px] text-blue-700 mt-1">Mengirim laporan harian ke nomor WhatsApp wali santri...</p>
           </div>
         )}
 
@@ -244,7 +154,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => setFilterTab('all')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
                 filterTab === 'all'
                   ? 'bg-slate-900 text-white'
                   : 'text-slate-600 hover:bg-slate-100'
@@ -254,23 +164,23 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
             </button>
             <button
               onClick={() => setFilterTab('pending')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
                 filterTab === 'pending'
                   ? 'bg-amber-600 text-white'
                   : 'text-amber-800 bg-amber-50 hover:bg-amber-100'
               }`}
             >
-              Belum ({pendingCount})
+              Belum Dikirim ({pendingCount})
             </button>
             <button
               onClick={() => setFilterTab('sent')}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
                 filterTab === 'sent'
                   ? 'bg-emerald-600 text-white'
                   : 'text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
               }`}
             >
-              Sudah ({sentCount})
+              Sudah Dikirim ({sentCount})
             </button>
           </div>
 
@@ -290,8 +200,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
           ) : (
             filteredList.map((santri) => {
               const isSentToday = santri.lastDailyReportSentDate === today;
-              const hasPhone = santri.parentPhone && santri.parentPhone.trim().length > 5;
-              const isSending = sendingId === santri.id;
+              const hasPhone = Boolean(santri.parentPhone && santri.parentPhone.trim().length > 5);
               const todayRecords = storageService.getTodaySetoranForSantri(santri.id);
               const linesToday = todayRecords.reduce((acc, r) => acc + r.totalLines, 0) || santri.linesCompletedToday;
 
@@ -319,7 +228,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                         <button
                           type="button"
                           onClick={() => setEditingWaliSantri(santri)}
-                          className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-[#0070BA] hover:underline ml-1"
+                          className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-[#0070BA] hover:underline ml-1 cursor-pointer"
                           title="Edit nama atau no WA wali santri"
                         >
                           <Edit2 className="w-3 h-3" />
@@ -363,7 +272,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                       ) : hasPhone ? (
                         <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
                           <Clock className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Siap Kirim</span>
+                          <span>Belum Dikirim</span>
                         </div>
                       ) : (
                         <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">
@@ -378,59 +287,57 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                       type="button"
                       variant="outline"
                       onClick={() => setSelectedPreviewSantri(santri)}
-                      className="h-9 px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 border-slate-200 rounded-lg"
+                      className="h-9 px-2.5 sm:px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 border-slate-200 rounded-lg cursor-pointer"
                       title="Lihat pesan yang akan dikirim"
                     >
                       <Eye className="w-3.5 h-3.5 mr-1" />
                       Preview
                     </Button>
 
-                    {/* Send / Resend Button */}
-                    {isSentToday ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={!hasPhone || isSending || Boolean(batchProgress?.isRunning)}
-                        onClick={() => handleSendSingle(santri, true)}
-                        className="h-9 px-3 text-xs font-semibold text-slate-600 hover:text-[#0070BA] border-slate-200 rounded-lg"
-                        title="Kirim ulang laporan hari ini"
-                      >
-                        {isSending ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                        )}
-                        Kirim Ulang
-                      </Button>
+                    {/* Salin Teks Button */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleCopySingle(santri)}
+                      className="h-9 px-2.5 sm:px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 border-slate-200 rounded-lg cursor-pointer"
+                      title="Salin teks pesan ke clipboard"
+                    >
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                      Salin
+                    </Button>
+
+                    {/* Direct WA Button */}
+                    {hasPhone ? (
+                      isSentToday ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleOpenDirectWA(santri)}
+                          className="h-9 px-3 text-xs font-semibold text-emerald-700 border-emerald-300 hover:bg-emerald-50 rounded-lg cursor-pointer inline-flex items-center gap-1.5"
+                          title="Buka WhatsApp untuk kirim ulang"
+                        >
+                          <span>Kirim Ulang</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={() => handleOpenDirectWA(santri)}
+                          className="h-9 px-3.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
+                          title="Buka WhatsApp langsung (wa.me)"
+                        >
+                          <span>Buka WA (wa.me)</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Button>
+                      )
                     ) : (
                       <Button
                         type="button"
-                        disabled={!hasPhone || isSending || Boolean(batchProgress?.isRunning)}
-                        onClick={() => handleSendSingle(santri, false)}
-                        className="h-9 px-3.5 text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-2xs"
+                        variant="outline"
+                        onClick={() => setEditingWaliSantri(santri)}
+                        className="h-9 px-3 text-xs font-semibold text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 rounded-lg cursor-pointer"
                       >
-                        {isSending ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1" />
-                        ) : (
-                          <Send className="w-3.5 h-3.5 mr-1" />
-                        )}
-                        Kirim WA
-                      </Button>
-                    )}
-
-                    {/* Fallback Direct WA link */}
-                    {hasPhone && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          const msg = waGatewayService.buildDailyProgressMessage(santri);
-                          waGatewayService.openDirectWA(santri.parentPhone, msg);
-                        }}
-                        className="h-9 w-9 p-0 text-slate-400 hover:text-emerald-600 rounded-lg"
-                        title="Buka langsung di WhatsApp Web / App"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        Atur No. HP
                       </Button>
                     )}
                   </div>
@@ -442,20 +349,43 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
 
         {/* Preview Drawer / Submodal if selected */}
         {selectedPreviewSantri && (
-          <div className="border-t border-slate-200 bg-slate-50 p-4 max-h-60 overflow-y-auto">
+          <div className="border-t border-slate-200 bg-slate-50 p-4 max-h-64 overflow-y-auto">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-[#0070BA]" />
                 <span className="text-xs font-bold text-slate-900">
-                  Preview Pesan WhatsApp untuk Wali: {selectedPreviewSantri.name} ({selectedPreviewSantri.parentPhone || 'No WA Kosong'})
+                  Preview Pesan: {selectedPreviewSantri.name} ({selectedPreviewSantri.parentPhone || 'No WA Kosong'})
                 </span>
               </div>
-              <button
-                onClick={() => setSelectedPreviewSantri(null)}
-                className="text-xs font-semibold text-slate-500 hover:text-slate-800"
-              >
-                Tutup Preview [×]
-              </button>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCopySingle(selectedPreviewSantri)}
+                  className="h-7 text-xs border-slate-300"
+                >
+                  <Copy className="w-3 h-3 mr-1" />
+                  Salin Teks
+                </Button>
+                {selectedPreviewSantri.parentPhone && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleOpenDirectWA(selectedPreviewSantri)}
+                    className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Buka WhatsApp
+                  </Button>
+                )}
+                <button
+                  onClick={() => setSelectedPreviewSantri(null)}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer ml-1"
+                >
+                  [× Tutup]
+                </button>
+              </div>
             </div>
             <pre className="p-3 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-800 whitespace-pre-wrap leading-relaxed">
               {waGatewayService.buildDailyProgressMessage(selectedPreviewSantri)}
@@ -466,40 +396,20 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
         {/* Footer */}
         <DialogFooter className="px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="text-xs text-slate-500 flex items-center gap-2">
-            <span>Terkirim: <strong className="text-emerald-600 font-semibold">{sentCount}</strong></span>
+            <span>Sudah Dikirim: <strong className="text-emerald-600 font-semibold">{sentCount}</strong></span>
             <span>•</span>
             <span>Belum: <strong className="text-amber-600 font-semibold">{pendingCount}</strong></span>
             <span>•</span>
             <span>Total: <strong>{santriList.length} Santri</strong></span>
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <Button
               type="button"
-              variant="outline"
               onClick={onClose}
-              disabled={Boolean(batchProgress?.isRunning)}
-              className="text-xs font-semibold h-9 sm:h-10 px-4 border-slate-200 rounded-lg justify-center"
+              className="text-xs font-semibold h-9 px-5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg justify-center cursor-pointer"
             >
-              Tutup
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSendBatch}
-              disabled={pendingCount === 0 || Boolean(batchProgress?.isRunning)}
-              className="text-xs font-semibold h-9 sm:h-10 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs justify-center"
-            >
-              {batchProgress?.isRunning ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                  Mengirim ({batchProgress.current}/{batchProgress.total})...
-                </>
-              ) : (
-                <>
-                  <Send className="w-3.5 h-3.5 mr-1.5" />
-                  Kirim ke Semua Wali yang Belum ({pendingCount})
-                </>
-              )}
+              Selesai / Tutup
             </Button>
           </div>
         </DialogFooter>

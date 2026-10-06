@@ -39,30 +39,11 @@ export interface SetoranRecord {
   waSentAt?: string;
 }
 
-export type WAGatewayProvider = 'fonnte' | 'waha' | 'wablas' | 'custom';
-
-export interface WAGatewayConfig {
-  provider: WAGatewayProvider;
-  endpointUrl: string;
-  apiKey: string;
-  senderNumber: string;
-  autoSendOnSetoran: boolean;
-  limitOneMessagePerDay: boolean;
+export interface WATemplateConfig {
   templateDailyProgress: string;
   templateZiyadah: string;
   templateMurojaah: string;
   templateHalaqahDigest: string;
-}
-
-export interface WALog {
-  id: string;
-  timestamp: string;
-  recipientName: string;
-  recipientPhone: string;
-  messageType: 'setoran' | 'broadcast' | 'test' | 'daily_report';
-  status: 'success' | 'failed' | 'fallback_opened';
-  statusText: string;
-  snippet: string;
 }
 
 export interface HalaqahSettings {
