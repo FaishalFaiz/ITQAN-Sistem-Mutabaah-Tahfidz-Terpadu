@@ -2,6 +2,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { FileText, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { storageService } from '../../services/storageService';
 import type { Santri, SetoranRecord } from './types';
 import type { SantriReportItem } from './laporanData';
 
@@ -21,6 +22,10 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
   periodLabel = 'Bulan Ini',
 }) => {
   if (!isOpen || !santri) return null;
+
+  const halaqahSettings = storageService.getHalaqahSettings();
+  const currentMusyrifName = halaqahSettings.musyrifName || 'Musyrif Halaqoh';
+  const currentHalaqahName = ('halaqahName' in santri && santri.halaqahName) || halaqahSettings.halaqahName || 'Halaqoh Tahfidz';
 
   // Normalisasi data dari Santri atau SantriReportItem
   const totalRecords = records.length;
@@ -119,14 +124,14 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
               <div className="flex">
                 <span className="w-24 text-slate-500">Halaqoh</span>
                 <span className="text-slate-800 font-medium">
-                  : {('halaqahName' in santri && santri.halaqahName) || 'Halaqoh Abu Bakar Ash-Shiddiq'}
+                  : {currentHalaqahName}
                 </span>
               </div>
             </div>
             <div className="space-y-1">
               <div className="flex">
                 <span className="w-24 text-slate-500">Musyrif</span>
-                <span className="text-slate-800 font-medium">: Ust. Hamzah / Musyrif</span>
+                <span className="text-slate-800 font-medium">: {currentMusyrifName}</span>
               </div>
               <div className="flex">
                 <span className="w-24 text-slate-500">Target Jenjang</span>
@@ -211,18 +216,12 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
             </p>
           </div>
 
-          {/* Tanda Tangan */}
-          <div className="grid grid-cols-2 gap-8 pt-3 text-center avoid-break">
-            <div className="space-y-10">
-              <span className="text-slate-600 block text-[11px]">Koordinator Tahfidz,</span>
-              <span className="font-bold text-slate-900 block border-t border-slate-300 pt-1 text-[11px]">
-                Ust. Hamzah Al-Hafidz, Lc.
-              </span>
-            </div>
-            <div className="space-y-10">
+          {/* Tanda Tangan Tunggal Musyrif */}
+          <div className="flex justify-end pt-4 text-center avoid-break">
+            <div className="space-y-12 min-w-[180px]">
               <span className="text-slate-600 block text-[11px]">Musyrif Halaqoh,</span>
               <span className="font-bold text-slate-900 block border-t border-slate-300 pt-1 text-[11px]">
-                Ust. Abdullah
+                {currentMusyrifName}
               </span>
             </div>
           </div>

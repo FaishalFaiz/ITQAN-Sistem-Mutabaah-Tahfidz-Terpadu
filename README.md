@@ -41,7 +41,7 @@
 - **Digital Tap Counter Ujian Tasmi':** Modul simulasi ujian sekali duduk dengan penghitung digital untuk ketukan tajwid (*Tawaqquf*) dan koreksi fatal lafadz (*Fath*) dengan grading instan (Mumtaz, Jayyid, I'adah).
 - **Executive Santri Detail Page:** Halaman rapor santri yang bersih dan bebas duplikasi metrik, dilengkapi rekomendasi tindakan talaqqi adaptif untuk musyrif.
 - **Generator Laporan WhatsApp (WA Digest):** Salin ringkasan mutaba'ah harian/pekanan siap kirim ke wali santri dalam 1-klik.
-- **Otentikasi Multirole Enterprise:** Halaman Login & Sign Up terpisah dengan pemilihan peran cepat (*Musyrif*, *Koordinator/Admin*, dan *Wali Santri*).
+- **Otentikasi Terfokus Musyrif:** Akses portal khusus guru/musyrif halaqoh tanpa kerumitan multi-role/atasan sehingga penggunaan lebih cepat dan intuitif.
 
 ---
 
@@ -173,8 +173,8 @@ Seluruh rute dan fitur utama dapat diakses langsung pada mode dev:
 | **Detail Santri** | `/santri/1` | Rapor komprehensif Zaid bin Tsabit |
 | **Ujian Tasmi' Digital** | `/ujian-tasmi` | Tap counter simulasi penilaian ujian |
 | **Pacing Engine** | `/pacing` | Dasbor target khatam 30 Juz 3 tahun |
-| **Login Multi-Role** | `/login` | Masuk sebagai Musyrif, Koordinator, atau Wali Santri |
-| **Registrasi Akun** | `/signup` | Pendaftaran akun guru dan wali santri |
+| **Login Musyrif** | `/login` | Masuk ke portal halaqoh musyrif |
+| **Registrasi Musyrif** | `/signup` | Pendaftaran akun musyrif baru |
 
 ---
 

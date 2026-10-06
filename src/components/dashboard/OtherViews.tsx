@@ -65,10 +65,12 @@ export const OtherView: React.FC<OtherViewProps> = ({
       {currentView === 'santri' && (
         <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-xs space-y-4">
           {/* Header Title & Add Button */}
-          <div className="flex items-center justify-between gap-3 pb-2 border-b border-slate-100">
-            <div>
-              <h3 className="font-bold text-base sm:text-lg text-slate-900 tracking-tight">Data Santri &amp; Kontak Wali</h3>
-              <p className="text-xs text-slate-500">
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="min-w-0 pr-2">
+              <h3 className="font-bold text-base sm:text-lg text-slate-900 tracking-tight leading-snug">
+                Data Santri &amp; Kontak Wali
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
                 Total {santriList.length} santri tercatat dalam rombel halaqoh
               </p>
             </div>
@@ -76,11 +78,10 @@ export const OtherView: React.FC<OtherViewProps> = ({
             <button
               type="button"
               onClick={onOpenAddModal}
-              className="inline-flex items-center gap-1 sm:gap-1.5 h-8.5 sm:h-9 px-2.5 sm:px-3.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] text-xs font-semibold transition-colors shadow-2xs shrink-0 cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 h-9 px-3 sm:px-3.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] active:scale-[0.98] text-xs font-bold transition-all shadow-2xs shrink-0 whitespace-nowrap cursor-pointer"
             >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Tambah Santri</span>
-              <span className="sm:hidden">Tambah</span>
+              <UserPlus className="w-4 h-4 shrink-0" />
+              <span>Tambah Santri</span>
             </button>
           </div>
 

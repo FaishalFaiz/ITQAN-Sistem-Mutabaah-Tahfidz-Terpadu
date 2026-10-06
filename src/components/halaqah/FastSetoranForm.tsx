@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
-import { CheckCircle2, Send, AlertTriangle, ExternalLink, Check, MessageSquare, BookOpen, RotateCcw } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { 
+  CheckCircle2, 
+  Send, 
+  AlertTriangle, 
+  ExternalLink, 
+  Check, 
+  MessageSquare, 
+  BookOpen, 
+  Search, 
+  ChevronDown
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import type { Santri } from '../dashboard/types';
 import { storageService } from '../../services/storageService';
 import { waGatewayService, type SendResult } from '../../services/waGatewayService';
 import { toast } from '@/components/ui/sonner';
+import { QURAN_SURAHS, JUZ_TO_START_SURAH, type SurahItem } from '../../data/quranData';
 
 interface FastSetoranFormProps {
   santri?: Santri | null;
@@ -13,18 +24,6 @@ interface FastSetoranFormProps {
   onCancel?: () => void;
   onSaveSetor?: (linesAdded: number) => void;
 }
-
-const COMMON_SURAHS = [
-  'An-Naba', 'An-Naziat', 'Abasa', 'At-Takwir', 'Al-Infithar', 'Al-Muthaffifin',
-  'Al-Insyiqaq', 'Al-Buruj', 'Ath-Thariq', 'Al-A\'la', 'Al-Ghasyiyah', 'Al-Fajr',
-  'Al-Balad', 'Asy-Syams', 'Al-Lail', 'Adh-Dhuha', 'Al-Insyirah', 'At-Tin',
-  'Al-\'Alaq', 'Al-Qadr', 'Al-Bayyinah', 'Az-Zalzalah', 'Al-\'Adiyat', 'Al-Qari\'ah',
-  'At-Takatsur', 'Al-\'Ashr', 'Al-Humazah', 'Al-Fil', 'Quraisy', 'Al-Ma\'un',
-  'Al-Kautsar', 'Al-Kafirun', 'An-Nashr', 'Al-Lahab', 'Al-Ikhlas', 'Al-Falaq', 'An-Nas',
-  'Al-Mulk', 'Al-Qalam', 'Al-Haqqah', 'Al-Ma\'arij', 'Nuh', 'Al-Jinn', 'Al-Muzzammil',
-  'Al-Muddastsir', 'Al-Qiyamah', 'Al-Insan', 'Al-Mursalat', 'Yasin', 'Al-Waqi\'ah',
-  'Ar-Rahman', 'Al-Kahf', 'Al-Baqarah', 'Ali \'Imran', 'An-Nisa\''
-];
 
 export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({ 
   santri: initialSantri, 
@@ -42,15 +41,22 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
   const activeSantri = initialSantri || allSantri.find((s) => s.id === selectedSantriId) || allSantri[0];
   
   const [type, setType] = useState<'ziyadah' | 'murojaah'>('ziyadah');
-  const [surahName, setSurahName] = useState<string>(() => activeSantri?.lastSurah || 'An-Naba 1-40');
-  const [juz, setJuz] = useState<number>(30);
-  const [pageStart, setPageStart] = useState<number>(582);
-  const [pageEnd, setPageEnd] = useState<number>(582);
-  const [lineStart, setLineStart] = useState<number>(1);
-  const [lineEnd, setLineEnd] = useState<number>(15);
-  const [grade, setGrade] = useState<'mumtaz' | 'jayyid' | 'iadah'>('mumtaz');
-  const [notes, setNotes] = useState<string>('');
   
+  // Juz & Surah States
+  const [juz, setJuz] = useState<number>(30);
+  const [selectedSurah, setSelectedSurah] = useState<SurahItem>(() => {
+    return QURAN_SURAHS.find((s) => s.name === 'An-Naba') || QURAN_SURAHS[77];
+  });
+  const [surahSearchText, setSurahSearchText] = useState<string>('An-Naba');
+  const [isSurahDropdownOpen, setIsSurahDropdownOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Range Ayat & Input Manual Baris Setoran
+  const [ayatStart, setAyatStart] = useState<number>(1);
+  const [ayatEnd, setAyatEnd] = useState<number>(15);
+  const [manualLines, setManualLines] = useState<number>(15);
+
+  const [notes, setNotes] = useState<string>('');
   const [sendWA, setSendWA] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [waFeedback, setWaFeedback] = useState<{
@@ -59,22 +65,72 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
     fallbackUrl?: string;
   }>({ status: 'idle', message: '' });
 
+  // Close dropdown when clicked outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsSurahDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filter surah berdasarkan search text
+  const filteredSurahs = useMemo(() => {
+    const query = surahSearchText.toLowerCase().trim();
+    if (!query) {
+      // Tampilkan surah yang ada di juz yang dipilih di bagian atas
+      const sameJuz = QURAN_SURAHS.filter((s) => s.juz === juz);
+      const otherJuz = QURAN_SURAHS.filter((s) => s.juz !== juz);
+      return [...sameJuz, ...otherJuz];
+    }
+    return QURAN_SURAHS.filter(
+      (s) =>
+        s.name.toLowerCase().includes(query) ||
+        String(s.number).includes(query) ||
+        `juz ${s.juz}`.includes(query)
+    );
+  }, [surahSearchText, juz]);
+
+  // Saat Musyrif mengganti Juz, arahkan surah default ke surah pembuka juz tersebut
+  const handleJuzChange = (newJuz: number) => {
+    setJuz(newJuz);
+    const startSurahName = JUZ_TO_START_SURAH[newJuz];
+    const found = QURAN_SURAHS.find((s) => s.name === startSurahName);
+    if (found) {
+      setSelectedSurah(found);
+      setSurahSearchText(found.name);
+      setAyatStart(1);
+      setAyatEnd(Math.min(15, found.totalAyat));
+    }
+  };
+
+  const handleSelectSurah = (surah: SurahItem) => {
+    setSelectedSurah(surah);
+    setSurahSearchText(surah.name);
+    setJuz(surah.juz);
+    setAyatStart(1);
+    setAyatEnd(Math.min(15, surah.totalAyat));
+    setIsSurahDropdownOpen(false);
+  };
+
   const handleSantriChange = (id: string) => {
     setSelectedSantriId(id);
     const target = allSantri.find((s) => s.id === id);
     if (target?.lastSurah) {
-      setSurahName(target.lastSurah);
+      const match = target.lastSurah.match(/^([a-zA-Z\s'-]+)/);
+      if (match) {
+        const found = QURAN_SURAHS.find((s) => s.name.toLowerCase() === match[1].trim().toLowerCase());
+        if (found) {
+          handleSelectSurah(found);
+        }
+      }
     }
   };
 
-  // Kalkulasi total baris
-  const totalPages = Math.max(1, pageEnd - pageStart + 1);
-  const totalLines = totalPages === 1 
-    ? Math.max(1, lineEnd - lineStart + 1)
-    : (totalPages - 2) * 15 + (15 - lineStart + 1) + lineEnd;
-
   const dailyTarget = activeSantri?.dailyTargetLines || 15;
-  const isTargetMet = totalLines >= dailyTarget;
+  const isTargetMet = manualLines >= dailyTarget;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,31 +139,33 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
     setIsSubmitting(true);
     setWaFeedback({ status: 'idle', message: '' });
 
-    // 1. Simpan ke database lokal melalui storageService
+    const formattedSurahRange = `${selectedSurah.name} : ${ayatStart}-${ayatEnd}`;
     const halaqahSettings = storageService.getHalaqahSettings();
+
+    // 1. Simpan ke database lokal
     const result = storageService.addSetoranRecord({
       santriId: activeSantri.id,
       santriName: activeSantri.name,
       nis: activeSantri.nis,
       type,
       juz,
-      surahName: surahName.trim() || 'Hafalan Al-Qur\'an',
-      pageStart,
-      pageEnd,
-      lineStart,
-      lineEnd,
-      totalLines,
-      grade,
-      musyrif: halaqahSettings.musyrifName || 'Ust. Abdullah',
+      surahName: formattedSurahRange,
+      pageStart: 1,
+      pageEnd: 1,
+      lineStart: 1,
+      lineEnd: manualLines,
+      totalLines: manualLines,
+      grade: 'mumtaz', // Default mutqin/lancar karena disahkan musyrif
+      musyrif: halaqahSettings.musyrifName || 'Musyrif Halaqoh',
       notes: notes.trim() || undefined,
       waStatus: 'not_sent',
     });
 
     if (onSaveSetor) {
-      onSaveSetor(totalLines);
+      onSaveSetor(manualLines);
     }
 
-    // 2. Eksekusi Pengiriman WhatsApp jika opsi aktif
+    // 2. Eksekusi Pengiriman WhatsApp jika diaktifkan
     if (sendWA && activeSantri.parentPhone) {
       const messageText = waGatewayService.buildSetoranMessage(result.record, result.updatedSantri);
       const sendRes: SendResult = await waGatewayService.sendMessage(
@@ -121,46 +179,45 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
         storageService.updateSetoranWAStatus(result.record.id, 'sent');
         setWaFeedback({
           status: 'success',
-          message: `Setoran tersimpan & pesan WA terkirim otomatis ke wali (${activeSantri.parentPhone}).`,
+          message: `Setoran tersimpan & pesan WA terkirim ke wali (${activeSantri.parentPhone}).`,
         });
         toast.success(`Setoran ${activeSantri.name} tersimpan`, {
-          description: `${totalLines} baris (${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"}) • WA terkirim`,
+          description: `${manualLines} baris (${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"}) • WA terkirim`,
         });
         setTimeout(() => {
           setIsSubmitting(false);
           if (onSuccess) onSuccess();
-        }, 1200);
+        }, 1100);
       } else {
-        // Jika pengiriman otomatis belum aktif, hubungkan langsung ke WhatsApp
         storageService.updateSetoranWAStatus(result.record.id, 'failed');
         setWaFeedback({
           status: 'fallback',
-          message: `Setoran tersimpan. Hubungkan ke WhatsApp wali:`,
+          message: `Setoran tersimpan. Buka pesan WhatsApp:`,
           fallbackUrl: sendRes.fallbackUrl,
         });
         toast.success(`Setoran ${activeSantri.name} tersimpan`, {
-          description: `${totalLines} baris tercatat. Siap kirim via WhatsApp.`,
+          description: `${manualLines} baris tercatat. Siap kirim via WhatsApp.`,
         });
         setIsSubmitting(false);
       }
     } else {
       setWaFeedback({
         status: 'success',
-        message: `Setoran berhasil disimpan! (${totalLines} baris tercatat).`,
+        message: `Setoran berhasil disimpan! (${manualLines} baris tercatat).`,
       });
       toast.success(`Setoran ${activeSantri.name} tersimpan`, {
-        description: `${totalLines} baris • ${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"} (${grade.toUpperCase()})`,
+        description: `${manualLines} baris • ${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"}`,
       });
       setTimeout(() => {
         setIsSubmitting(false);
         if (onSuccess) onSuccess();
-      }, 900);
+      }, 800);
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* Alert Notifikasi Status WA */}
+      {/* Alert Status WA */}
       {waFeedback.status === 'success' && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2.5">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -169,15 +226,12 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
       )}
 
       {waFeedback.status === 'fallback' && (
-        <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-2">
+        <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs space-y-2">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
             <span className="font-bold">{waFeedback.message}</span>
           </div>
-          <p className="text-[11px] text-amber-700">
-            Anda dapat langsung mengirimkan ringkasan setoran ini ke WhatsApp Wali Santri dalam 1-klik:
-          </p>
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2 pt-0.5">
             {waFeedback.fallbackUrl && (
               <a
                 href={waFeedback.fallbackUrl}
@@ -206,8 +260,8 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3.5">
-        {/* Santri Picker (only shown when standalone without initialSantri) */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Santri Picker (jika tanpa santri spesifik) */}
         {!initialSantri && (
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -228,14 +282,14 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
         )}
 
         {/* 1. Jenis Setoran (Segmented Tab Control) */}
-        <div className="bg-slate-100/90 p-1 rounded-xl grid grid-cols-2 gap-1 border border-slate-200/80">
+        <div className="bg-slate-100 p-1 rounded-xl grid grid-cols-2 gap-1 border border-slate-200">
           <button
             type="button"
             onClick={() => setType('ziyadah')}
             className={`py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               type === 'ziyadah'
                 ? 'bg-white text-[#0070BA] shadow-xs border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/40'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
             }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${type === 'ziyadah' ? 'bg-[#0070BA]' : 'bg-transparent'}`} />
@@ -247,7 +301,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
             className={`py-2 px-3 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               type === 'murojaah'
                 ? 'bg-white text-[#0070BA] shadow-xs border border-slate-200/80'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/40'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
             }`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${type === 'murojaah' ? 'bg-[#0070BA]' : 'bg-transparent'}`} />
@@ -255,37 +309,89 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
           </button>
         </div>
 
-        {/* 2. Surah & Juz */}
+        {/* 2. Surah (Search + Dropdown) & Juz (Dropdown) */}
         <div className="space-y-1.5">
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            <div className="col-span-2 sm:col-span-3">
-              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 mb-1">
-                <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-                <span>Surah &amp; Ayat</span>
+            {/* Searchable Surah Dropdown */}
+            <div className="col-span-2 sm:col-span-3 relative" ref={dropdownRef}>
+              <label className="flex items-center justify-between text-[11px] font-semibold text-slate-700 mb-1">
+                <span className="flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Cari &amp; Pilih Surah</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal">
+                  {selectedSurah.totalAyat} Ayat
+                </span>
               </label>
+
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                  <Search className="w-3.5 h-3.5" />
+                </div>
                 <input
                   type="text"
-                  list="surah-list"
                   required
-                  value={surahName}
-                  onChange={(e) => setSurahName(e.target.value)}
-                  placeholder="Contoh: An-Naba 1-40"
-                  className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20 font-medium"
+                  value={surahSearchText}
+                  onFocus={() => setIsSurahDropdownOpen(true)}
+                  onChange={(e) => {
+                    setSurahSearchText(e.target.value);
+                    setIsSurahDropdownOpen(true);
+                  }}
+                  placeholder="Ketik nama atau nomor surat..."
+                  className="w-full h-9 rounded-lg border border-slate-300 bg-white pl-8 pr-7 text-xs text-slate-900 font-medium placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20"
                 />
+                <button
+                  type="button"
+                  onClick={() => setIsSurahDropdownOpen(!isSurahDropdownOpen)}
+                  className="absolute inset-y-0 right-0 pr-2 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isSurahDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
               </div>
-              <datalist id="surah-list">
-                {COMMON_SURAHS.map((s) => (
-                  <option key={s} value={s} />
-                ))}
-              </datalist>
+
+              {/* Floating Dropdown List */}
+              {isSurahDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg z-50 divide-y divide-slate-100 animate-in fade-in zoom-in-95 duration-100">
+                  {filteredSurahs.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-slate-400">
+                      Surah tidak ditemukan
+                    </div>
+                  ) : (
+                    filteredSurahs.map((s) => (
+                      <button
+                        key={s.number}
+                        type="button"
+                        onClick={() => handleSelectSurah(s)}
+                        className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between hover:bg-[#EBF5FB] transition-colors cursor-pointer ${
+                          selectedSurah.number === s.number ? 'bg-blue-50/80 font-bold text-[#0070BA]' : 'text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="w-5 text-[10px] text-slate-400 text-right font-mono">
+                            {s.number}.
+                          </span>
+                          <span>{s.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400 font-normal">
+                          <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">Juz {s.juz}</span>
+                          <span>{s.totalAyat} ayat</span>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Juz Selector */}
             <div>
-              <label className="block text-[11px] font-semibold text-slate-700 mb-1">Juz</label>
+              <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                Pilih Juz
+              </label>
               <select
                 value={juz}
-                onChange={(e) => setJuz(Number(e.target.value))}
-                className="w-full h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-900 font-medium focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20 cursor-pointer"
+                onChange={(e) => handleJuzChange(Number(e.target.value))}
+                className="w-full h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-900 font-semibold focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20 cursor-pointer"
               >
                 {Array.from({ length: 30 }, (_, i) => i + 1).map((j) => (
                   <option key={j} value={j}>Juz {j}</option>
@@ -294,30 +400,23 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
             </div>
           </div>
 
-          {activeSantri?.lastSurah && activeSantri.lastSurah !== surahName && (
+          {activeSantri?.lastSurah && (
             <div className="flex items-center gap-1.5 text-[11px] text-slate-500 pt-0.5">
-              <span>Setoran sebelumnya:</span>
-              <button
-                type="button"
-                onClick={() => setSurahName(activeSantri.lastSurah)}
-                className="inline-flex items-center gap-1 text-[#0070BA] font-semibold hover:underline cursor-pointer"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>{activeSantri.lastSurah}</span>
-              </button>
+              <span>Setoran terakhir:</span>
+              <span className="text-[#0070BA] font-semibold">{activeSantri.lastSurah}</span>
             </div>
           )}
         </div>
 
-        {/* 3. Posisi Halaman & Baris (Cohesive Grouped Card) */}
-        <div className="bg-slate-50/80 border border-slate-200/90 rounded-xl p-3 space-y-2.5">
+        {/* 3. Rentang Ayat & Input Manual Baris Setoran (IDN Style) */}
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-700">
-              Posisi Halaman &amp; Baris
+            <span className="text-xs font-bold text-slate-800">
+              Rentang Ayat &amp; Jumlah Baris
             </span>
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#EBF5FB] text-[#0070BA] border border-[#0070BA]/20">
-                {totalLines} Baris
+                {manualLines} Baris
               </span>
               {type === 'ziyadah' && (
                 <span
@@ -327,156 +426,108 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
                       : 'bg-amber-50 text-amber-700 border-amber-200'
                   }`}
                 >
-                  {isTargetMet ? 'Target Tercapai ✓' : `${dailyTarget - totalLines} baris lagi`}
+                  {isTargetMet ? 'Target Tercapai ✓' : `${dailyTarget - manualLines} baris lagi`}
                 </span>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            {/* Halaman Range */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Input Ayat Dari s/d */}
             <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-              <div className="text-[10px] font-medium text-slate-500 mb-1.5 flex items-center justify-between">
-                <span>Halaman (1-604)</span>
-                <span className="text-slate-400">{totalPages} hal</span>
+              <div className="text-[10px] font-semibold text-slate-600 mb-1.5 flex items-center justify-between">
+                <span>Rentang Ayat ({selectedSurah.name})</span>
+                <span className="text-slate-400 text-[9px]">Max: {selectedSurah.totalAyat} ayat</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <input
                     type="number"
                     min={1}
-                    max={604}
-                    value={pageStart}
+                    max={selectedSurah.totalAyat}
+                    value={ayatStart}
                     onChange={(e) => {
                       const val = Number(e.target.value);
-                      setPageStart(val);
-                      if (pageEnd < val) setPageEnd(val);
+                      setAyatStart(val);
+                      if (ayatEnd < val) setAyatEnd(val);
                     }}
                     className="w-full h-8 text-center text-xs font-bold text-slate-900 border border-slate-200 rounded-md focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20"
                   />
-                  <span className="block text-[9px] text-center text-slate-400 mt-0.5 font-medium">Awal</span>
+                  <span className="block text-[9px] text-center text-slate-400 mt-0.5 font-medium">Ayat Awal</span>
                 </div>
                 <span className="text-slate-400 text-xs font-bold pb-3">s/d</span>
                 <div className="flex-1">
                   <input
                     type="number"
-                    min={pageStart}
-                    max={604}
-                    value={pageEnd}
-                    onChange={(e) => setPageEnd(Number(e.target.value))}
+                    min={ayatStart}
+                    max={selectedSurah.totalAyat}
+                    value={ayatEnd}
+                    onChange={(e) => setAyatEnd(Number(e.target.value))}
                     className="w-full h-8 text-center text-xs font-bold text-slate-900 border border-slate-200 rounded-md focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20"
                   />
-                  <span className="block text-[9px] text-center text-slate-400 mt-0.5 font-medium">Akhir</span>
+                  <span className="block text-[9px] text-center text-slate-400 mt-0.5 font-medium">Ayat Akhir</span>
                 </div>
               </div>
             </div>
 
-            {/* Baris Range */}
+            {/* Input Baris Setoran Manual */}
             <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-2xs">
-              <div className="text-[10px] font-medium text-slate-500 mb-1.5 flex items-center justify-between">
-                <span>Baris per Hal (1-15)</span>
-                <span className="text-slate-400">Hal. Madinah</span>
+              <div className="text-[10px] font-semibold text-slate-600 mb-1.5 flex items-center justify-between">
+                <span>Baris Setoran (Input Manual)</span>
+                <span className="text-[#0070BA] font-bold text-[10px]">
+                  {manualLines === 15 ? '1 Halaman Penuh' : `${manualLines} Baris`}
+                </span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="flex-1">
-                  <input
-                    type="number"
-                    min={1}
-                    max={15}
-                    value={lineStart}
-                    onChange={(e) => setLineStart(Number(e.target.value))}
-                    className="w-full h-8 text-center text-xs font-bold text-slate-900 border border-slate-200 rounded-md focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20"
-                  />
-                  <span className="block text-[9px] text-center text-slate-400 mt-0.5 font-medium">Awal</span>
-                </div>
-                <span className="text-slate-400 text-xs font-bold pb-3">s/d</span>
-                <div className="flex-1">
-                  <input
-                    type="number"
-                    min={1}
-                    max={15}
-                    value={lineEnd}
-                    onChange={(e) => setLineEnd(Number(e.target.value))}
-                    className="w-full h-8 text-center text-xs font-bold text-slate-900 border border-slate-200 rounded-md focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20"
-                  />
-                  <span className="block text-[9px] text-center text-slate-400 mt-0.5 font-medium">Akhir</span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={300}
+                  required
+                  value={manualLines}
+                  onChange={(e) => setManualLines(Math.max(1, Number(e.target.value)))}
+                  className="w-full h-8 text-center text-sm font-bold text-slate-900 border border-slate-200 rounded-md focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20"
+                />
+              </div>
+              {/* Shortcut Cepat Baris */}
+              <div className="flex items-center justify-between gap-1 mt-1.5 pt-1 border-t border-slate-100">
+                <span className="text-[9px] text-slate-400">Pintasan:</span>
+                <div className="flex items-center gap-1">
+                  {[5, 10, 15, 30].map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setManualLines(b)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-medium border cursor-pointer transition-colors ${
+                        manualLines === b 
+                          ? 'bg-[#0070BA] text-white border-[#0070BA]' 
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      {b}b
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 4. Evaluasi Nilai Kelancaran (Clean Distinct Selectable Cards) */}
-        <div className="space-y-1.5">
-          <label className="block text-[11px] font-semibold text-slate-700">
-            Nilai Kelancaran
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {/* Mumtaz */}
-            <button
-              type="button"
-              onClick={() => setGrade('mumtaz')}
-              className={`p-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
-                grade === 'mumtaz'
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs ring-2 ring-emerald-500/20'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40'
-              }`}
-            >
-              <span className="text-xs font-bold">Mumtaz</span>
-              <span className={`text-[10px] mt-0.5 ${grade === 'mumtaz' ? 'text-emerald-100' : 'text-slate-500'}`}>
-                Lancar (0-1 salah)
-              </span>
-            </button>
-
-            {/* Jayyid */}
-            <button
-              type="button"
-              onClick={() => setGrade('jayyid')}
-              className={`p-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
-                grade === 'jayyid'
-                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs ring-2 ring-amber-500/20'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-amber-300 hover:bg-amber-50/40'
-              }`}
-            >
-              <span className="text-xs font-bold">Jayyid</span>
-              <span className={`text-[10px] mt-0.5 ${grade === 'jayyid' ? 'text-amber-100' : 'text-slate-500'}`}>
-                Cukup (2-3 salah)
-              </span>
-            </button>
-
-            {/* I'adah */}
-            <button
-              type="button"
-              onClick={() => setGrade('iadah')}
-              className={`p-2 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
-                grade === 'iadah'
-                  ? 'bg-rose-600 text-white border-rose-600 shadow-xs ring-2 ring-rose-500/20'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-rose-300 hover:bg-rose-50/40'
-              }`}
-            >
-              <span className="text-xs font-bold">I'adah</span>
-              <span className={`text-[10px] mt-0.5 ${grade === 'iadah' ? 'text-rose-100' : 'text-slate-500'}`}>
-                Ulang (&gt;3 salah)
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* 5. Catatan Talaqqi (Opsional) */}
+        {/* 4. Catatan Talaqqi (Opsional) */}
         <div>
           <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-            Catatan Talaqqi <span className="text-slate-400 font-normal">(opsional)</span>
+            Catatan Talaqqi / Musyrif <span className="text-slate-400 font-normal">(opsional)</span>
           </label>
           <input
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Misal: Perhatikan dengung ikhfa, makhraj 'Ain..."
+            placeholder="Misal: Perhatikan makhraj huruf 'Ain dan mad thabi'i..."
             className="w-full h-9 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20 font-medium"
           />
         </div>
 
-        {/* 6. Kirim WhatsApp ke Wali */}
+        {/* 5. Kirim WhatsApp ke Wali */}
         <div className="p-2.5 rounded-xl border border-slate-200 bg-slate-50/70 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${sendWA && activeSantri?.parentPhone ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
@@ -505,7 +556,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
           />
         </div>
 
-        {/* 7. Action Buttons (Batal & Simpan) */}
+        {/* 6. Action Buttons */}
         <div className="flex items-center gap-2 pt-1">
           {onCancel && (
             <Button 

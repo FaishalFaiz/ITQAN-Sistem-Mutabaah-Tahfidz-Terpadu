@@ -8,25 +8,21 @@ import {
   Settings, 
   FileText, 
   Sliders, 
-  Eye,
-  EyeOff,
   ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
 import { waGatewayService, type SendResult } from '../../services/waGatewayService';
-import type { WAGatewayConfig, WAGatewayProvider, HalaqahSettings, WALog } from './types';
+import type { WAGatewayConfig, HalaqahSettings, WALog } from './types';
 
 export const PengaturanView: React.FC = () => {
   // Gateway config state
   const [waConfig, setWaConfig] = useState<WAGatewayConfig>(storageService.getWAGatewayConfig());
-  const [showApiKey, setShowApiKey] = useState(false);
   const [testPhone, setTestPhone] = useState('081234567890');
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success?: boolean; message?: string; fallbackUrl?: string } | null>(null);
   const [configSaved, setConfigSaved] = useState(false);
-
   // Halaqah settings state
   const [settings, setSettings] = useState<HalaqahSettings>(storageService.getHalaqahSettings());
   const [settingsSaved, setSettingsSaved] = useState(false);
@@ -45,23 +41,6 @@ export const PengaturanView: React.FC = () => {
     window.addEventListener(EVENT_DATA_CHANGED, refreshLogs);
     return () => window.removeEventListener(EVENT_DATA_CHANGED, refreshLogs);
   }, []);
-
-  // Handle provider preset switch
-  const handleProviderChange = (provider: WAGatewayProvider) => {
-    let endpoint = waConfig.endpointUrl;
-    if (provider === 'fonnte') {
-      endpoint = 'https://api.fonnte.com/send';
-    } else if (provider === 'waha') {
-      endpoint = 'http://localhost:3000/api/sendText';
-    } else if (provider === 'wablas') {
-      endpoint = 'https://kudus.wablas.com/api/send-message';
-    }
-    setWaConfig((prev) => ({
-      ...prev,
-      provider,
-      endpointUrl: endpoint,
-    }));
-  };
 
   const handleSaveWAConfig = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,8 +69,8 @@ export const PengaturanView: React.FC = () => {
     setTestResult({
       success: res.success,
       message: res.success 
-        ? `Sukses! Pesan verifikasi berhasil dikirim melalui ${waConfig.provider.toUpperCase()}.`
-        : res.message || res.error || 'Pengujian pengiriman pesan belum berhasil.',
+        ? 'Sukses! Pesan uji coba berhasil dikirim ke nomor tujuan.'
+        : res.message || res.error || 'Pengujian pengiriman pesan belum berhasil. Anda tetap dapat menggunakan Direct WA.',
       fallbackUrl: res.fallbackUrl,
     });
     refreshLogs();
@@ -121,131 +100,33 @@ export const PengaturanView: React.FC = () => {
 
       {/* 1. SECTION: Pengaturan Pengiriman WhatsApp */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center">
-              <Server className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-slate-900">
-                Layanan Pengiriman WhatsApp Otomatis
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                Pilih layanan pengiriman pesan otomatis ke nomor wali santri
-              </p>
-            </div>
+        <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+            <Server className="w-4 h-4" />
           </div>
-
-          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-center">
-            {waConfig.endpointUrl ? `Layanan: ${waConfig.provider.toUpperCase()}` : 'Belum Terhubung'}
-          </span>
+          <div>
+            <h3 className="font-bold text-sm text-slate-900">
+              Pengaturan Pengiriman WhatsApp
+            </h3>
+            <p className="text-[11px] text-slate-500">
+              Konfigurasi pengiriman notifikasi setoran otomatis ke nomor WhatsApp wali santri
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSaveWAConfig} className="space-y-4">
-          {/* Pilihan Provider Preset */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-900 mb-1.5">
-              Pilihan Layanan WhatsApp
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { id: 'fonnte', label: 'Fonnte', desc: 'Layanan Cloud Otomatis' },
-                { id: 'waha', label: 'WAHA Server', desc: 'Server Sekolah Lokal' },
-                { id: 'wablas', label: 'Wablas', desc: 'Layanan Cloud Otomatis' },
-                { id: 'custom', label: 'Layanan Lain', desc: 'Kustom / Webhook' },
-              ].map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => handleProviderChange(p.id as WAGatewayProvider)}
-                  className={`p-2.5 text-left rounded-lg border text-xs transition-all ${
-                    waConfig.provider === p.id
-                      ? 'border-[#0070BA] bg-[#EBF5FB] text-[#0070BA] font-bold shadow-2xs'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <span className="block">{p.label}</span>
-                  <span className="text-[10px] text-slate-400 font-normal block">{p.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Endpoint URL & API Key */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-900 mb-1">
-                Alamat Server Kirim Pesan <span className="text-red-500">*</span>
-              </label>
-              <Input
-                type="url"
-                required
-                value={waConfig.endpointUrl}
-                onChange={(e) => setWaConfig({ ...waConfig, endpointUrl: e.target.value })}
-                placeholder="https://api.fonnte.com/send"
-                className="text-xs h-9 bg-white"
-              />
-              <span className="text-[10px] text-slate-400 block mt-1">
-                Alamat koneksi pengiriman pesan (default sudah terisi).
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-900 mb-1">
-                Kunci Akses / Token {waConfig.provider === 'fonnte' && <span className="text-red-500">* (Wajib diisi)</span>}
-              </label>
-              <div className="relative">
-                <Input
-                  type={showApiKey ? 'text' : 'password'}
-                  value={waConfig.apiKey}
-                  onChange={(e) => setWaConfig({ ...waConfig, apiKey: e.target.value })}
-                  placeholder={
-                    waConfig.provider === 'fonnte'
-                      ? 'Tempelkan token Fonnte Anda di sini'
-                      : 'Masukkan kunci akses'
-                  }
-                  className="text-xs h-9 bg-white pr-9"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
-                >
-                  {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <span className="text-[10px] text-slate-400 block mt-1">
-                Kunci akses akun WhatsApp Anda untuk mengirim pesan.
-              </span>
-            </div>
-          </div>
-
-          {/* Sender Number */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-900 mb-1">
-              Nomor Pengirim / Device ID (opsional)
-            </label>
-            <Input
-              type="text"
-              value={waConfig.senderNumber}
-              onChange={(e) => setWaConfig({ ...waConfig, senderNumber: e.target.value })}
-              placeholder="Contoh: 6281234567890"
-              className="text-xs h-9 bg-white max-w-sm"
-            />
-          </div>
-
           {/* Toggles: Auto-send per setoran & 1 Pesan per Hari per Wali */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
-              <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/60 transition-colors">
+              <div className="pr-2">
                 <span className="text-xs font-bold text-slate-900 block leading-tight">
                   Batasi 1 Pesan / Hari Per Wali
                 </span>
-                <span className="text-[11px] text-slate-500">
-                  Konsolidasikan seluruh setoran harian (Ziyadah + Muroja'ah) dalam 1 pesan rekapitulasi harian.
+                <span className="text-[11px] text-slate-500 block mt-0.5">
+                  Mencegah spam ke wali santri. Ringkasan setoran dikumpulkan dalam 1 pesan laporan harian.
                 </span>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
                 <input
                   type="checkbox"
                   checked={waConfig.limitOneMessagePerDay}
@@ -256,16 +137,16 @@ export const PengaturanView: React.FC = () => {
               </label>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-slate-50">
-              <div>
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/60 transition-colors">
+              <div className="pr-2">
                 <span className="text-xs font-bold text-slate-900 block leading-tight">
                   Auto-Send Saat Input Setoran
                 </span>
-                <span className="text-[11px] text-slate-500">
-                  Kirim notifikasi instan langsung begitu setoran baru dicatat musyrif.
+                <span className="text-[11px] text-slate-500 block mt-0.5">
+                  Kirim notifikasi instan langsung begitu setoran baru dicatat oleh musyrif.
                 </span>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
                 <input
                   type="checkbox"
                   checked={waConfig.autoSendOnSetoran}
@@ -277,15 +158,15 @@ export const PengaturanView: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-between pt-1">
             <span className="text-xs text-emerald-700 font-medium">
-              {configSaved && 'Pengaturan layanan WhatsApp berhasil disimpan!'}
+              {configSaved && 'Pengaturan WhatsApp berhasil disimpan!'}
             </span>
             <Button
               type="submit"
-              className="bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs h-10 px-5 rounded-lg shadow-xs"
+              className="bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs h-9 px-5 rounded-lg shadow-xs cursor-pointer"
             >
-              Simpan Pengaturan WhatsApp
+              Simpan Pengaturan
             </Button>
           </div>
         </form>
@@ -297,7 +178,7 @@ export const PengaturanView: React.FC = () => {
               <Send className="w-4 h-4 text-[#0070BA]" />
               <span className="text-xs font-bold text-slate-900">Uji Coba Kirim Pesan</span>
             </div>
-            <span className="text-[11px] text-slate-500">Kirim pesan uji coba ke nomor Anda</span>
+            <span className="text-[11px] text-slate-500">Kirim pesan uji coba ke nomor Anda / nomor tujuan</span>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-2">
@@ -305,7 +186,7 @@ export const PengaturanView: React.FC = () => {
               type="tel"
               value={testPhone}
               onChange={(e) => setTestPhone(e.target.value)}
-              placeholder="Masukkan No WhatsApp Anda (0812xxxx)"
+              placeholder="Masukkan No WhatsApp Anda (contoh: 081234567890)"
               className="text-xs h-10 bg-white flex-1"
             />
             <Button
@@ -313,7 +194,7 @@ export const PengaturanView: React.FC = () => {
               variant="outline"
               disabled={isTesting || !testPhone}
               onClick={handleTestConnection}
-              className="w-full sm:w-auto text-xs font-semibold h-10 px-4 border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB] rounded-lg"
+              className="w-full sm:w-auto text-xs font-semibold h-10 px-4 border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB] rounded-lg cursor-pointer"
             >
               {isTesting ? 'Menguji Pengiriman...' : 'Kirim Pesan Uji Coba'}
             </Button>

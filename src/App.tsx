@@ -297,13 +297,13 @@ export function App() {
                 <button
                   type="button"
                   onClick={() => setIsDailyReportModalOpen(true)}
-                  className="relative inline-flex items-center justify-center gap-1 sm:gap-1.5 h-8.5 sm:h-9 w-8.5 sm:w-auto px-0 sm:px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer text-[11px] sm:text-xs"
+                  className="relative inline-flex items-center justify-center gap-1.5 h-9 min-w-[36px] px-2.5 sm:px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer text-xs shrink-0"
                   title="Kirim Laporan Harian ke Wali Santri"
                 >
                   <Send className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span className="hidden sm:inline">Laporan Harian WA</span>
                   {pendingDailyReportsCount > 0 && (
-                    <span className="absolute -top-1 -right-1 sm:static sm:top-auto sm:right-auto px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] bg-emerald-600 text-white font-bold leading-none shadow-xs">
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-600 text-white font-bold leading-none shadow-xs shrink-0">
                       {pendingDailyReportsCount}
                     </span>
                   )}
