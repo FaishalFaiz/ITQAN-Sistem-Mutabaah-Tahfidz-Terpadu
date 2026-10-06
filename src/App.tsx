@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
-import { Menu, Calendar, Send, ArrowLeft } from 'lucide-react';
+import { Menu, Calendar, Send } from 'lucide-react';
 import gsap from 'gsap';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
 import type { Santri } from './components/dashboard/types';
@@ -221,71 +221,22 @@ export function App() {
         <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
           <div className="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3">
             <div className="flex items-center justify-between gap-2">
-              {/* Sisi Kiri: Hamburger / Back Arrow + Title / Breadcrumb */}
+              {/* Sisi Kiri: Hamburger Button + Title */}
               <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-                {/* Mobile: Tampilkan Back Button jika di subhalaman, atau Hamburger jika di Beranda. Di Desktop: Back Button di subhalaman */}
-                {location.pathname !== '/' && location.pathname !== '/beranda' ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (location.pathname.startsWith('/santri/')) {
-                        navigate('/santri');
-                      } else {
-                        navigate('/beranda');
-                      }
-                    }}
-                    className="p-1.5 -ml-1 sm:ml-0 rounded-lg text-slate-600 hover:text-[#0070BA] hover:bg-[#EBF5FB] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA] shrink-0 cursor-pointer flex items-center justify-center border border-slate-200/90 bg-slate-50/70"
-                    title={location.pathname.startsWith('/santri/') ? 'Kembali ke Daftar Santri' : 'Kembali ke Beranda'}
-                    aria-label="Kembali"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    className="p-1.5 -ml-1 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA] lg:hidden shrink-0 cursor-pointer"
-                    aria-label="Toggle Menu"
-                  >
-                    <Menu className="w-5 h-5" />
-                  </button>
-                )}
+                {/* Tombol Hamburger di Mobile (lg:hidden) */}
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  className="p-1.5 -ml-1 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA] lg:hidden shrink-0 cursor-pointer"
+                  aria-label="Toggle Menu"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
 
                 <div className="min-w-0">
                   <h1 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight truncate leading-tight">
                     {getHeaderTitle()}
                   </h1>
-                  <div className="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1 leading-none truncate mt-0.5 font-medium">
-                    {location.pathname !== '/' && location.pathname !== '/beranda' ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => navigate('/beranda')}
-                          className="hover:text-[#0070BA] hover:underline cursor-pointer transition-colors"
-                        >
-                          Beranda
-                        </button>
-                        <span className="text-slate-300">/</span>
-                        {location.pathname.startsWith('/santri/') ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => navigate('/santri')}
-                              className="hover:text-[#0070BA] hover:underline cursor-pointer transition-colors hidden sm:inline"
-                            >
-                              Santri
-                            </button>
-                            <span className="text-slate-300 hidden sm:inline">/</span>
-                            <span className="text-slate-700 font-semibold truncate">{getHeaderTitle()}</span>
-                          </>
-                        ) : (
-                          <span className="text-slate-700 font-semibold truncate">{getHeaderTitle()}</span>
-                        )}
-                      </>
-                    ) : (
-                      <span>Pesantren Tahfidz Terpadu</span>
-                    )}
-                  </div>
                 </div>
               </div>
 
