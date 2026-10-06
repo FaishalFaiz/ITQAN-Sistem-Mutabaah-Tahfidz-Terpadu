@@ -5,7 +5,7 @@
   <!-- Subtle inner border for crisp definition -->
   <rect x="1" y="1" width="62" height="62" rx="13" stroke="#ffffff" stroke-opacity="0.15" stroke-width="2"/>
   
-  <!-- Stylized Quran Book & Ribbons -->
+  <!-- Stylized Quran Book -->
   <!-- Left Page -->
   <path d="M14 23.5C14 20.5 19.5 20 29.5 22.5V45.5C20.5 43.5 14 44 14 47V23.5Z" fill="#FFFFFF"/>
   
@@ -14,9 +14,6 @@
   
   <!-- Book Spine Center Fold -->
   <path d="M32 21.5V46" stroke="#0070BA" stroke-width="2.5" stroke-linecap="round"/>
-  
-  <!-- Golden Ribbon / Bookmark -->
-  <path d="M32 17V33L35 30.5L38 33V17H32Z" fill="#F59E0B"/>
   
   <!-- Modern Clean Accent (Quran Noor Arc) -->
   <path d="M22 15.5C27.5 13.5 36.5 13.5 42 15.5" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="2.5" stroke-linecap="round"/>

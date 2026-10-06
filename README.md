@@ -16,7 +16,7 @@
 
 <br />
 
-**ITQAN** adalah aplikasi web mutaba'ah tahfidz terpadu yang dirancang khusus untuk pesantren, madrasah, dan halaqoh Al-Qur'an modern. Dibangun dengan filosofi antarmuka **Clean Enterprise** (terinspirasi dari standar portal SIAP IDN) yang mengedepankan efisiensi pencatatan (*fast-logging* satu tangan), keterbacaan data metrik yang tinggi, dan transparansi progres santri ke wali santri secara real-time.
+**ITQAN** adalah aplikasi web mutaba'ah tahfidz terpadu yang dirancang khusus untuk musyrif pesantren, madrasah, dan halaqoh Al-Qur'an modern. Dibangun dengan filosofi antarmuka **Clean Enterprise** (terinspirasi dari standar portal SIAP IDN) yang mengedepankan efisiensi pencatatan (*fast-logging* satu tangan), keterbacaan data metrik yang tinggi, dan integrasi pengiriman progres hafalan ke nomor WhatsApp wali santri.
 
 ---
 
@@ -35,13 +35,13 @@
 
 ## Fitur Utama
 
-- **Fast-Logging Setoran Halaqoh (< 15 Detik):** Form pencatatan cepat hafalan baru (*Ziyadah*) dan pengulangan (*Muroja'ah*) berbasis standar Mushaf Madinah 15 baris per halaman.
+- **Fast-Logging Setoran Halaqoh (< 15 Detik):** Form pencatatan cepat hafalan baru (*Ziyadah*) dan pengulangan (*Muroja'ah*) berbasis input nama/nomor surah (searchable combobox 114 surah), dropdown Juz 1–30, rentang ayat awal/akhir, dan input manual jumlah baris setoran (IDN style).
 - **Otomatisasi Target Santri (Auto-Lock Modal):** Saat menekan tombol setor pada santri tertentu, popup modal otomatis mengunci identitas santri tanpa perlu memilih nama ulang secara manual.
 - **Pacing Engine Kurikulum 3 Tahun (30 Juz):** Kalkulator otomatis yang menghitung sisa hari, akumulasi baris hafalan, dan rekomendasi target harian ideal agar santri khatam sesuai kurikulum 36 bulan.
-- **Digital Tap Counter Ujian Tasmi':** Modul simulasi ujian sekali duduk dengan penghitung digital untuk ketukan tajwid (*Tawaqquf*) dan koreksi fatal lafadz (*Fath*) dengan grading instan (Mumtaz, Jayyid, I'adah).
-- **Executive Santri Detail Page:** Halaman rapor santri yang bersih dan bebas duplikasi metrik, dilengkapi rekomendasi tindakan talaqqi adaptif untuk musyrif.
-- **Generator Laporan WhatsApp (WA Digest):** Salin ringkasan mutaba'ah harian/pekanan siap kirim ke wali santri dalam 1-klik.
-- **Otentikasi Terfokus Musyrif:** Akses portal khusus guru/musyrif halaqoh tanpa kerumitan multi-role/atasan sehingga penggunaan lebih cepat dan intuitif.
+- **Digital Tap Counter Ujian Tasmi':** Modul simulasi ujian sekali duduk dengan penghitung digital untuk ketukan tajwid (*Tawaqquf*) dan koreksi fatal lafadz (*Fath*).
+- **Executive Santri Detail Page:** Halaman rapor santri yang bersih dan bebas duplikasi metrik, dilengkapi riwayat setoran komprehensif dan pintasan kontak wali santri.
+- **Integrasi Notifikasi WhatsApp Ramah Musyrif:** Pengiriman otomatis laporan harian per santri ke nomor WhatsApp wali, pembatasan 1 pesan per hari untuk mencegah spam, serta opsi *Direct WA* (`wa.me`).
+- **Otentikasi Terfokus Musyrif:** Akses portal khusus musyrif halaqoh tanpa kerumitan multi-role/atasan sehingga penggunaan lebih cepat dan intuitif.
 
 ---
 
@@ -112,28 +112,39 @@ ITQAN/
 │   ├── components/
 │   │   ├── dashboard/          # Komponen dasbor & halaqoh
 │   │   │   ├── AddSantriModal.tsx    # Modal tambah data santri baru
+│   │   │   ├── DailyReportModal.tsx  # Modal kirim laporan harian massal
+│   │   │   ├── EditWaliModal.tsx     # Modal edit kontak wali santri
 │   │   │   ├── HalaqahQuickFocus.tsx # Banner fokus halaqoh aktif
-│   │   │   ├── mockData.ts           # Data dummy awal santri & metrik
+│   │   │   ├── LaporanPage.tsx       # Halaman rekapitulasi mutaba'ah
+│   │   │   ├── mockData.ts           # Data awal dan preferensi default
 │   │   │   ├── NavbarSidebar.tsx     # Navigasi utama sidebar enterprise
-│   │   │   ├── OtherViews.tsx        # View view sekunder (Ujian, Pacing, Pengaturan)
+│   │   │   ├── OtherViews.tsx        # View sekunder (Data Santri, Pengaturan)
+│   │   │   ├── PengaturanView.tsx    # Pengaturan halaqoh & preferensi WhatsApp
+│   │   │   ├── RaporPrintModal.tsx   # Modal cetak rapor resmi musyrif
 │   │   │   ├── SantriCard.tsx        # Kartu santri ringkas dengan status badge
-│   │   │   ├── SantriDetailPage.tsx  # Halaman detail santri & rekomendasi musyrif
-│   │   │   ├── SantriListSection.tsx # Tabel & daftar santri filterable
+│   │   │   ├── SantriDetailPage.tsx  # Halaman detail santri & riwayat mutaba'ah
 │   │   │   ├── SantriModal.tsx       # Dialog pembungkus setoran/detail
 │   │   │   ├── StatCards.tsx         # Kartu rekapitulasi capaian target harian
 │   │   │   ├── TrendChart.tsx        # Visualisasi grafik tren ziyadah & muroja'ah
 │   │   │   └── types.ts              # Interface santri, status, & navigasi
 │   │   ├── halaqah/
-│   │   │   ├── FastSetoranForm.tsx   # Form input cepat setoran (auto-locked)
+│   │   │   ├── FastSetoranForm.tsx   # Form input cepat setoran (surah search, ayat, baris manual)
 │   │   │   └── TapCounterExam.tsx    # Simulator digital tap counter ujian tasmi'
-│   │   ├── ui/                 # Komponen dasar (Button, Card, Badge, Input, Dialog)
+│   │   ├── ui/                 # Komponen dasar (Button, Card, Badge, Input, Dialog, Sonner)
 │   │   └── visualization/
 │   │       └── PacingCard.tsx        # Kartu visualisasi pacing engine 3 tahun
+│   ├── data/
+│   │   └── quranData.ts        # Master data 114 Surah, Juz, dan pemetaan ayat
 │   ├── pages/
 │   │   └── auth/
-│   │       ├── LoginPage.tsx         # Halaman masuk sistem (Multi-role)
-│   │       └── SignupPage.tsx        # Halaman pendaftaran akun baru
+│   │       ├── LoginPage.tsx         # Halaman masuk portal musyrif
+│   │       └── SignupPage.tsx        # Halaman pendaftaran akun musyrif
+│   ├── services/
+│   │   ├── authService.ts      # Layanan otentikasi musyrif (Supabase Auth)
+│   │   ├── storageService.ts   # Penyimpanan data lokal terisolasi per akun
+│   │   └── waGatewayService.ts # Layanan pengiriman notifikasi WhatsApp
 │   ├── lib/
+│   │   ├── supabase.ts         # Konfigurasi klien Supabase
 │   │   └── utils.ts            # Helper utility Tailwind & class merger
 │   ├── App.tsx                 # Shell navigasi & deklarasi router
 │   ├── index.css               # Desain tokens, font Inter, & reset CSS
@@ -170,7 +181,7 @@ Seluruh rute dan fitur utama dapat diakses langsung pada mode dev:
 | Halaman / Fitur | Rute URL | Keterangan |
 | :--- | :--- | :--- |
 | **Beranda Halaqoh** | `/beranda` atau `/` | Ringkasan absensi, stat cards, dan daftar santri |
-| **Detail Santri** | `/santri/1` | Rapor komprehensif Zaid bin Tsabit |
+| **Detail Santri** | `/santri/1` | Rapor komprehensif santri |
 | **Ujian Tasmi' Digital** | `/ujian-tasmi` | Tap counter simulasi penilaian ujian |
 | **Pacing Engine** | `/pacing` | Dasbor target khatam 30 Juz 3 tahun |
 | **Login Musyrif** | `/login` | Masuk ke portal halaqoh musyrif |
