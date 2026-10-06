@@ -24,7 +24,7 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
   if (!isOpen || !santri) return null;
 
   const halaqahSettings = storageService.getHalaqahSettings();
-  const currentMusyrifName = halaqahSettings.musyrifName || 'Musyrif Halaqoh';
+  const currentMusyrifName = halaqahSettings.musyrifName || 'Muhaffizh Halaqoh';
   const currentHalaqahName = ('halaqahName' in santri && santri.halaqahName) || halaqahSettings.halaqahName || 'Halaqoh Tahfidz';
 
   // Normalisasi data dari Santri atau SantriReportItem
@@ -130,7 +130,7 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
             </div>
             <div className="space-y-1">
               <div className="flex">
-                <span className="w-24 text-slate-500">Musyrif</span>
+                <span className="w-24 text-slate-500">Muhaffizh</span>
                 <span className="text-slate-800 font-medium">: {currentMusyrifName}</span>
               </div>
               <div className="flex">
@@ -208,18 +208,18 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
             </div>
           </div>
 
-          {/* Catatan Musyrif */}
+          {/* Catatan Muhaffizh */}
           <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg space-y-1 avoid-break">
-            <span className="font-bold text-slate-900 block text-[11px]">Catatan &amp; Arahan Musyrif:</span>
+            <span className="font-bold text-slate-900 block text-[11px]">Catatan &amp; Arahan Muhaffizh:</span>
             <p className="text-slate-600 leading-relaxed text-[10px] sm:text-[11px]">
               Alhamdulillah, ananda menunjukkan komitmen yang baik dalam halaqoh Al-Qur'an. Diharapkan wali santri terus mendampingi muroja'ah mandiri di rumah agar hafalan tetap mutqin dan terjaga.
             </p>
           </div>
 
-          {/* Tanda Tangan Tunggal Musyrif */}
+          {/* Tanda Tangan Tunggal Muhaffizh */}
           <div className="flex justify-end pt-4 text-center avoid-break">
             <div className="space-y-12 min-w-[180px]">
-              <span className="text-slate-600 block text-[11px]">Musyrif Halaqoh,</span>
+              <span className="text-slate-600 block text-[11px]">Muhaffizh Halaqoh,</span>
               <span className="font-bold text-slate-900 block border-t border-slate-300 pt-1 text-[11px]">
                 {currentMusyrifName}
               </span>

@@ -199,7 +199,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
           })}
         </nav>
 
-        {/* Sidebar Footer User Info (Khusus Musyrif) */}
+        {/* Sidebar Footer User Info (Khusus Muhaffizh) */}
         <div className="p-3.5 border-t border-slate-200 shrink-0">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -211,11 +211,11 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
                       .slice(0, 2)
                       .map((n) => n[0].toUpperCase())
                       .join('')
-                  : 'MS'}
+                  : 'MH'}
               </div>
               <div className="min-w-0">
-                <span className="font-bold text-xs text-slate-900 block truncate" title={currentUser?.fullName || 'Musyrif'}>
-                  {currentUser?.fullName || 'Musyrif'}
+                <span className="font-bold text-xs text-slate-900 block truncate" title={currentUser?.fullName || 'Muhaffizh'}>
+                  {currentUser?.fullName || 'Muhaffizh'}
                 </span>
                 <span className="text-[10px] text-slate-500 block truncate">
                   Pembimbing Halaqoh
@@ -231,7 +231,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
                   onClose();
                 }
               }}
-              title="Keluar dari Portal Musyrif"
+              title="Keluar dari Portal Muhaffizh"
               className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
               aria-label="Logout"
             >

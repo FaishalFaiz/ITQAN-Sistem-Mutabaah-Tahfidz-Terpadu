@@ -8,7 +8,7 @@
 - **Nama Produk**: ITQAN (Sistem Mutabaah Tahfidz Terpadu)
 - **Kategori Solusi**: Sistem Informasi Manajemen Pesantren (SIMP) Terapan
 - **Tujuan Utama**: Menggantikan buku catatan mutaba'ah manual berbahan kertas dengan platform web modern berbasis *offline-first*. Sistem memfasilitasi:
-  - Pencatatan setoran halaqoh cepat oleh musyrif (< 15 detik).
+  - Pencatatan setoran halaqoh cepat oleh muhaffizh (< 15 detik).
   - Pacing target harian adaptif menuju target 30 juz dalam 3 tahun.
   - Pencatatan simulasi ujian tasmi' berbasis ketukan/koreksi (digital tap counter).
   - Dasbor analitik capaian hafalan santri di halaqoh.
@@ -23,37 +23,37 @@
 - **Styling & Icons**: Tailwind CSS v3.4, Lucide React
 - **Font Utama**: Inter (`font-sans`)
 - **Backend & Database**: Supabase (PostgreSQL + Supabase Auth)
-- **Penyimpanan Klien (Offline-First)**: LocalStorage terisolasi per akun musyrif
+- **Penyimpanan Klien (Offline-First)**: LocalStorage terisolasi per akun muhaffizh
 - **Ekspor Dokumen**: Cetak Rapor Mutaba'ah Resmi & Ekspor CSV
-- **Integrasi WhatsApp**: WhatsApp Gateway Service dengan mode ramah musyrif (otomatis & fallback wa.me)
+- **Integrasi WhatsApp**: WhatsApp Gateway Service dengan mode ramah muhaffizh (otomatis & fallback wa.me)
 
 ---
 
 ## 3. Hak Akses & Peran Pengguna
 
-### Musyrif (Peran Tunggal & Terfokus)
-Aplikasi didesain khusus untuk digunakan oleh **Musyrif / Guru Halaqoh** tanpa hambatan hierarki jabatan:
+### Muhaffizh (Peran Tunggal & Terfokus)
+Aplikasi didesain khusus untuk digunakan oleh **Muhaffizh / Muhaffizhah / Guru Tahfidz** tanpa hambatan hierarki jabatan:
 - Tidak ada pembagian multi-role yang membingungkan pengguna non-teknis (tidak ada role terpisah untuk Walsan atau Atasan/Koordinator).
 - Menginput setoran Ziyadah dan Muroja'ah santri binaan secara cepat.
 - Mengatur target harian dan memantau status santri (Tercapai / Belum Setor / Defisit).
 - Mengirim rekapitulasi setoran langsung ke nomor WhatsApp wali santri.
-- Mencetak Rapor Mutaba'ah resmi dengan tanda tangan tunggal musyrif halaqoh.
+- Mencetak Rapor Mutaba'ah resmi dengan tanda tangan tunggal muhaffizh halaqoh.
 - Mengelola data santri halaqoh dan kontak wali secara mandiri.
 
 ---
 
 ## 4. Spesifikasi Fitur Utama
 
-### 4.1. Fast-Logging Halaqoh (Input Setoran Ramah Musyrif)
+### 4.1. Fast-Logging Halaqoh (Input Setoran Ramah Muhaffizh)
 - **Pemilihan Surah & Juz Cepat**:
-  - **Searchable Combobox Surah**: Musyrif dapat mengetik nama surah atau nomor surah (1–114) dan memilih dari daftar dropdown otomatis.
+  - **Searchable Combobox Surah**: Muhaffizh dapat mengetik nama surah atau nomor surah (1–114) dan memilih dari daftar dropdown otomatis.
   - **Juz Dropdown**: Pilihan Juz 1–30. Memilih nomor juz otomatis memfilter dan mengarahkan surah ke bagian awal juz tersebut.
 - **Rentang Ayat & Input Manual Baris Setoran (IDN Style)**:
   - Input `Ayat Awal` s/d `Ayat Akhir` sesuai surah yang dipilih.
-  - Input manual `Jumlah Baris` setoran yang didengar musyrif (misal: 5, 10, 15 baris), dilengkapi tombol pintasan cepat (`5b`, `10b`, `15b = 1 halaman`, `30b`).
+  - Input manual `Jumlah Baris` setoran yang didengar muhaffizh (misal: 5, 10, 15 baris), dilengkapi tombol pintasan cepat (`5b`, `10b`, `15b = 1 halaman`, `30b`).
 - **Prinsip Kelancaran Tanpa Grading Rumit**:
   - Nilai kelancaran opsional (Mumtaz/Jayyid/I'adah) ditiadakan dari form input.
-  - Jika setoran belum lancar/tidak layak dihitung, musyrif cukup tidak mencatat datanya atau memberikan catatan pembinaan di kolom catatan talaqqi.
+  - Jika setoran belum lancar/tidak layak dihitung, muhaffizh cukup tidak mencatat datanya atau memberikan catatan pembinaan di kolom catatan talaqqi.
 - **Otomatisasi Notifikasi WhatsApp**:
   - Tombol toggle kirim WA ke nomor wali santri langsung dari form setoran.
 
@@ -73,18 +73,18 @@ Aplikasi didesain khusus untuk digunakan oleh **Musyrif / Guru Halaqoh** tanpa h
 - Tombol tap responsif untuk mencatat ketukan tajwid (*Tawaqquf*) dan koreksi lafadz (*Fath*).
 - Penghitungan skor otomatis sekali duduk untuk ujian kelayakan hafalan.
 
-### 4.4. Integrasi WhatsApp Sederhana (Fokus Musyrif)
+### 4.4. Integrasi WhatsApp Sederhana (Fokus Muhaffizh)
 - **Desain Ramah Pengguna**:
-  - Menghilangkan konfigurasi teknis rumit (endpoint webhook URL, API token, sender device ID).
+  - Menghilangkan template custom dan tabel log teknis yang membingungkan pengguna non-teknis.
   - Menyediakan 2 kontrol utama:
     1. **Batasi 1 Pesan / Hari Per Wali**: Mengkonsolidasikan seluruh setoran dalam 1 laporan harian agar tidak membebani wali santri.
-    2. **Auto-Send Saat Input Setoran**: Mengirim pesan notifikasi instan langsung begitu setoran disimpan musyrif.
+    2. **Auto-Send Saat Input Setoran**: Mengirim pesan notifikasi instan langsung begitu setoran disimpan muhaffizh.
   - Fitur **Uji Coba Kirim Pesan** dengan nomor tujuan tes dan fallback **Direct WA** (`wa.me`).
 
 ### 4.5. Dokumen Rapor & Laporan Mutaba'ah
 - **Cetak Rapor Santri**:
   - Format standar cetak/PDF bersih tanpa elemen tidak perlu.
-  - Tanda tangan resmi tunggal oleh Musyrif Halaqoh.
+  - Tanda tangan resmi tunggal oleh Muhaffizh Halaqoh.
 - **Ekspor CSV**: Unduh data mutaba'ah untuk arsip spreadsheet sekolah.
 
 ---
@@ -202,11 +202,11 @@ itqan-app/
 │   │   └── utils.ts          # Helper classnames & formatters
 │   ├── pages/
 │   │   └── auth/
-│   │       ├── LoginPage.tsx # Portal masuk khusus musyrif
-│   │       └── SignupPage.tsx # Pendaftaran akun musyrif
+│   │       ├── LoginPage.tsx # Portal masuk khusus muhaffizh
+│   │       └── SignupPage.tsx # Pendaftaran akun muhaffizh
 │   ├── services/
-│   │   ├── authService.ts    # Otentikasi Supabase Auth musyrif
-│   │   ├── storageService.ts # LocalStorage terisolasi per musyrif aktif
+│   │   ├── authService.ts    # Otentikasi Supabase Auth muhaffizh
+│   │   ├── storageService.ts # LocalStorage terisolasi per muhaffizh aktif
 │   │   └── waGatewayService.ts # Integrasi WhatsApp otomatis & Direct WA
 │   ├── App.tsx
 │   ├── index.css

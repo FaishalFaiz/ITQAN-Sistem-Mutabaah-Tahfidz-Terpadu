@@ -31,7 +31,7 @@ export const authService = {
         const musyrifUser: MusyrifUser = {
           id: user.id,
           email: user.email || '',
-          fullName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Musyrif',
+          fullName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Muhaffizh',
         };
         localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(musyrifUser));
         return musyrifUser;
@@ -109,7 +109,7 @@ export const authService = {
 
       if (error) {
         if (error.message.includes('already registered')) {
-          return { success: false, error: 'Email ini sudah terdaftar sebagai musyrif. Silakan gunakan menu Masuk.' };
+          return { success: false, error: 'Email ini sudah terdaftar sebagai muhaffizh. Silakan gunakan menu Masuk.' };
         }
         return { success: false, error: error.message };
       }

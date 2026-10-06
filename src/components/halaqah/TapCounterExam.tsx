@@ -73,7 +73,7 @@ export const TapCounterExam: React.FC<TapCounterExamProps> = ({
       penalty,
       finalScore,
       isPassed,
-      musyrif: settings.musyrifName || 'Musyrif Halaqoh',
+      musyrif: settings.musyrifName || 'Muhaffizh Halaqoh',
       notes: notes.trim() || undefined,
     });
 
@@ -222,7 +222,7 @@ export const TapCounterExam: React.FC<TapCounterExamProps> = ({
       {/* Catatan Penguji */}
       <div>
         <label className="text-xs font-semibold text-slate-700 block mb-1">
-          Catatan Musyrif / Evaluasi Tasmi'
+          Catatan Muhaffizh / Evaluasi Tasmi'
         </label>
         <textarea
           value={notes}

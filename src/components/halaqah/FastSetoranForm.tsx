@@ -155,8 +155,8 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
       lineStart: 1,
       lineEnd: manualLines,
       totalLines: manualLines,
-      grade: 'mumtaz', // Default mutqin/lancar karena disahkan musyrif
-      musyrif: halaqahSettings.musyrifName || 'Musyrif Halaqoh',
+      grade: 'mumtaz', // Default mutqin/lancar karena disahkan muhaffizh
+      musyrif: halaqahSettings.musyrifName || 'Muhaffizh Halaqoh',
       notes: notes.trim() || undefined,
       waStatus: 'not_sent',
     });
@@ -516,7 +516,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
         {/* 4. Catatan Talaqqi (Opsional) */}
         <div>
           <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-            Catatan Talaqqi / Musyrif <span className="text-slate-400 font-normal">(opsional)</span>
+            Catatan Talaqqi / Muhaffizh <span className="text-slate-400 font-normal">(opsional)</span>
           </label>
           <input
             type="text"

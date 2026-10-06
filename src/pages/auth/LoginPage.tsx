@@ -40,7 +40,7 @@ export const LoginPage: React.FC = () => {
             className="inline-block w-12 h-12 rounded-xl shadow-xs mb-3.5 object-contain"
           />
           <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-            PORTAL MUSYRIF ITQAN
+            PORTAL MUHAFFIZH ITQAN
           </h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">
             Sistem Mutaba'ah &amp; Evaluasi Tahfidz Terpadu
@@ -60,7 +60,7 @@ export const LoginPage: React.FC = () => {
             {/* Input Email */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-slate-800">
-                Alamat Email Musyrif
+                Alamat Email Muhaffizh
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -71,7 +71,7 @@ export const LoginPage: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="musyrif@itqan.sch.id"
+                  placeholder="muhaffizh@itqan.sch.id"
                   className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
                 />
               </div>
@@ -126,18 +126,18 @@ export const LoginPage: React.FC = () => {
               disabled={isLoading}
               className="w-full h-10 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-sm rounded-lg shadow-xs transition-colors mt-2 cursor-pointer"
             >
-              {isLoading ? 'Memverifikasi...' : 'Masuk sebagai Musyrif'}
+              {isLoading ? 'Memverifikasi...' : 'Masuk sebagai Muhaffizh'}
             </Button>
           </form>
 
           {/* Link ke Registrasi */}
           <div className="mt-6 text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
-            Belum memiliki akun musyrif?{' '}
+            Belum memiliki akun muhaffizh?{' '}
             <Link
               to="/signup"
               className="font-semibold text-[#0070BA] hover:underline"
             >
-              Daftar Akun Musyrif
+              Daftar Akun Muhaffizh
             </Link>
           </div>
         </div>

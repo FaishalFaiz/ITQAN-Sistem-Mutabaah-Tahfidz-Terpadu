@@ -16,12 +16,14 @@
 
 <br />
 
-**ITQAN** adalah aplikasi web mutaba'ah tahfidz terpadu yang dirancang khusus untuk musyrif pesantren, madrasah, dan halaqoh Al-Qur'an modern. Dibangun dengan filosofi antarmuka **Clean Enterprise** (terinspirasi dari standar portal SIAP IDN) yang mengedepankan efisiensi pencatatan (*fast-logging* satu tangan), keterbacaan data metrik yang tinggi, dan integrasi pengiriman progres hafalan ke nomor WhatsApp wali santri.
+**ITQAN** adalah aplikasi web mutaba'ah tahfidz terpadu yang dirancang khusus untuk muhaffizh / muhaffizhah pesantren, madrasah, dan halaqoh Al-Qur'an modern. Dibangun dengan filosofi antarmuka **Clean Enterprise** (terinspirasi dari standar portal SIAP IDN) yang mengedepankan efisiensi pencatatan (*fast-logging* satu tangan), keterbacaan data metrik yang tinggi, dan integrasi pengiriman progres hafalan ke nomor WhatsApp wali santri.
 
 ---
 
 ## Daftar Isi
 
+- [Konsep Produk & Filosofi (PRODUCT-CONCEPT.md)](PRODUCT-CONCEPT.md)
+- [Spesifikasi Teknis (PRD.md)](PRD.md)
 - [Fitur Utama](#-fitur-utama)
 - [Teknologi & Arsitektur](#-teknologi--arsitektur)
 - [Persyaratan Sistem](#-persyaratan-sistem)
@@ -40,8 +42,8 @@
 - **Pacing Engine Kurikulum 3 Tahun (30 Juz):** Kalkulator otomatis yang menghitung sisa hari, akumulasi baris hafalan, dan rekomendasi target harian ideal agar santri khatam sesuai kurikulum 36 bulan.
 - **Digital Tap Counter Ujian Tasmi':** Modul simulasi ujian sekali duduk dengan penghitung digital untuk ketukan tajwid (*Tawaqquf*) dan koreksi fatal lafadz (*Fath*).
 - **Executive Santri Detail Page:** Halaman rapor santri yang bersih dan bebas duplikasi metrik, dilengkapi riwayat setoran komprehensif dan pintasan kontak wali santri.
-- **Integrasi Notifikasi WhatsApp Ramah Musyrif:** Pengiriman otomatis laporan harian per santri ke nomor WhatsApp wali, pembatasan 1 pesan per hari untuk mencegah spam, serta opsi *Direct WA* (`wa.me`).
-- **Otentikasi Terfokus Musyrif:** Akses portal khusus musyrif halaqoh tanpa kerumitan multi-role/atasan sehingga penggunaan lebih cepat dan intuitif.
+- **Integrasi Notifikasi WhatsApp Ramah Guru:** Pengiriman otomatis laporan harian per santri ke nomor WhatsApp wali, pembatasan 1 pesan per hari untuk mencegah spam, serta opsi *Direct WA* (`wa.me`).
+- **Otentikasi Terfokus Muhaffizh:** Akses portal khusus muhaffizh halaqoh tanpa kerumitan multi-role/atasan sehingga penggunaan lebih cepat dan intuitif.
 
 ---
 
@@ -120,7 +122,7 @@ ITQAN/
 │   │   │   ├── NavbarSidebar.tsx     # Navigasi utama sidebar enterprise
 │   │   │   ├── OtherViews.tsx        # View sekunder (Data Santri, Pengaturan)
 │   │   │   ├── PengaturanView.tsx    # Pengaturan halaqoh & preferensi WhatsApp
-│   │   │   ├── RaporPrintModal.tsx   # Modal cetak rapor resmi musyrif
+│   │   │   ├── RaporPrintModal.tsx   # Modal cetak rapor resmi muhaffizh
 │   │   │   ├── SantriCard.tsx        # Kartu santri ringkas dengan status badge
 │   │   │   ├── SantriDetailPage.tsx  # Halaman detail santri & riwayat mutaba'ah
 │   │   │   ├── SantriModal.tsx       # Dialog pembungkus setoran/detail
@@ -137,10 +139,10 @@ ITQAN/
 │   │   └── quranData.ts        # Master data 114 Surah, Juz, dan pemetaan ayat
 │   ├── pages/
 │   │   └── auth/
-│   │       ├── LoginPage.tsx         # Halaman masuk portal musyrif
-│   │       └── SignupPage.tsx        # Halaman pendaftaran akun musyrif
+│   │       ├── LoginPage.tsx         # Halaman masuk portal muhaffizh
+│   │       └── SignupPage.tsx        # Halaman pendaftaran akun muhaffizh
 │   ├── services/
-│   │   ├── authService.ts      # Layanan otentikasi musyrif (Supabase Auth)
+│   │   ├── authService.ts      # Layanan otentikasi muhaffizh (Supabase Auth)
 │   │   ├── storageService.ts   # Penyimpanan data lokal terisolasi per akun
 │   │   └── waGatewayService.ts # Layanan pengiriman notifikasi WhatsApp
 │   ├── lib/
@@ -184,8 +186,8 @@ Seluruh rute dan fitur utama dapat diakses langsung pada mode dev:
 | **Detail Santri** | `/santri/1` | Rapor komprehensif santri |
 | **Ujian Tasmi' Digital** | `/ujian-tasmi` | Tap counter simulasi penilaian ujian |
 | **Pacing Engine** | `/pacing` | Dasbor target khatam 30 Juz 3 tahun |
-| **Login Musyrif** | `/login` | Masuk ke portal halaqoh musyrif |
-| **Registrasi Musyrif** | `/signup` | Pendaftaran akun musyrif baru |
+| **Login Muhaffizh** | `/login` | Masuk ke portal halaqoh muhaffizh |
+| **Registrasi Muhaffizh** | `/signup` | Pendaftaran akun muhaffizh baru |
 
 ---
 

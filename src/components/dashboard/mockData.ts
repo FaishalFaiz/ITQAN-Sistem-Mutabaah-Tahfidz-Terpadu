@@ -27,7 +27,7 @@ Berikut laporan mutaba'ah hari ini:
 {catatanMusyrif}
 
 Terima kasih atas doa dan pendampingan di rumah.
-_Musyrif: {musyrif}_`,
+_Muhaffizh: {musyrif}_`,
 
   templateZiyadah: `*SETORAN HAFALAN BARU (ZIYADAH)*
 
@@ -41,7 +41,7 @@ Alhamdulillah telah setor hafalan baru:
 • *Total Hafalan:* {capaianJuz}
 {catatan}
 
-Waktu: {waktu} WIB | Musyrif: {musyrif}`,
+Waktu: {waktu} WIB | Muhaffizh: {musyrif}`,
 
   templateMurojaah: `*SETORAN PENGULANGAN (MUROJA'AH)*
 
@@ -54,7 +54,7 @@ Alhamdulillah telah mengulang hafalan:
 • *Nilai:* *{nilai}*
 {catatan}
 
-Waktu: {waktu} WIB | Musyrif: {musyrif}`,
+Waktu: {waktu} WIB | Muhaffizh: {musyrif}`,
 
   templateHalaqahDigest: `*REKAP MUTABA'AH HALAQOH*
 Halaqoh: {halaqoh} | {tanggal}
@@ -66,6 +66,6 @@ _ITQAN - Tahfidz Terpadu_`,
 
 export const DEFAULT_HALAQAH_SETTINGS: HalaqahSettings = {
   halaqahName: 'Halaqoh Tahfidz',
-  musyrifName: 'Musyrif',
+  musyrifName: 'Muhaffizh',
   standardDailyTargetLines: 15,
 };

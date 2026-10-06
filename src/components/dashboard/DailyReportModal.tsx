@@ -183,7 +183,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
               <DialogDescription className="text-xs text-slate-500 mt-1 flex items-center gap-2">
                 <span>{settings.halaqahName}</span>
                 <span>•</span>
-                <span>Musyrif: {settings.musyrifName}</span>
+                <span>Muhaffizh: {settings.musyrifName}</span>
                 <span>•</span>
                 <span className="font-semibold text-slate-700">Tanggal: {today}</span>
               </DialogDescription>

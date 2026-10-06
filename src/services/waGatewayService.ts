@@ -287,7 +287,7 @@ export const waGatewayService = {
       `Waktu Uji: ${new Date().toLocaleString('id-ID')}\n` +
       `_Pesan otomatis verifikasi sistem._`;
 
-    return this.sendMessage(targetPhone, 'Musyrif (Test)', testMessage, 'test');
+    return this.sendMessage(targetPhone, 'Muhaffizh (Test)', testMessage, 'test');
   },
 
   /**
@@ -352,13 +352,13 @@ export const waGatewayService = {
       statusPacing = 'Perlu ditingkatkan';
     }
 
-    // Catatan Musyrif
+    // Catatan Muhaffizh
     let catatanMusyrif = '';
     const hasIadah = todayRecords.some((r) => r.grade === 'iadah');
     if (hasIadah) {
-      catatanMusyrif = `\n💬 *Pesan Musyrif:* Mohon dibantu muroja'ah di rumah ba'da maghrib agar hafalan ananda makin lancar.`;
+      catatanMusyrif = `\n💬 *Pesan Muhaffizh:* Mohon dibantu muroja'ah di rumah ba'da maghrib agar hafalan ananda makin lancar.`;
     } else if (todayRecords.length > 0 && linesToday >= santri.dailyTargetLines) {
-      catatanMusyrif = `\n💬 *Pesan Musyrif:* Alhamdulillah setoran ananda hari ini sangat baik dan lancar.`;
+      catatanMusyrif = `\n💬 *Pesan Muhaffizh:* Alhamdulillah setoran ananda hari ini sangat baik dan lancar.`;
     }
 
     return this.formatMessage(config.templateDailyProgress, {
