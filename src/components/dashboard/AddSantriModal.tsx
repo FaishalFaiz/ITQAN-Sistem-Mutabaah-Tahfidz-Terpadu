@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
+import { formatJuz } from '@/lib/utils';
 
 interface AddSantriModalProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
   const [nis, setNis] = useState('');
   const [parentName, setParentName] = useState('');
   const [parentPhone, setParentPhone] = useState('');
-  const [juzAchieved, setJuzAchieved] = useState('1.0 Juz');
+  const [juzAchieved, setJuzAchieved] = useState('1 Juz');
   const [dailyTargetLines, setDailyTargetLines] = useState(15);
   const [lastSurah, setLastSurah] = useState('An-Naba 1-15');
 
@@ -53,7 +54,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
       parentName: parentName.trim() || `Wali ${name.trim()}`,
       parentPhone: cleanPhone,
       avatarInitials: initials,
-      juzAchieved: juzAchieved.trim() || '1.0 Juz',
+      juzAchieved: formatJuz(juzAchieved.trim() || '1 Juz'),
       dailyTargetLines: Number(dailyTargetLines) || 15,
       linesCompletedToday: 0,
       status: 'belum_setor',
@@ -74,7 +75,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
     setNis('');
     setParentName('');
     setParentPhone('');
-    setJuzAchieved('1.0 Juz');
+    setJuzAchieved('1 Juz');
     setDailyTargetLines(15);
     setLastSurah('An-Naba 1-15');
   };
@@ -136,7 +137,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
                 type="text"
                 value={juzAchieved}
                 onChange={(e) => setJuzAchieved(e.target.value)}
-                placeholder="5.0 Juz"
+                placeholder="5 Juz"
                 className="text-xs h-9"
               />
             </div>

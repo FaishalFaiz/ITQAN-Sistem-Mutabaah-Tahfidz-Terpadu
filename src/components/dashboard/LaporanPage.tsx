@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import {
   Share2,
   Printer,
@@ -11,7 +10,6 @@ import {
   Sparkles,
   BookOpen,
   ArrowUpDown,
-  X,
   FileSpreadsheet,
   ChevronDown,
   Check,
@@ -31,9 +29,18 @@ import {
 } from './laporanData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { RaporPrintModal } from './RaporPrintModal';
 import { TrendChart } from './TrendChart';
 import { toast } from '@/components/ui/sonner';
+import { formatJuz } from '@/lib/utils';
 
 interface LaporanPageProps {
   santriList: Santri[];
@@ -255,7 +262,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
       `🏅 *Santri Paling Aktif Pekan Ini:*\n` +
       santriReports
         .slice(0, 3)
-        .map((s, i) => `${i + 1}. *${s.name}* (${s.juzAchieved})`)
+        .map((s, i) => `${i + 1}. *${s.name}* (${formatJuz(s.juzAchieved)})`)
         .join('\n') +
       `\n\n` +
       `Mohon Ayah/Bunda terus mendampingi muroja'ah di rumah.\n` +
@@ -711,7 +718,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                       <div>
                         <span className="font-bold text-slate-900 block">{s.name}</span>
                         <span className="text-[11px] text-slate-500">
-                          {s.juzAchieved} • {s.lastSurah}
+                          {formatJuz(s.juzAchieved)} • {s.lastSurah}
                         </span>
                       </div>
                     </div>
@@ -749,7 +756,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                         <div>
                           <span className="font-bold text-slate-900 block">{s.name}</span>
                           <span className="text-[11px] text-slate-500">
-                            Capaian: {s.juzAchieved}
+                            Capaian: {formatJuz(s.juzAchieved)}
                           </span>
                         </div>
                       </div>
@@ -869,7 +876,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                     {/* Capaian Total */}
                     <td className="py-2.5 px-3">
                       <span className="font-bold text-[#0070BA] block">
-                        {s.juzAchieved}
+                        {formatJuz(s.juzAchieved)}
                       </span>
                       <span className="text-[10px] text-slate-400">
                         {s.totalLinesMemorized.toLocaleString()} baris
@@ -1062,86 +1069,74 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
       />
 
       {/* 9. MODAL: Broadcast WhatsApp Digest */}
-      {isWAModalOpen &&
-        createPortal(
-          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-4 animate-in fade-in duration-150">
-            <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full overflow-hidden space-y-4 p-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                  <Share2 className="w-4 h-4 text-emerald-600" />
-                  <span>Format Teks WhatsApp Halaqoh</span>
-                </div>
-                <button
+      <Dialog open={isWAModalOpen} onOpenChange={setIsWAModalOpen}>
+        <DialogContent className="max-w-lg p-5">
+          <DialogHeader className="pb-3 border-b border-slate-100">
+            <DialogTitle className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+              <Share2 className="w-4 h-4 text-emerald-600" />
+              <span>Format Teks WhatsApp Halaqoh</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 text-left pt-1">
+              Salin atau kirimkan ringkasan laporan ini langsung ke grup WhatsApp wali santri atau nomor pembina:
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Target Input */}
+          <div className="flex items-center gap-2">
+            <Input
+              type="text"
+              value={broadcastTarget}
+              onChange={(e) => setBroadcastTarget(e.target.value)}
+              placeholder="Nomor WA Tujuan / Grup"
+              className="text-xs h-9 bg-slate-50 flex-1"
+            />
+            <span className="text-[11px] text-slate-400 whitespace-nowrap">Target WA</span>
+          </div>
+
+          <textarea
+            readOnly
+            value={waDigestMessage}
+            rows={8}
+            className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
+          />
+
+          <DialogFooter className="flex flex-row flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 sm:justify-between">
+            <span className="text-xs text-slate-400">
+              {copySuccess ? 'Berhasil disalin!' : 'Siap dikirimkan secara manual'}
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCopyWA}
+                className="text-xs font-semibold h-9 px-3 border-slate-200 rounded-lg cursor-pointer"
+              >
+                {copySuccess ? <Check className="w-3.5 h-3.5 mr-1" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
+                <span>Salin Teks</span>
+              </Button>
+
+              {broadcastTarget ? (
+                <Button
                   type="button"
-                  onClick={() => setIsWAModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-700 cursor-pointer"
+                  onClick={handleOpenWABroadcast}
+                  className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 h-9 px-3.5 rounded-lg shadow-xs cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <p className="text-xs text-slate-500">
-                Salin atau kirimkan ringkasan laporan ini langsung ke grup WhatsApp wali santri atau nomor pembina:
-              </p>
-
-              {/* Target Input */}
-              <div className="flex items-center gap-2">
-                <Input
-                  type="text"
-                  value={broadcastTarget}
-                  onChange={(e) => setBroadcastTarget(e.target.value)}
-                  placeholder="Nomor WA Tujuan / Grup"
-                  className="text-xs h-9 bg-slate-50 flex-1"
-                />
-                <span className="text-[11px] text-slate-400 whitespace-nowrap">Target WA</span>
-              </div>
-
-              <textarea
-                readOnly
-                value={waDigestMessage}
-                rows={8}
-                className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
-              />
-
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                <span className="text-xs text-slate-400">
-                  {copySuccess ? 'Berhasil disalin!' : 'Siap dikirimkan secara manual'}
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCopyWA}
-                    className="text-xs font-semibold h-9 px-3 border-slate-200 rounded-lg cursor-pointer"
-                  >
-                    {copySuccess ? <Check className="w-3.5 h-3.5 mr-1" /> : <Share2 className="w-3.5 h-3.5 mr-1" />}
-                    <span>Salin Teks</span>
-                  </Button>
-
-                  {broadcastTarget ? (
-                    <Button
-                      type="button"
-                      onClick={handleOpenWABroadcast}
-                      className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 h-9 px-3.5 rounded-lg shadow-xs cursor-pointer"
-                    >
-                      <span>Buka WhatsApp (wa.me)</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      disabled
-                      className="text-xs font-semibold bg-slate-200 text-slate-400 h-9 px-3.5 rounded-lg"
-                    >
-                      Masukkan Nomor Tujuan
-                    </Button>
-                  )}
-                </div>
-              </div>
+                  <span>Buka WhatsApp</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  disabled
+                  className="text-xs font-semibold bg-slate-200 text-slate-400 h-9 px-3.5 rounded-lg"
+                >
+                  Masukkan Nomor Tujuan
+                </Button>
+              )}
             </div>
-          </div>,
-          document.body
-        )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

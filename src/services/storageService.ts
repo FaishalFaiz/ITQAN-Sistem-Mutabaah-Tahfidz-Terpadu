@@ -3,6 +3,7 @@ import {
   DEFAULT_WA_TEMPLATE_CONFIG, 
   DEFAULT_HALAQAH_SETTINGS 
 } from '../components/dashboard/mockData';
+import { formatJuz } from '../lib/utils';
 
 // Base keys
 const BASE_KEYS = {
@@ -86,7 +87,12 @@ export const storageService = {
         localStorage.setItem(key, JSON.stringify([]));
         return [];
       }
-      return JSON.parse(data);
+      const list: Santri[] = JSON.parse(data);
+      // Normalisasi format juzAchieved agar format bulat seperti 1.0 atau 30.0 menjadi 1 Juz / 30 Juz
+      return list.map((s) => ({
+        ...s,
+        juzAchieved: formatJuz(s.juzAchieved),
+      }));
     } catch {
       return [];
     }
@@ -105,14 +111,22 @@ export const storageService = {
 
   addSantri(newSantri: Santri): Santri[] {
     const list = this.getSantriList();
-    const updated = [newSantri, ...list];
+    const formatted: Santri = {
+      ...newSantri,
+      juzAchieved: formatJuz(newSantri.juzAchieved),
+    };
+    const updated = [formatted, ...list];
     this.saveSantriList(updated);
     return updated;
   },
 
   updateSantri(updatedSantri: Santri): Santri[] {
     const list = this.getSantriList();
-    const updated = list.map((s) => (s.id === updatedSantri.id ? updatedSantri : s));
+    const formatted: Santri = {
+      ...updatedSantri,
+      juzAchieved: formatJuz(updatedSantri.juzAchieved),
+    };
+    const updated = list.map((s) => (s.id === formatted.id ? formatted : s));
     this.saveSantriList(updated);
     return updated;
   },
@@ -222,7 +236,7 @@ export const storageService = {
       const newLinesToday = (s.linesCompletedToday || 0) + input.totalLines;
       const newTotalMemorized = (s.totalLinesMemorized || 0) + input.totalLines;
       const isTercapai = newLinesToday >= s.dailyTargetLines;
-      const calculatedJuz = (newTotalMemorized / 300).toFixed(1) + ' Juz';
+      const calculatedJuz = formatJuz(newTotalMemorized / 300);
 
       updatedSantriTarget = {
         ...s,
@@ -245,6 +259,75 @@ export const storageService = {
       record,
       updatedSantri: updatedSantriTarget || santriList[0],
     };
+  },
+
+  recalculateSantriMetrics(santriId: string): Santri | null {
+    const today = getTodayDateKey();
+    const allRecords = this.getSetoranRecords();
+    const santriRecords = allRecords.filter((r) => r.santriId === santriId);
+    
+    // Urutkan dari yang terbaru
+    santriRecords.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+    const todayRecords = santriRecords.filter((r) => r.createdAt?.startsWith(today));
+    const linesToday = todayRecords.reduce((sum, r) => sum + (r.totalLines || 0), 0);
+    const totalLinesMemorized = santriRecords.reduce((sum, r) => sum + (r.totalLines || 0), 0);
+    const lastSurah = santriRecords.length > 0 ? santriRecords[0].surahName : '-';
+
+    const santriList = this.getSantriList();
+    let updatedSantri: Santri | null = null;
+
+    const updatedList = santriList.map((s) => {
+      if (s.id !== santriId) return s;
+
+      const isTercapai = linesToday >= s.dailyTargetLines;
+      const calculatedJuz = formatJuz(totalLinesMemorized / 300);
+      
+      let status: 'tercapai' | 'tidak_tercapai' | 'belum_setor' = 'belum_setor';
+      if (todayRecords.length > 0) {
+        status = isTercapai ? 'tercapai' : 'tidak_tercapai';
+      }
+
+      updatedSantri = {
+        ...s,
+        linesCompletedToday: linesToday,
+        totalLinesMemorized: totalLinesMemorized,
+        juzAchieved: calculatedJuz,
+        status,
+        lastSurah,
+      };
+      return updatedSantri;
+    });
+
+    if (updatedSantri) {
+      this.saveSantriList(updatedList);
+    }
+    return updatedSantri;
+  },
+
+  updateSetoranRecord(updatedRecord: SetoranRecord): Santri | null {
+    const key = this.getScopedKey(BASE_KEYS.SETORAN);
+    const records = this.getSetoranRecords();
+    const index = records.findIndex((r) => r.id === updatedRecord.id);
+    if (index === -1) return null;
+
+    records[index] = updatedRecord;
+    localStorage.setItem(key, JSON.stringify(records));
+
+    const updatedSantri = this.recalculateSantriMetrics(updatedRecord.santriId);
+    emitChange('setoran_updated');
+    return updatedSantri;
+  },
+
+  deleteSetoranRecord(recordId: string, santriId: string): Santri | null {
+    const key = this.getScopedKey(BASE_KEYS.SETORAN);
+    const records = this.getSetoranRecords();
+    const updatedRecords = records.filter((r) => r.id !== recordId);
+    localStorage.setItem(key, JSON.stringify(updatedRecords));
+
+    const updatedSantri = this.recalculateSantriMetrics(santriId);
+    emitChange('setoran_deleted');
+    return updatedSantri;
   },
 
   updateSetoranWAStatus(recordId: string, waStatus: 'sent' | 'failed' | 'not_sent'): void {

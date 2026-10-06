@@ -74,6 +74,5 @@ export type NavItemKey =
   | 'beranda' 
   | 'laporan' 
   | 'santri' 
-  | 'pengaturan' 
-  | 'pacing';
+  | 'pengaturan';
 

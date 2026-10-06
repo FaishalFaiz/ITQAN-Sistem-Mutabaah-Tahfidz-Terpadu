@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -14,9 +13,10 @@ import {
   ExternalLink, 
   MessageSquare, 
   Edit2, 
-  X, 
   Clock, 
-  Printer
+  Printer,
+  Trash2,
+  Calendar
 } from 'lucide-react';
 import gsap from 'gsap';
 import type { Santri, SetoranRecord } from './types';
@@ -26,6 +26,19 @@ import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from '../../servi
 import { waGatewayService } from '../../services/waGatewayService';
 import { EditWaliModal } from './EditWaliModal';
 import { RaporPrintModal } from './RaporPrintModal';
+import { EditSetoranModal } from './EditSetoranModal';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { toast } from '@/components/ui/sonner';
+import { formatJuz } from '@/lib/utils';
+
+export type DateFilterRange = 'semua' | 'hari_ini' | 'pekan_ini' | 'bulan_ini' | 'custom';
 
 interface SantriDetailPageProps {
   santri: Santri;
@@ -44,6 +57,13 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   // Real Setoran records state
   const [records, setRecords] = useState<SetoranRecord[]>(() => storageService.getSetoranBySantriId(santri.id));
   const [setoranFilter, setSetoranFilter] = useState<'all' | 'ziyadah' | 'murojaah'>('all');
+  const [dateFilter, setDateFilter] = useState<DateFilterRange>('semua');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+
+  // Editing & Deleting record state
+  const [editingRecord, setEditingRecord] = useState<SetoranRecord | null>(null);
+  const [deletingRecord, setDeletingRecord] = useState<SetoranRecord | null>(null);
 
   // WA Digest Modal State
   const [isWAModalOpen, setIsWAModalOpen] = useState(false);
@@ -133,10 +153,55 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     waGatewayService.openDirectWA(currentSantri.parentPhone, messageText);
   };
 
+  const handleConfirmDelete = () => {
+    if (!deletingRecord) return;
+    const updated = storageService.deleteSetoranRecord(deletingRecord.id, currentSantri.id);
+    if (updated) {
+      setCurrentSantri(updated);
+    }
+    loadRecords();
+    toast.success('Catatan setoran berhasil dihapus.');
+    setDeletingRecord(null);
+  };
+
   const filteredRecords = useMemo(() => {
-    if (setoranFilter === 'all') return records;
-    return records.filter((r) => r.type === setoranFilter);
-  }, [records, setoranFilter]);
+    return records.filter((r) => {
+      // 1. Filter jenis setoran
+      if (setoranFilter !== 'all' && r.type !== setoranFilter) {
+        return false;
+      }
+
+      // 2. Filter rentang tanggal
+      if (dateFilter === 'semua') return true;
+
+      const recordTime = r.createdAt ? new Date(r.createdAt).getTime() : 0;
+      if (!recordTime) return true;
+
+      const now = new Date();
+      if (dateFilter === 'hari_ini') {
+        const todayKey = getTodayDateKey();
+        return r.createdAt?.startsWith(todayKey);
+      }
+      if (dateFilter === 'pekan_ini') {
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).getTime();
+        return recordTime >= sevenDaysAgo && recordTime <= now.getTime();
+      }
+      if (dateFilter === 'bulan_ini') {
+        const recDate = new Date(recordTime);
+        return recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear();
+      }
+      if (dateFilter === 'custom') {
+        if (!customStartDate) return true;
+        const start = new Date(customStartDate);
+        start.setHours(0, 0, 0, 0);
+        const end = customEndDate ? new Date(customEndDate) : new Date(now);
+        end.setHours(23, 59, 59, 999);
+        return recordTime >= start.getTime() && recordTime <= end.getTime();
+      }
+
+      return true;
+    });
+  }, [records, setoranFilter, dateFilter, customStartDate, customEndDate]);
 
   const statusConfig = {
     tercapai: {
@@ -249,7 +314,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           <div className="grid grid-cols-3 gap-2 sm:gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
             <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 text-center min-w-0">
               <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 block truncate">Total Capaian</span>
-              <span className="text-sm sm:text-base font-bold text-[#0070BA] block mt-0.5 truncate">{santri.juzAchieved}</span>
+              <span className="text-sm sm:text-base font-bold text-[#0070BA] block mt-0.5 truncate">{formatJuz(santri.juzAchieved)}</span>
               <span className="text-[10px] text-slate-400 block truncate">~{pagesCompleted} Hal</span>
             </div>
 
@@ -559,7 +624,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             </div>
 
             {/* Filter Jenis Setoran */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg text-xs">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg text-xs self-start sm:self-auto">
               <button
                 type="button"
                 onClick={() => setSetoranFilter('all')}
@@ -596,6 +661,61 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             </div>
           </div>
 
+          {/* Sub Toolbar: Filter Rentang Tanggal */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-semibold text-slate-600 inline-flex items-center gap-1 mr-1">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                Periode:
+              </span>
+              {(
+                [
+                  { id: 'semua', label: 'Semua Waktu' },
+                  { id: 'hari_ini', label: 'Hari Ini' },
+                  { id: 'pekan_ini', label: '7 Hari Terakhir' },
+                  { id: 'bulan_ini', label: 'Bulan Ini' },
+                  { id: 'custom', label: 'Kustom' },
+                ] as const
+              ).map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setDateFilter(preset.id)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                    dateFilter === preset.id
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Date Pickers */}
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-1.5 pt-1 lg:pt-0">
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="h-7 px-2 text-xs rounded border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+                />
+                <span className="text-slate-400 text-xs">s/d</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="h-7 px-2 text-xs rounded border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+                />
+              </div>
+            )}
+
+            <div className="text-[11px] text-slate-500 font-medium">
+              Menampilkan <strong>{filteredRecords.length}</strong> dari <strong>{records.length}</strong> sesi
+            </div>
+          </div>
+
           {filteredRecords.length === 0 ? (
             <div className="py-12 text-center space-y-3">
               <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
@@ -603,7 +723,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               </div>
               <h4 className="font-bold text-sm text-slate-700">Belum Ada Riwayat Setoran</h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Santri belum memiliki catatan setoran pada filter ini.
+                Santri belum memiliki catatan setoran pada filter yang dipilih.
               </p>
               <Button
                 onClick={() => onSetor(santri)}
@@ -625,7 +745,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                       <th className="py-2.5 px-3">Jumlah Baris</th>
                       <th className="py-2.5 px-3">Mutu Kelancaran</th>
                       <th className="py-2.5 px-3">Status WA</th>
-                      <th className="py-2.5 px-3 text-right">Aksi</th>
+                      <th className="py-2.5 px-3 text-right">Aksi &amp; Koreksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -692,16 +812,39 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                           )}
                         </td>
                         <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                          <button
-                            type="button"
-                            disabled={!currentSantri.parentPhone}
-                            onClick={() => handleSendRecordWA(r)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50 cursor-pointer"
-                            title="Kirim catatan setoran via WhatsApp"
-                          >
-                            <Send className="w-3 h-3" />
-                            <span>Kirim WA</span>
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Tombol Koreksi / Edit */}
+                            <button
+                              type="button"
+                              onClick={() => setEditingRecord(r)}
+                              className="p-1 rounded text-slate-500 hover:text-[#0070BA] hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Koreksi / Edit catatan setoran"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Tombol Hapus */}
+                            <button
+                              type="button"
+                              onClick={() => setDeletingRecord(r)}
+                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                              title="Hapus rekaman setoran"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Tombol Kirim WA */}
+                            <button
+                              type="button"
+                              disabled={!currentSantri.parentPhone}
+                              onClick={() => handleSendRecordWA(r)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50 cursor-pointer"
+                              title="Kirim catatan setoran via WhatsApp"
+                            >
+                              <Send className="w-3 h-3" />
+                              <span>Kirim WA</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -767,16 +910,35 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                           <span className="text-[10px] text-slate-400">WA Belum Terkirim</span>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        disabled={!currentSantri.parentPhone}
-                        onClick={() => handleSendRecordWA(r)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50 cursor-pointer"
-                        title="Kirim catatan setoran via WhatsApp"
-                      >
-                        <Send className="w-3 h-3" />
-                        <span>Kirim WA</span>
-                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setEditingRecord(r)}
+                          className="p-1 rounded border border-slate-200 bg-white text-slate-600 hover:text-[#0070BA] transition-colors"
+                          title="Edit setoran"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeletingRecord(r)}
+                          className="p-1 rounded border border-slate-200 bg-white text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="Hapus setoran"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!currentSantri.parentPhone}
+                          onClick={() => handleSendRecordWA(r)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors disabled:opacity-50 cursor-pointer"
+                          title="Kirim catatan setoran via WhatsApp"
+                        >
+                          <Send className="w-3 h-3" />
+                          <span>Kirim WA</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -789,84 +951,72 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
 
       {/* 7. MODAL: Kirim Laporan WhatsApp Digest */}
-      {isWAModalOpen &&
-        createPortal(
-          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-4 animate-in fade-in duration-150">
-            <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full overflow-hidden space-y-4 p-5">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                  <Share2 className="w-4 h-4 text-emerald-600" />
-                  <span>Format Laporan WhatsApp Wali Santri</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsWAModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-700 cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+      <Dialog open={isWAModalOpen} onOpenChange={setIsWAModalOpen}>
+        <DialogContent className="max-w-lg p-5">
+          <DialogHeader className="pb-3 border-b border-slate-100">
+            <DialogTitle className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+              <Share2 className="w-4 h-4 text-emerald-600" />
+              <span>Format Laporan WhatsApp Wali Santri</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 text-left pt-1">
+              Teks ringkasan progres santri siap kirim ke Wali ({currentSantri.parentName || 'Wali Santri'} - {currentSantri.parentPhone || 'No WA belum diisi'}):
+            </DialogDescription>
+          </DialogHeader>
 
-              <p className="text-xs text-slate-500">
-                Teks ringkasan progres santri siap kirim ke Wali ({currentSantri.parentName || 'Wali Santri'} - {currentSantri.parentPhone || 'No WA belum diisi'}):
-              </p>
+          <textarea
+            readOnly
+            value={waDigestMessage}
+            rows={8}
+            className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
+          />
 
-              <textarea
-                readOnly
-                value={waDigestMessage}
-                rows={8}
-                className="w-full p-3 font-mono text-xs rounded-lg border border-slate-200 bg-slate-50 text-slate-800 focus:outline-none"
-              />
-
-              {/* Info Status 1 Pesan / Hari */}
-              {isSentToday && (
-                <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Laporan hari ini sudah ditandai terkirim ({currentSantri.lastDailyReportSentTime || 'Hari ini'}).</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={handleCopyWADigest}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer"
-                >
-                  {copyFeedback ? 'Tersalin ke Clipboard!' : 'Salin Teks'}
-                </button>
-
-                <div className="flex items-center gap-2">
-                  {currentSantri.parentPhone ? (
-                    <Button
-                      type="button"
-                      onClick={handleOpenWADigestDirect}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
-                    >
-                      <span>Buka WhatsApp (wa.me)</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIsWAModalOpen(false);
-                        setIsEditWaliModalOpen(true);
-                      }}
-                      className="text-xs border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
-                    >
-                      <Edit2 className="w-3.5 h-3.5 mr-1" />
-                      Atur No. HP Wali Dulu
-                    </Button>
-                  )}
-                </div>
+          {/* Info Status 1 Pesan / Hari */}
+          {isSentToday && (
+            <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Laporan hari ini sudah ditandai terkirim ({currentSantri.lastDailyReportSentTime || 'Hari ini'}).</span>
               </div>
             </div>
-          </div>,
-          document.body
-        )}
+          )}
+
+          <DialogFooter className="flex flex-row flex-wrap items-center justify-between gap-2 pt-2 sm:justify-between">
+            <button
+              type="button"
+              onClick={handleCopyWADigest}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer"
+            >
+              {copyFeedback ? 'Tersalin ke Clipboard!' : 'Salin Teks'}
+            </button>
+
+            <div className="flex items-center gap-2">
+              {currentSantri.parentPhone ? (
+                <Button
+                  type="button"
+                  onClick={handleOpenWADigestDirect}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                >
+                  <span>Buka WhatsApp</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsWAModalOpen(false);
+                    setIsEditWaliModalOpen(true);
+                  }}
+                  className="text-xs border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                >
+                  <Edit2 className="w-3.5 h-3.5 mr-1" />
+                  Atur No. HP Wali Dulu
+                </Button>
+              )}
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 8. MODAL: Edit Kontak Wali Santri */}
       <EditWaliModal
@@ -877,7 +1027,6 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
       />
 
       {/* 9. MODAL: Rapor Resmi Santri (Siap Cetak / Ekspor PDF Langsung) */}
-      {/* Modal Cetak Rapor Resmi Santri */}
       <RaporPrintModal
         isOpen={isRaporModalOpen}
         onClose={() => setIsRaporModalOpen(false)}
@@ -885,6 +1034,74 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         records={records}
         periodLabel="Bulan Berjalan"
       />
+
+      {/* 10. MODAL: Koreksi / Edit Catatan Setoran */}
+      <EditSetoranModal
+        isOpen={Boolean(editingRecord)}
+        onClose={() => setEditingRecord(null)}
+        record={editingRecord}
+        santriName={currentSantri.name}
+        onSuccess={(updated) => {
+          setCurrentSantri(updated);
+          loadRecords();
+        }}
+      />
+
+      {/* 11. MODAL: Konfirmasi Hapus Catatan Setoran */}
+      <Dialog open={Boolean(deletingRecord)} onOpenChange={(open) => !open && setDeletingRecord(null)}>
+        <DialogContent className="sm:max-w-md p-5 rounded-2xl border-slate-200">
+          <DialogHeader className="text-left pb-2">
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-red-100 text-red-600">
+                <Trash2 className="w-4 h-4" />
+              </span>
+              <span>Hapus Catatan Setoran?</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-600 mt-2 space-y-2">
+              <p>
+                Anda akan menghapus rekaman setoran berikut:
+              </p>
+              {deletingRecord && (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium space-y-1">
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-500">Waktu Sesi:</span>
+                    <span className="font-semibold">{deletingRecord.formattedDate}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-500">Materi:</span>
+                    <span className="font-bold text-[#0070BA]">{deletingRecord.surahName} (Juz {deletingRecord.juz})</span>
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-slate-500">Capaian:</span>
+                    <span>{deletingRecord.totalLines} Baris ({deletingRecord.type.toUpperCase()})</span>
+                  </div>
+                </div>
+              )}
+              <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 p-2 rounded">
+                ⚠️ Akumulasi total hafalan dan capaian harian santri akan otomatis dihitung ulang secara akurat.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeletingRecord(null)}
+              className="text-xs h-9 px-4 border-slate-200"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmDelete}
+              className="text-xs h-9 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold shadow-xs"
+            >
+              Ya, Hapus Catatan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

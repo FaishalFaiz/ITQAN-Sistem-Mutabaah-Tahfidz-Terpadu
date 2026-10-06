@@ -177,24 +177,41 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
 
       {/* Grid Kartu Santri */}
       {santriList.length === 0 ? (
-        <div className="text-center py-14 px-4 text-muted-foreground text-xs bg-slate-50/60 rounded-xl border border-dashed border-border space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center mx-auto">
+        <div className="py-10 px-5 text-center text-xs bg-slate-50/60 rounded-xl border border-dashed border-slate-200 space-y-4">
+          <div className="w-13 h-13 rounded-2xl bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center mx-auto shadow-2xs border border-[#D6EAF8]">
             <UserPlus className="w-6 h-6" />
           </div>
-          <div>
-            <p className="font-bold text-foreground text-sm">Belum Ada Santri di Halaqoh Ini</p>
-            <p className="text-muted-foreground mt-1 max-w-md mx-auto">
-              Daftar santri masih kosong (0 santri). Daftarkan santri pertama ke rombel Anda untuk memulai mutaba'ah hafalan Al-Qur'an.
+          <div className="space-y-1">
+            <h4 className="font-bold text-slate-900 text-sm sm:text-base">
+              Selamat Datang di Halaqoh ITQAN
+            </h4>
+            <p className="text-slate-500 max-w-md mx-auto text-xs leading-relaxed">
+              Belum ada santri yang terdaftar dalam rombel halaqoh Anda. Daftarkan santri pertama untuk mulai mencatat talaqqi hafalan dan mengirim update harian ke wali santri.
             </p>
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 max-w-lg mx-auto text-left pt-1">
+            <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-0.5">
+              <span className="font-bold text-[#0070BA] block text-[11px]">1. Tambah Santri</span>
+              <p className="text-[10px] text-slate-500">Input nama, NIS, dan kontak WhatsApp wali.</p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-0.5">
+              <span className="font-bold text-emerald-700 block text-[11px]">2. Catat Setoran</span>
+              <p className="text-[10px] text-slate-500">Talaqqi Ziyadah &amp; Muroja'ah sekali klik.</p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-white border border-slate-200 space-y-0.5">
+              <span className="font-bold text-amber-700 block text-[11px]">3. Kirim Laporan</span>
+              <p className="text-[10px] text-slate-500">Kirim format pesan resmi langsung ke WhatsApp wali.</p>
+            </div>
+          </div>
+
           <Button
             type="button"
-            size="sm"
             onClick={onOpenAddModal}
-            className="inline-flex items-center gap-1.5 h-9 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs cursor-pointer shadow-xs"
+            className="inline-flex items-center gap-1.5 h-9 px-5 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs cursor-pointer shadow-xs rounded-lg"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            <span>Tambah Santri Pertama</span>
+            <span>Tambah Santri Pertama Sekarang</span>
           </Button>
         </div>
       ) : filtered.length === 0 ? (

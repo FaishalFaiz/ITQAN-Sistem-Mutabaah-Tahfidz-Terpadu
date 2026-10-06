@@ -59,7 +59,6 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
     if (path.startsWith('/laporan')) return 'laporan';
     if (path.startsWith('/santri')) return 'santri';
     if (path.startsWith('/pengaturan')) return 'pengaturan';
-    if (path.startsWith('/pacing')) return 'santri';
     return 'beranda';
   };
 

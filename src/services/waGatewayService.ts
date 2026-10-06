@@ -1,5 +1,6 @@
 import type { Santri, SetoranRecord } from '../components/dashboard/types';
 import { storageService } from './storageService';
+import { formatJuz } from '../lib/utils';
 
 export const waGatewayService = {
   /**
@@ -84,7 +85,7 @@ export const waGatewayService = {
       barisAkhir: record.lineEnd,
       baris: record.totalLines,
       nilai: gradeLabel,
-      capaianJuz: santri.juzAchieved,
+      capaianJuz: formatJuz(santri.juzAchieved),
       waktu: timeStr,
       tanggal: dateStr,
       musyrif: record.musyrif,
@@ -174,7 +175,7 @@ export const waGatewayService = {
       halamanHariIni: estPagesToday,
       statusHarian,
       rincianSesi,
-      totalHafalan: `${santri.juzAchieved} (${santri.totalLinesMemorized || 0} Baris)`,
+      totalHafalan: `${formatJuz(santri.juzAchieved)} (${santri.totalLinesMemorized || 0} Baris)`,
       sisaTarget: remainingLines,
       statusPacing,
       catatanMusyrif,

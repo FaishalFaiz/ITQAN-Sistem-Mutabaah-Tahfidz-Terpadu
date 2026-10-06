@@ -66,7 +66,7 @@ export function App() {
   // Modal state for Add Santri
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Modal state for Daily Report to Parents via Fonnte
+  // Modal state for Daily Report to Parents via WhatsApp
   const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
 
   // Filter state for Santri cards
@@ -397,11 +397,6 @@ export function App() {
               path="/ujian-tasmi"
               element={<Navigate to="/santri" replace />}
             />
-
-            <Route
-              path="/pacing"
-              element={<Navigate to="/santri" replace />}
-            />
           </Routes>
         </main>
       </div>
@@ -421,7 +416,7 @@ export function App() {
         onAddSantri={handleAddSantri}
       />
 
-      {/* Daily Report to Parents Modal (1 message per day via Fonnte) */}
+      {/* Daily Report to Parents Modal (Manual Direct WhatsApp) */}
       <DailyReportModal
         isOpen={isDailyReportModalOpen}
         onClose={() => setIsDailyReportModalOpen(false)}

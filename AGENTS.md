@@ -24,6 +24,7 @@
 
 ## 3. Git Workflow Rules
 - **NO Git Commit**: NEVER execute `git commit` automatically unless the user explicitly commands it in that exact prompt. Keep all changes unstaged or staged in the working directory for user review.
+- **Commit Message Standards**: Commit messages must ALWAYS be professional, adhere strictly to Conventional Commits format (e.g., `feat: ...`, `fix: ...`, `refactor: ...`), and be written in **English**.
 - **NO Git Push**: NEVER execute `git push` under any circumstances unless explicitly ordered by the user.
 
 ## 4. Verification & Testing Policy

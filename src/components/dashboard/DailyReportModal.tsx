@@ -324,9 +324,9 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                           type="button"
                           onClick={() => handleOpenDirectWA(santri)}
                           className="h-9 px-3.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
-                          title="Buka WhatsApp langsung (wa.me)"
+                          title="Buka WhatsApp langsung"
                         >
-                          <span>Buka WA (wa.me)</span>
+                          <span>Buka WhatsApp</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </Button>
                       )

@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { formatJuz } from '@/lib/utils';
 
 interface SantriModalProps {
   type: 'setor' | 'detail' | null;
@@ -63,7 +64,7 @@ export const SantriModal: React.FC<SantriModalProps> = ({
                 </span>
                 <span className="text-slate-300">•</span>
                 <span>
-                  Hafalan: <b className="text-slate-800 font-semibold">{displaySantri.juzAchieved}</b>
+                  Hafalan: <b className="text-slate-800 font-semibold">{formatJuz(displaySantri.juzAchieved)}</b>
                 </span>
               </p>
             </div>

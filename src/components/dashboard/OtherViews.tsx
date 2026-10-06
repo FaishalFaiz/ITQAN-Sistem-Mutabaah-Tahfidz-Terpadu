@@ -19,6 +19,7 @@ import { PengaturanView } from './PengaturanView';
 import { EditWaliModal } from './EditWaliModal';
 import { EditTargetModal } from './EditTargetModal';
 import { waGatewayService } from '../../services/waGatewayService';
+import { formatJuz } from '@/lib/utils';
 import type { NavItemKey, Santri } from './types';
 
 interface OtherViewProps {
@@ -41,9 +42,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
   const [editingWaliSantri, setEditingWaliSantri] = useState<Santri | null>(null);
   const [editingTargetSantri, setEditingTargetSantri] = useState<Santri | null>(null);
-  const [santriSubTab, setSantriSubTab] = useState<'kontak' | 'target'>(
-    currentView === 'pacing' ? 'target' : 'kontak'
-  );
+  const [santriSubTab, setSantriSubTab] = useState<'kontak' | 'target'>('kontak');
 
   const countTercapai = santriList.filter((s) => s.status === 'tercapai').length;
   const countTidak = santriList.filter((s) => s.status === 'tidak_tercapai').length;
@@ -69,7 +68,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
         />
       )}
 
-      {(currentView === 'santri' || currentView === 'pacing') && (
+      {currentView === 'santri' && (
         <div className="space-y-4">
           {/* Header Card: Title, Switcher Tabs, & Tambah Santri */}
           <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-5 shadow-xs space-y-4">
@@ -185,7 +184,27 @@ export const OtherView: React.FC<OtherViewProps> = ({
                 </button>
               </div>
 
-              {filteredSantri.length === 0 ? (
+              {santriList.length === 0 ? (
+                <div className="text-center py-14 px-4 text-slate-500 text-xs bg-slate-50/60 rounded-xl border border-dashed border-slate-200 space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center mx-auto shadow-2xs">
+                    <UserPlus className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">Belum Ada Santri Terdaftar</p>
+                    <p className="text-slate-500 mt-1 max-w-md mx-auto text-xs leading-relaxed">
+                      Mulai kelola halaqoh Anda dengan mendaftarkan santri pertama. Anda dapat mengelola kontak wali, nomor WhatsApp, serta target hafalan harian.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onOpenAddModal}
+                    className="inline-flex items-center gap-1.5 h-9 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs rounded-lg cursor-pointer shadow-xs"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Tambah Santri Pertama</span>
+                  </button>
+                </div>
+              ) : filteredSantri.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 space-y-1.5">
                   <p className="text-sm font-semibold text-slate-700">Tidak ada santri yang cocok</p>
                   <p className="text-xs text-slate-500">Coba ubah kata kunci pencarian atau ubah tab filter status.</p>
@@ -230,7 +249,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
                             </div>
 
                             <span className="text-xs font-bold text-[#0070BA] shrink-0 font-mono">
-                              {santri.juzAchieved}
+                              {formatJuz(santri.juzAchieved)}
                             </span>
                           </div>
 
@@ -368,7 +387,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
                                 </button>
                               </div>
                             </td>
-                            <td className="py-3 px-4 font-bold text-[#0070BA]">{santri.juzAchieved}</td>
+                            <td className="py-3 px-4 font-bold text-[#0070BA]">{formatJuz(santri.juzAchieved)}</td>
                             <td className="py-3 px-4">
                               {santri.linesCompletedToday} / {santri.dailyTargetLines} Baris
                             </td>
@@ -419,7 +438,27 @@ export const OtherView: React.FC<OtherViewProps> = ({
           {/* TAB 2: TARGET HAFALAN & PACING CARDS */}
           {santriSubTab === 'target' && (
             <div className="space-y-4">
-              {filteredSantri.length === 0 ? (
+              {santriList.length === 0 ? (
+                <div className="text-center py-14 px-4 text-slate-500 text-xs bg-white rounded-xl border border-dashed border-slate-200 space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center mx-auto shadow-2xs">
+                    <Target className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">Target Pacing Belum Tersedia</p>
+                    <p className="text-slate-500 mt-1 max-w-md mx-auto text-xs leading-relaxed">
+                      Setelah santri didaftarkan, Anda dapat memantau kalkulasi kurikulum 30 juz dan target capaian harian santri di sini.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onOpenAddModal}
+                    className="inline-flex items-center gap-1.5 h-9 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs rounded-lg cursor-pointer shadow-xs"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Daftarkan Santri Sekarang</span>
+                  </button>
+                </div>
+              ) : filteredSantri.length === 0 ? (
                 <div className="text-center py-12 px-4 text-slate-500 text-xs bg-white rounded-xl border border-dashed border-slate-200 space-y-3">
                   <p className="font-bold text-slate-800 text-sm">Tidak Ada Santri yang Cocok</p>
                   <p className="max-w-md mx-auto text-slate-500">

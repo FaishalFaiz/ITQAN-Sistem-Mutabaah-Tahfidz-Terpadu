@@ -3,6 +3,7 @@ import type { Santri } from './types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { formatJuz } from '@/lib/utils';
 
 interface SantriCardProps {
   santri: Santri;
@@ -27,6 +28,10 @@ export const SantriCard: React.FC<SantriCardProps> = ({
   };
 
   const percent = Math.min(100, Math.round((santri.linesCompletedToday / santri.dailyTargetLines) * 100));
+  const formattedJuz = formatJuz(santri.juzAchieved);
+  const juzDisplayNumber = formattedJuz.endsWith('Juz') 
+    ? formattedJuz.replace(/\s*Juz$/i, '').trim() 
+    : formattedJuz;
 
   return (
     <Card className="santri-card-item rounded-xl p-4 shadow-xs hover:border-primary/40 hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
@@ -48,7 +53,7 @@ export const SantriCard: React.FC<SantriCardProps> = ({
               {santri.name}
             </h4>
             <p className="text-xs font-semibold text-brand mt-0.5">
-              {santri.juzAchieved} <span className="text-muted-foreground font-normal">/ 30 Juz</span>
+              {juzDisplayNumber} <span className="text-muted-foreground font-normal">/ 30 Juz</span>
             </p>
           </div>
         </div>

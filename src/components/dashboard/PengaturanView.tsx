@@ -58,7 +58,7 @@ export const PengaturanView: React.FC = () => {
           <span>Pengaturan Halaqoh &amp; Format Pesan WhatsApp</span>
         </h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Atur parameter halaqoh, muhaffizh, dan kustomisasi format teks pesan laporan WhatsApp (wa.me) ke wali santri.
+          Atur parameter halaqoh, muhaffizh, dan kustomisasi format teks pesan laporan WhatsApp ke wali santri.
         </p>
       </div>
 
@@ -143,7 +143,7 @@ export const PengaturanView: React.FC = () => {
           </div>
           <div>
             <h3 className="font-bold text-sm text-slate-900">
-              Format Teks Pesan WhatsApp (Pengiriman Manual wa.me)
+              Format Teks Pesan WhatsApp (Pengiriman Langsung ke Wali)
             </h3>
             <p className="text-[11px] text-slate-500">
               Sesuaikan kata-kata laporan yang otomatis terisi saat muhaffizh mengklik Buka WhatsApp / Salin Teks
