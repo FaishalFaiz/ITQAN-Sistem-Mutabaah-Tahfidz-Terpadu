@@ -8,10 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
+export type SetoranFilterType = 'all' | 'sudah_setor' | 'belum_setor' | 'tercapai' | 'tidak_tercapai';
+
 interface SantriListSectionProps {
   santriList: Santri[];
-  activeFilter: 'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor';
-  onFilterChange: (filter: 'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor') => void;
+  activeFilter: SetoranFilterType;
+  onFilterChange: (filter: SetoranFilterType) => void;
   onSetor: (santri: Santri) => void;
   onDetail: (santri: Santri) => void;
   onOpenAddModal: () => void;
@@ -28,8 +30,20 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
   const [search, setSearch] = useState('');
   const sectionRef = useRef<HTMLDivElement>(null);
 
+  const countTercapai = santriList.filter((s) => s.status === 'tercapai').length;
+  const countTidak = santriList.filter((s) => s.status === 'tidak_tercapai').length;
+  const countBelum = santriList.filter((s) => s.status === 'belum_setor').length;
+  const countSudah = countTercapai + countTidak;
+
   const filtered = santriList.filter((s) => {
-    const matchesFilter = activeFilter === 'all' || s.status === activeFilter;
+    let matchesFilter = true;
+    if (activeFilter === 'sudah_setor') {
+      matchesFilter = s.status === 'tercapai' || s.status === 'tidak_tercapai' || s.linesCompletedToday > 0;
+    } else if (activeFilter === 'belum_setor') {
+      matchesFilter = s.status === 'belum_setor';
+    } else if (activeFilter !== 'all') {
+      matchesFilter = s.status === activeFilter;
+    }
     const matchesSearch =
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.juzAchieved.toLowerCase().includes(search.toLowerCase()) ||
@@ -60,74 +74,77 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
     return () => ctx.revert();
   }, [filtered.length, search, activeFilter]);
 
-  const countTercapai = santriList.filter((s) => s.status === 'tercapai').length;
-  const countTidak = santriList.filter((s) => s.status === 'tidak_tercapai').length;
-  const countBelum = santriList.filter((s) => s.status === 'belum_setor').length;
-
   return (
     <Card ref={sectionRef} className="p-3.5 sm:p-6 shadow-xs space-y-4">
-      {/* Section Header: Switcher beside title (Left) & Searchbar beside Add button (Right) */}
+      {/* Section Header: Title & Filter Tabs */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-border">
-        {/* Left Side: Title & Status Filter Tabs */}
+        {/* Left Side: Title & Filter Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-base text-foreground whitespace-nowrap">
-              Daftar Santri Halaqoh
+              Target &amp; Setoran Santri Hari Ini
             </h3>
             <Badge variant="secondary" className="font-semibold text-xs">
               {filtered.length}
             </Badge>
           </div>
 
-          {/* Switcher Filter (Responsif: 4 Kolom di Mobile, Flex di Desktop) */}
-          <div className="grid grid-cols-4 sm:flex items-center bg-muted/60 p-0.5 sm:p-1 rounded-lg border border-border text-xs w-full sm:w-auto overflow-hidden">
+          {/* Switcher Filter */}
+          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border text-xs w-full sm:w-auto overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => onFilterChange('all')}
-              className={`px-1.5 sm:px-3 py-1 rounded-md text-center transition-all truncate cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-center transition-all whitespace-nowrap cursor-pointer ${
                 activeFilter === 'all'
-                  ? 'bg-background text-foreground font-semibold shadow-xs'
+                  ? 'bg-background text-foreground font-bold shadow-xs'
                   : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              <span className="hidden sm:inline">Semua ({santriList.length})</span>
-              <span className="sm:hidden text-[11px]">Semua ({santriList.length})</span>
+              Semua ({santriList.length})
             </button>
             <button
               type="button"
-              onClick={() => onFilterChange('tercapai')}
-              className={`px-1.5 sm:px-3 py-1 rounded-md text-center transition-all truncate cursor-pointer ${
-                activeFilter === 'tercapai'
-                  ? 'bg-background text-emerald-700 font-semibold shadow-xs'
+              onClick={() => onFilterChange('sudah_setor')}
+              className={`px-2.5 py-1 rounded-lg text-center transition-all whitespace-nowrap cursor-pointer ${
+                activeFilter === 'sudah_setor'
+                  ? 'bg-background text-[#0070BA] font-bold shadow-xs'
                   : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              <span className="hidden sm:inline">Tercapai ({countTercapai})</span>
-              <span className="sm:hidden text-[11px]">Tercapai ({countTercapai})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onFilterChange('tidak_tercapai')}
-              className={`px-1.5 sm:px-3 py-1 rounded-md text-center transition-all truncate cursor-pointer ${
-                activeFilter === 'tidak_tercapai'
-                  ? 'bg-background text-red-700 font-semibold shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground font-medium'
-              }`}
-            >
-              <span className="hidden sm:inline">Tidak Tercapai ({countTidak})</span>
-              <span className="sm:hidden text-[11px]">Defisit ({countTidak})</span>
+              Sudah Setor ({countSudah})
             </button>
             <button
               type="button"
               onClick={() => onFilterChange('belum_setor')}
-              className={`px-1.5 sm:px-3 py-1 rounded-md text-center transition-all truncate cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-center transition-all whitespace-nowrap cursor-pointer ${
                 activeFilter === 'belum_setor'
-                  ? 'bg-background text-amber-700 font-semibold shadow-xs'
+                  ? 'bg-background text-amber-700 font-bold shadow-xs'
                   : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              <span className="hidden sm:inline">Belum Setor ({countBelum})</span>
-              <span className="sm:hidden text-[11px]">Belum ({countBelum})</span>
+              Belum Setor ({countBelum})
+            </button>
+            <button
+              type="button"
+              onClick={() => onFilterChange('tercapai')}
+              className={`px-2.5 py-1 rounded-lg text-center transition-all whitespace-nowrap cursor-pointer ${
+                activeFilter === 'tercapai'
+                  ? 'bg-background text-emerald-700 font-bold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground font-medium'
+              }`}
+            >
+              Tercapai ({countTercapai})
+            </button>
+            <button
+              type="button"
+              onClick={() => onFilterChange('tidak_tercapai')}
+              className={`px-2.5 py-1 rounded-lg text-center transition-all whitespace-nowrap cursor-pointer ${
+                activeFilter === 'tidak_tercapai'
+                  ? 'bg-background text-red-700 font-bold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground font-medium'
+              }`}
+            >
+              Defisit ({countTidak})
             </button>
           </div>
         </div>

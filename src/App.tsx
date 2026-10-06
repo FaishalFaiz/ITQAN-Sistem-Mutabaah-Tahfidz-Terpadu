@@ -5,14 +5,13 @@ import gsap from 'gsap';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
 import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
-import { TrendChart } from './components/dashboard/TrendChart';
-import { SantriListSection } from './components/dashboard/SantriListSection';
+import { SantriListSection, type SetoranFilterType } from './components/dashboard/SantriListSection';
+import { TodayProgressCard } from './components/dashboard/TodayProgressCard';
 import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
 import { SantriModal } from './components/dashboard/SantriModal';
 import { AddSantriModal } from './components/dashboard/AddSantriModal';
 import { DailyReportModal } from './components/dashboard/DailyReportModal';
 import { SantriDetailPage } from './components/dashboard/SantriDetailPage';
-import { HalaqahQuickFocus } from './components/dashboard/HalaqahQuickFocus';
 import { OtherView } from './components/dashboard/OtherViews';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
@@ -71,7 +70,7 @@ export function App() {
   const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
 
   // Filter state for Santri cards
-  const [activeFilter, setActiveFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
+  const [activeFilter, setActiveFilter] = useState<SetoranFilterType>('all');
 
   const [santriList, setSantriList] = useState<Santri[]>(() => storageService.getSantriList());
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
@@ -139,7 +138,6 @@ export function App() {
     if (p.startsWith('/santri')) return 'Daftar Santri';
     if (p.startsWith('/laporan')) return 'Laporan';
     if (p.startsWith('/pengaturan')) return 'Pengaturan';
-    if (p.startsWith('/pacing')) return 'Target Hafalan Santri';
     return 'ITQAN';
   };
 
@@ -342,13 +340,11 @@ export function App() {
                     onFilterChange={setActiveFilter}
                   />
 
-                  <HalaqahQuickFocus
+                  <TodayProgressCard
                     santriList={santriList}
-                    onSetor={handleOpenSetor}
-                    onDetail={handleOpenDetail}
+                    activeFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
                   />
-
-                  <TrendChart />
 
                   <SantriListSection
                     santriList={santriList}
@@ -374,13 +370,11 @@ export function App() {
                     onFilterChange={setActiveFilter}
                   />
 
-                  <HalaqahQuickFocus
+                  <TodayProgressCard
                     santriList={santriList}
-                    onSetor={handleOpenSetor}
-                    onDetail={handleOpenDetail}
+                    activeFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
                   />
-
-                  <TrendChart />
 
                   <SantriListSection
                     santriList={santriList}
@@ -455,16 +449,7 @@ export function App() {
 
             <Route
               path="/pacing"
-              element={
-                <OtherView
-                  currentView="pacing"
-                  onBackToBeranda={() => navigate('/beranda')}
-                  santriList={santriList}
-                  onSetor={handleOpenSetor}
-                  onDetail={handleOpenDetail}
-                  onOpenAddModal={() => setIsAddModalOpen(true)}
-                />
-              }
+              element={<Navigate to="/santri" replace />}
             />
           </Routes>
         </main>

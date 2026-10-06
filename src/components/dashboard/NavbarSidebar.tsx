@@ -5,7 +5,6 @@ import {
   FileText, 
   Users, 
   Settings, 
-  Target,
   LogOut,
   X
 } from 'lucide-react';
@@ -33,7 +32,6 @@ const NAV_ITEMS: NavItemDef[] = [
   { key: 'laporan', label: 'Laporan', icon: FileText, path: '/laporan' },
   { key: 'santri', label: 'Santri', icon: Users, path: '/santri' },
   { key: 'pengaturan', label: 'Pengaturan', icon: Settings, path: '/pengaturan' },
-  { key: 'pacing', label: 'Target Hafalan', icon: Target, path: '/pacing' },
 ];
 
 export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
@@ -61,7 +59,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
     if (path.startsWith('/laporan')) return 'laporan';
     if (path.startsWith('/santri')) return 'santri';
     if (path.startsWith('/pengaturan')) return 'pengaturan';
-    if (path.startsWith('/pacing')) return 'pacing';
+    if (path.startsWith('/pacing')) return 'santri';
     return 'beranda';
   };
 

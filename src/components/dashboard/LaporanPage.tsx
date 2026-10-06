@@ -33,6 +33,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RaporPrintModal } from './RaporPrintModal';
+import { TrendChart } from './TrendChart';
 import { toast } from '@/components/ui/sonner';
 
 interface LaporanPageProps {
@@ -493,6 +494,9 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
       {/* 4. Tab 1: Ringkasan Tren */}
       {activeTab === 'ringkasan' && (
         <div className="space-y-4">
+          {/* Tren Capaian Setoran Harian (Pekan / Bulan) */}
+          <TrendChart />
+
           {/* Row 1: Weekly Comparison Chart + Kelancaran Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Chart Balok Mingguan */}

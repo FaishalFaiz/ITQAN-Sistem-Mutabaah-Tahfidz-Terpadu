@@ -2,12 +2,14 @@ import React, { useRef, useEffect } from 'react';
 import { CheckCircle2, AlertCircle, Clock, ChevronRight } from 'lucide-react';
 import gsap from 'gsap';
 
+import { type SetoranFilterType } from './SantriListSection';
+
 interface StatCardsProps {
   tercapaiCount?: number;
   tidakTercapaiCount?: number;
   belumSetorCount?: number;
-  activeFilter?: 'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor';
-  onFilterChange?: (filter: 'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor') => void;
+  activeFilter?: SetoranFilterType;
+  onFilterChange?: (filter: SetoranFilterType) => void;
 }
 
 export const StatCards: React.FC<StatCardsProps> = ({
