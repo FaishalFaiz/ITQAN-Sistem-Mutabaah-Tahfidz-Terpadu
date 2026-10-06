@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
-import { Menu, Calendar, Send } from 'lucide-react';
+import { Menu, Calendar, Send, ArrowLeft } from 'lucide-react';
 import gsap from 'gsap';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
 import type { Santri } from './components/dashboard/types';
@@ -17,6 +17,7 @@ import { OtherView } from './components/dashboard/OtherViews';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
 import { authService } from './services/authService';
+import { Toaster } from './components/ui/sonner';
 
 // Helper component for /santri/:id route
 function SantriDetailRoute({
@@ -222,63 +223,101 @@ export function App() {
         <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
           <div className="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3">
             <div className="flex items-center justify-between gap-2">
-              {/* Sisi Kiri: Hamburger + Breadcrumb */}
-              <div className="flex items-center gap-2 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                  className="p-1.5 -ml-1 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA] lg:hidden shrink-0 cursor-pointer"
-                  aria-label="Toggle Menu"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
+              {/* Sisi Kiri: Hamburger / Back Arrow + Title / Breadcrumb */}
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                {/* Mobile: Tampilkan Back Button jika di subhalaman, atau Hamburger jika di Beranda. Di Desktop: Back Button di subhalaman */}
+                {location.pathname !== '/' && location.pathname !== '/beranda' ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (location.pathname.startsWith('/santri/')) {
+                        navigate('/santri');
+                      } else {
+                        navigate('/beranda');
+                      }
+                    }}
+                    className="p-1.5 -ml-1 sm:ml-0 rounded-lg text-slate-600 hover:text-[#0070BA] hover:bg-[#EBF5FB] transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA] shrink-0 cursor-pointer flex items-center justify-center border border-slate-200/90 bg-slate-50/70"
+                    title={location.pathname.startsWith('/santri/') ? 'Kembali ke Daftar Santri' : 'Kembali ke Beranda'}
+                    aria-label="Kembali"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="p-1.5 -ml-1 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0070BA] lg:hidden shrink-0 cursor-pointer"
+                    aria-label="Toggle Menu"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </button>
+                )}
 
                 <div className="min-w-0">
                   <h1 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight truncate leading-tight">
                     {getHeaderTitle()}
                   </h1>
-                  <span className="text-[10px] sm:text-[11px] text-slate-500 block leading-none truncate mt-0.5">
-                    {location.pathname === '/' || location.pathname === '/beranda'
-                      ? 'Pesantren Tahfidz Terpadu'
-                      : halaqahName}
-                  </span>
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1 leading-none truncate mt-0.5 font-medium">
+                    {location.pathname !== '/' && location.pathname !== '/beranda' ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => navigate('/beranda')}
+                          className="hover:text-[#0070BA] hover:underline cursor-pointer transition-colors"
+                        >
+                          Beranda
+                        </button>
+                        <span className="text-slate-300">/</span>
+                        {location.pathname.startsWith('/santri/') ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => navigate('/santri')}
+                              className="hover:text-[#0070BA] hover:underline cursor-pointer transition-colors hidden sm:inline"
+                            >
+                              Santri
+                            </button>
+                            <span className="text-slate-300 hidden sm:inline">/</span>
+                            <span className="text-slate-700 font-semibold truncate">{getHeaderTitle()}</span>
+                          </>
+                        ) : (
+                          <span className="text-slate-700 font-semibold truncate">{getHeaderTitle()}</span>
+                        )}
+                      </>
+                    ) : (
+                      <span>Pesantren Tahfidz Terpadu</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Sisi Kanan: Laporan Harian WA Button + Tanggal */}
               <div className="flex items-center gap-1.5 sm:gap-2 text-xs shrink-0">
-                {/* Tombol Akses Cepat Laporan Harian Wali */}
+                {/* Tombol Akses Cepat Laporan Harian Wali (Ringkas di Mobile) */}
                 <button
                   type="button"
                   onClick={() => setIsDailyReportModalOpen(true)}
-                  className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer text-[11px] sm:text-xs"
+                  className="relative inline-flex items-center justify-center gap-1 sm:gap-1.5 h-8.5 sm:h-9 w-8.5 sm:w-auto px-0 sm:px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold transition-colors shadow-2xs cursor-pointer text-[11px] sm:text-xs"
                   title="Kirim Laporan Harian ke Wali Santri"
                 >
-                  <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600 shrink-0" />
+                  <Send className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span className="hidden sm:inline">Laporan Harian WA</span>
-                  <span className="sm:hidden">Laporan WA</span>
                   {pendingDailyReportsCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] bg-emerald-600 text-white font-bold leading-none">
+                    <span className="absolute -top-1 -right-1 sm:static sm:top-auto sm:right-auto px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] bg-emerald-600 text-white font-bold leading-none shadow-xs">
                       {pendingDailyReportsCount}
                     </span>
                   )}
                 </button>
 
-                {/* Badge Tanggal */}
-                <div className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-[11px] sm:text-xs">
-                  <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500 shrink-0" />
-                  <span className="font-semibold text-slate-800 hidden sm:inline">
+                {/* Badge Tanggal (Disembunyikan di Mobile agar Header Lega) */}
+                <div className="hidden sm:inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-[11px] sm:text-xs">
+                  <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <span className="font-semibold text-slate-800">
                     {new Intl.DateTimeFormat('id-ID', {
                       weekday: 'short',
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',
-                    }).format(new Date())}
-                  </span>
-                  <span className="font-semibold text-slate-800 sm:hidden">
-                    {new Intl.DateTimeFormat('id-ID', {
-                      day: 'numeric',
-                      month: 'short',
                     }).format(new Date())}
                   </span>
                 </div>
@@ -453,6 +492,9 @@ export function App() {
         santriList={santriList}
         onDataRefresh={() => setSantriList(storageService.getSantriList())}
       />
+
+      {/* Global Toast Notification System */}
+      <Toaster />
     </div>
   );
 }

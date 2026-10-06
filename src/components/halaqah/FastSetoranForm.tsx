@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { Santri } from '../dashboard/types';
 import { storageService } from '../../services/storageService';
 import { waGatewayService, type SendResult } from '../../services/waGatewayService';
+import { toast } from '@/components/ui/sonner';
 
 interface FastSetoranFormProps {
   santri?: Santri | null;
@@ -122,19 +123,23 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
           status: 'success',
           message: `Setoran tersimpan & pesan WA terkirim otomatis ke wali (${activeSantri.parentPhone}).`,
         });
+        toast.success(`Setoran ${activeSantri.name} tersimpan`, {
+          description: `${totalLines} baris (${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"}) • WA terkirim`,
+        });
         setTimeout(() => {
           setIsSubmitting(false);
           if (onSuccess) onSuccess();
         }, 1200);
-      } else if (sendRes.fallbackUrl) {
-        // Gateway belum setup atau gagal -> tawarkan direct wa.me
+      } else {
+        // Jika pengiriman otomatis belum aktif, hubungkan langsung ke WhatsApp
         storageService.updateSetoranWAStatus(result.record.id, 'failed');
         setWaFeedback({
           status: 'fallback',
-          message: sendRes.notConfigured
-            ? `Setoran tersimpan. Gateway WA belum disetup.`
-            : `Setoran tersimpan. Gateway merespon offline/gagal koneksi.`,
+          message: `Setoran tersimpan. Hubungkan ke WhatsApp wali:`,
           fallbackUrl: sendRes.fallbackUrl,
+        });
+        toast.success(`Setoran ${activeSantri.name} tersimpan`, {
+          description: `${totalLines} baris tercatat. Siap kirim via WhatsApp.`,
         });
         setIsSubmitting(false);
       }
@@ -143,10 +148,13 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
         status: 'success',
         message: `Setoran berhasil disimpan! (${totalLines} baris tercatat).`,
       });
+      toast.success(`Setoran ${activeSantri.name} tersimpan`, {
+        description: `${totalLines} baris • ${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"} (${grade.toUpperCase()})`,
+      });
       setTimeout(() => {
         setIsSubmitting(false);
         if (onSuccess) onSuccess();
-      }, 1000);
+      }, 900);
     }
   };
 
@@ -183,7 +191,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-xs"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>Kirim via WhatsApp Web/App</span>
+                <span>Kirim via WhatsApp</span>
                 <ExternalLink className="w-3 h-3 ml-0.5" />
               </a>
             )}
@@ -512,10 +520,13 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
           <Button 
             type="submit" 
             disabled={isSubmitting}
-            className="flex-1 bg-[#0070BA] hover:bg-[#005C9E] text-white font-bold text-xs h-10 rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+            className="flex-1 bg-[#0070BA] hover:bg-[#005C9E] active:scale-[0.98] text-white font-bold text-xs h-10 rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 transition-all duration-150"
           >
             {isSubmitting ? (
-              <span>Menyimpan...</span>
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                <span>Menyimpan Setoran...</span>
+              </>
             ) : (
               <>
                 <Check className="w-4 h-4" />

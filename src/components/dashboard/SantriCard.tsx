@@ -69,14 +69,14 @@ export const SantriCard: React.FC<SantriCardProps> = ({
       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
         <Button
           onClick={() => onSetor(santri)}
-          className="w-full text-xs font-semibold h-9 bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs rounded-lg"
+          className="w-full text-xs font-semibold h-9 bg-[#0070BA] hover:bg-[#005C9E] active:scale-[0.97] transition-all text-white shadow-2xs rounded-lg cursor-pointer"
         >
           Setor
         </Button>
         <Button
           variant="outline"
           onClick={() => onDetail(santri)}
-          className="w-full text-xs font-semibold h-9 rounded-lg border-slate-200 text-slate-700 hover:bg-slate-50"
+          className="w-full text-xs font-semibold h-9 rounded-lg border-slate-200 text-slate-700 hover:bg-slate-50 active:scale-[0.97] transition-all cursor-pointer"
         >
           Detail
         </Button>

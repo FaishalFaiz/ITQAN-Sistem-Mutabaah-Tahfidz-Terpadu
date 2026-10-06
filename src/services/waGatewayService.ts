@@ -135,16 +135,28 @@ export const waGatewayService = {
     }
 
     try {
+      let targetUrl = config.endpointUrl.trim();
+
+      // Jika berjalan di browser development lokal, arahkan ke proxy untuk mencegah blokir CORS browser
+      if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+        if (config.provider === 'fonnte' && targetUrl.startsWith('https://api.fonnte.com')) {
+          targetUrl = targetUrl.replace('https://api.fonnte.com', '/api-fonnte');
+        } else if (config.provider === 'wablas' && targetUrl.startsWith('https://kudus.wablas.com')) {
+          targetUrl = targetUrl.replace('https://kudus.wablas.com', '/api-wablas');
+        }
+      }
+
       let response: Response;
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
 
       if (config.provider === 'fonnte') {
-        headers['Authorization'] = config.apiKey;
-        response = await fetch(config.endpointUrl, {
+        headers['Authorization'] = config.apiKey.trim();
+        response = await fetch(targetUrl, {
           method: 'POST',
           headers,
+          credentials: 'omit',
           body: JSON.stringify({
             target: cleanPhone,
             message,
@@ -152,12 +164,13 @@ export const waGatewayService = {
           }),
         });
       } else if (config.provider === 'waha') {
-        if (config.apiKey) {
-          headers['X-Api-Key'] = config.apiKey;
+        if (config.apiKey && config.apiKey.trim()) {
+          headers['X-Api-Key'] = config.apiKey.trim();
         }
-        response = await fetch(config.endpointUrl, {
+        response = await fetch(targetUrl, {
           method: 'POST',
           headers,
+          credentials: 'omit',
           body: JSON.stringify({
             chatId: `${cleanPhone}@c.us`,
             text: message,
@@ -165,10 +178,11 @@ export const waGatewayService = {
           }),
         });
       } else if (config.provider === 'wablas') {
-        headers['Authorization'] = config.apiKey;
-        response = await fetch(config.endpointUrl, {
+        headers['Authorization'] = config.apiKey.trim();
+        response = await fetch(targetUrl, {
           method: 'POST',
           headers,
+          credentials: 'omit',
           body: JSON.stringify({
             phone: cleanPhone,
             message,
@@ -176,12 +190,13 @@ export const waGatewayService = {
         });
       } else {
         // Custom Provider
-        if (config.apiKey) {
-          headers['Authorization'] = `Bearer ${config.apiKey}`;
+        if (config.apiKey && config.apiKey.trim()) {
+          headers['Authorization'] = `Bearer ${config.apiKey.trim()}`;
         }
-        response = await fetch(config.endpointUrl, {
+        response = await fetch(targetUrl, {
           method: 'POST',
           headers,
+          credentials: 'omit',
           body: JSON.stringify({
             phone: cleanPhone,
             message,
@@ -191,41 +206,59 @@ export const waGatewayService = {
         });
       }
 
-      if (response.ok) {
+      const responseText = await response.text().catch(() => '');
+      let parsedData: any = null;
+      try {
+        parsedData = JSON.parse(responseText);
+      } catch {}
+
+      // Fonnte mengembalikan status: false di dalam JSON meski HTTP status 200 bila token/device invalid
+      const isFonnteError =
+        config.provider === 'fonnte' &&
+        parsedData &&
+        (parsedData.status === false || parsedData.status === 'false');
+
+      if (response.ok && !isFonnteError) {
         storageService.addWALog({
           recipientName,
           recipientPhone: cleanPhone,
           messageType,
           status: 'success',
-          statusText: `Terkirim via ${config.provider.toUpperCase()} Gateway (HTTP ${response.status})`,
+          statusText: `Terkirim via ${config.provider.toUpperCase()} (Otomatis)`,
           snippet: message.slice(0, 100) + '...',
         });
 
         return {
           success: true,
           provider: config.provider,
-          message: `Berhasil terkirim via ${config.provider.toUpperCase()} Gateway.`,
+          message: `Berhasil terkirim via ${config.provider.toUpperCase()}.`,
         };
       } else {
-        const errText = await response.text().catch(() => 'Unknown error');
+        const errorDetail =
+          parsedData?.reason ||
+          parsedData?.message ||
+          parsedData?.error ||
+          responseText.slice(0, 120) ||
+          `HTTP ${response.status}`;
+
         storageService.addWALog({
           recipientName,
           recipientPhone: cleanPhone,
           messageType,
           status: 'failed',
-          statusText: `Gagal HTTP ${response.status}: ${errText.slice(0, 100)}`,
+          statusText: `Gagal kirim: ${errorDetail}`,
           snippet: message.slice(0, 100) + '...',
         });
 
         return {
           success: false,
-          error: `Gateway merespon HTTP ${response.status}: ${errText}`,
-          message: `Pengiriman gateway gagal. Silakan gunakan tautan langsung WhatsApp.`,
+          error: errorDetail,
+          message: `Pengiriman otomatis belum berhasil (${errorDetail}). Silakan kirim langsung via WhatsApp Web/Aplikasi.`,
           fallbackUrl,
         };
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Koneksi ke gateway gagal (Network / CORS)';
+      const errorMessage = err instanceof Error ? err.message : 'Koneksi pengiriman terputus';
       storageService.addWALog({
         recipientName,
         recipientPhone: cleanPhone,
@@ -238,19 +271,19 @@ export const waGatewayService = {
       return {
         success: false,
         error: errorMessage,
-        message: `Koneksi gateway tidak dapat dihubungi (${errorMessage}). Gunakan Direct WhatsApp.`,
+        message: `Koneksi pengiriman belum terhubung. Anda dapat membuka dan mengirim via WhatsApp langsung.`,
         fallbackUrl,
       };
     }
   },
 
   /**
-   * Kirim pesan uji coba untuk memverifikasi pengaturan Gateway
+   * Kirim pesan uji coba untuk memverifikasi pengaturan WhatsApp
    */
   async sendTestMessage(targetPhone: string): Promise<SendResult> {
     const testMessage = 
-      `*TES KONEKSI WHATSAPP GATEWAY ITQAN*\n\n` +
-      `Alhamdulillah, konfigurasi WhatsApp Gateway pada Sistem Mutaba'ah ITQAN berhasil terhubung dengan baik.\n\n` +
+      `*UJI COBA PENGIRIMAN WHATSAPP ITQAN*\n\n` +
+      `Alhamdulillah, layanan kirim WhatsApp pada Sistem Mutaba'ah ITQAN berhasil terhubung dengan baik.\n\n` +
       `Waktu Uji: ${new Date().toLocaleString('id-ID')}\n` +
       `_Pesan otomatis verifikasi sistem._`;
 

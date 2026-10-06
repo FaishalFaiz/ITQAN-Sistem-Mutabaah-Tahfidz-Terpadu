@@ -1,4 +1,4 @@
-import type { Santri } from './types';
+import type { Santri, SetoranRecord } from './types';
 
 export interface SantriReportItem {
   id: string;
@@ -12,7 +12,8 @@ export interface SantriReportItem {
   linesCompletedToday: number;
   status: 'tercapai' | 'tidak_tercapai' | 'belum_setor';
   lastSurah: string;
-  // Metrik Laporan Tambahan
+  halaqahName?: string;
+  // Metrik Laporan Berdasarkan Setoran Riil
   ziyadahLinesPeriod: number;
   ziyadahPagesPeriod: number;
   murojaahLinesPeriod: number;
@@ -24,7 +25,7 @@ export interface SantriReportItem {
   totalSessionsAttended: number;
   totalSessionsScheduled: number;
   pacingStatus: 'on_track' | 'behind' | 'accelerated';
-  pacingDeficitLines: number; // 0 if on track
+  pacingDeficitLines: number; // 0 jika on track / accelerated
   lastExam: {
     juz: number;
     date: string;
@@ -35,25 +36,6 @@ export interface SantriReportItem {
   } | null;
   iadahWeakPoints: string[];
   daysSinceLastMurojaah: number;
-}
-
-export interface ExamRecord {
-  id: string;
-  santriId: string;
-  santriName: string;
-  nis: string;
-  juzTarget: number;
-  examDate: string;
-  examinerName: string;
-  ketukanCount: number;
-  dibetulkanCount: number;
-  tajwidScore: number;
-  fashahahScore: number;
-  kelancaranScore: number;
-  finalScore: number;
-  passed: boolean;
-  certificateQr: string;
-  notes: string;
 }
 
 export interface WeakPointSurah {
@@ -77,48 +59,170 @@ export interface DayActivity {
   intensity: 0 | 1 | 2 | 3 | 4; // 0=none, 1=low, 2=med, 3=high, 4=peak
 }
 
-// Data generator per-santri untuk laporan
-export const generateSantriReports = (santriList: Santri[]): SantriReportItem[] => {
-  return santriList.map((s, idx) => {
-    // Generate realistic data anchored on their status & juz
-    const juzNum = parseFloat(s.juzAchieved.replace(' Juz', '')) || 10;
-    const isTop = s.status === 'tercapai';
-    const isBehind = s.status === 'tidak_tercapai';
+export interface WeeklyTrendItem {
+  label: string;
+  ziyadah: number;
+  murojaah: number;
+  target: number;
+  mumtazRate: number;
+}
 
-    const ziyadahLinesPeriod = isTop ? 380 + (idx * 25) % 120 : isBehind ? 180 : 0;
+export interface JuzDistributionItem {
+  range: string;
+  count: number;
+  label: string;
+  color: string;
+}
+
+/**
+ * Filter setoran berdasarkan rentang periode kalender
+ */
+export function filterRecordsByPeriod(
+  records: SetoranRecord[],
+  period: 'bulan_ini' | 'pekan_ini' | 'bulan_lalu' | 'semester'
+): SetoranRecord[] {
+  if (!records || records.length === 0) return [];
+  const now = new Date();
+
+  return records.filter((r) => {
+    if (!r.createdAt) return false;
+    const recordDate = new Date(r.createdAt);
+    if (isNaN(recordDate.getTime())) return false;
+
+    if (period === 'pekan_ini') {
+      const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday
+      const distanceToMonday = (dayOfWeek + 6) % 7;
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - distanceToMonday);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+      return recordDate >= startOfWeek && recordDate <= endOfWeek;
+    }
+
+    if (period === 'bulan_ini') {
+      return (
+        recordDate.getFullYear() === now.getFullYear() &&
+        recordDate.getMonth() === now.getMonth()
+      );
+    }
+
+    if (period === 'bulan_lalu') {
+      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return (
+        recordDate.getFullYear() === prevMonth.getFullYear() &&
+        recordDate.getMonth() === prevMonth.getMonth()
+      );
+    }
+
+    if (period === 'semester') {
+      // 6 bulan terakhir
+      const sixMonthsAgo = new Date(now);
+      sixMonthsAgo.setMonth(now.getMonth() - 6);
+      return recordDate >= sixMonthsAgo && recordDate <= now;
+    }
+
+    return true;
+  });
+}
+
+/**
+ * Generator Laporan Santri berbasis data santri & riwayat setoran riil
+ */
+export const generateSantriReports = (
+  santriList: Santri[],
+  setoranRecords: SetoranRecord[] = []
+): SantriReportItem[] => {
+  const now = new Date();
+
+  return santriList.map((s) => {
+    const santriSetoran = setoranRecords.filter((r) => r.santriId === s.id);
+    const ziyadahRecords = santriSetoran.filter((r) => r.type === 'ziyadah');
+    const murojaahRecords = santriSetoran.filter((r) => r.type === 'murojaah');
+
+    const ziyadahLinesPeriod = ziyadahRecords.reduce((sum, r) => sum + (Number(r.totalLines) || 0), 0);
     const ziyadahPagesPeriod = +(ziyadahLinesPeriod / 15).toFixed(1);
-    const murojaahLinesPeriod = 850 + (idx * 60) % 300;
+
+    const murojaahLinesPeriod = murojaahRecords.reduce((sum, r) => sum + (Number(r.totalLines) || 0), 0);
     const murojaahJuzPeriod = +(murojaahLinesPeriod / 300).toFixed(1);
 
-    const mumtazPercent = isTop ? 88 + (idx % 8) : isBehind ? 68 : 75;
-    const iadahPercent = isTop ? 2 + (idx % 3) : isBehind ? 14 : 8;
-    const jayyidPercent = 100 - mumtazPercent - iadahPercent;
+    // Kualitas talaqqi
+    const totalSetoranCount = santriSetoran.length;
+    let mumtazPercent = 0;
+    let jayyidPercent = 0;
+    let iadahPercent = 0;
 
-    const pacingStatus: 'on_track' | 'behind' | 'accelerated' = 
-      isTop && juzNum >= 14 ? (juzNum >= 20 ? 'accelerated' : 'on_track') : isBehind ? 'behind' : 'on_track';
-    
-    const pacingDeficitLines = pacingStatus === 'behind' ? 45 : 0;
+    if (totalSetoranCount > 0) {
+      const mumtazCount = santriSetoran.filter((r) => r.grade === 'mumtaz').length;
+      const jayyidCount = santriSetoran.filter((r) => r.grade === 'jayyid').length;
+      const iadahCount = santriSetoran.filter((r) => r.grade === 'iadah').length;
 
-    const weakPointsPool = [
-      'Al-Muthaffifin 10–25 (Tawaqquf)',
-      'At-Takwir 15–29 (Makhraj)',
-      'An-Nazi\'at 27–40 (Ghunnah)',
-      'Al-Buruj 1–12 (Qalqalah)',
-      'Abasa 17–32 (Waqaf)',
-      'Al-A\'la 1–19 (Kelancaran)',
-      'Al-Insyiqaq 1–15 (Tajwid)'
-    ];
+      mumtazPercent = Math.round((mumtazCount / totalSetoranCount) * 100);
+      iadahPercent = Math.round((iadahCount / totalSetoranCount) * 100);
+      jayyidPercent = Math.max(0, Math.min(100, Math.round((jayyidCount / totalSetoranCount) * 100)));
+    } else {
+      // Default jika belum ada setoran sama sekali di periode
+      mumtazPercent = 100;
+      jayyidPercent = 0;
+      iadahPercent = 0;
+    }
 
-    const iadahWeakPoints = iadahPercent > 5 ? [weakPointsPool[idx % weakPointsPool.length]] : [];
+    // Hari sejak murojaah terakhir
+    let daysSinceLastMurojaah = 0;
+    if (murojaahRecords.length > 0) {
+      const sortedMurojaah = [...murojaahRecords].sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      const lastMurojaahDate = new Date(sortedMurojaah[0].createdAt);
+      if (!isNaN(lastMurojaahDate.getTime())) {
+        const diffMs = now.getTime() - lastMurojaahDate.getTime();
+        daysSinceLastMurojaah = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+      }
+    } else if (totalSetoranCount > 0) {
+      // Ada setoran ziyadah tapi belum murojaah
+      daysSinceLastMurojaah = 7;
+    }
 
-    const lastExam = juzNum >= 10 ? {
-      juz: Math.floor(juzNum),
-      date: `${10 + (idx % 18)} Sep 2026`,
-      score: +(90 + (idx % 8) * 1.1).toFixed(1),
-      grade: 'Mumtaz' as const,
-      passed: true,
-      examiner: 'Ust. Abdullah',
-    } : null;
+    // Status Pacing berdasarkan status harian & capaian
+    const juzNum = parseFloat(s.juzAchieved.replace(/[^0-9.]/g, '')) || 0;
+    let pacingStatus: 'on_track' | 'behind' | 'accelerated' = 'on_track';
+    let pacingDeficitLines = 0;
+
+    if (s.status === 'tidak_tercapai') {
+      pacingStatus = 'behind';
+      pacingDeficitLines = Math.max(15, (s.dailyTargetLines || 20) - (s.linesCompletedToday || 0));
+    } else if (s.status === 'tercapai' && (s.linesCompletedToday > (s.dailyTargetLines || 20) || juzNum >= 15)) {
+      pacingStatus = 'accelerated';
+      pacingDeficitLines = 0;
+    } else {
+      pacingStatus = 'on_track';
+      pacingDeficitLines = 0;
+    }
+
+    // Titik rawan i'adah santri ini dari riwayat setoran riil bertipe grade 'iadah'
+    const iadahRecords = santriSetoran.filter((r) => r.grade === 'iadah');
+    const iadahWeakPoints: string[] = Array.from(
+      new Set(
+        iadahRecords.map(
+          (r) => `${r.surahName || 'Surah'} (Juz ${r.juz || 30})`
+        )
+      )
+    );
+
+    // Kehadiran berdasarkan hari aktif menyetor
+    const distinctDates = new Set(
+      santriSetoran
+        .map((r) => r.createdAt?.slice(0, 10))
+        .filter(Boolean)
+    );
+    const totalSessionsAttended = distinctDates.size;
+    const totalSessionsScheduled = Math.max(totalSessionsAttended, 26);
+    const attendancePercent =
+      totalSessionsScheduled > 0
+        ? Math.min(100, Math.round((totalSessionsAttended / totalSessionsScheduled) * 100))
+        : 100;
 
     return {
       id: s.id,
@@ -132,6 +236,7 @@ export const generateSantriReports = (santriList: Santri[]): SantriReportItem[] 
       linesCompletedToday: s.linesCompletedToday,
       status: s.status,
       lastSurah: s.lastSurah,
+      halaqahName: s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
       ziyadahLinesPeriod,
       ziyadahPagesPeriod,
       murojaahLinesPeriod,
@@ -139,149 +244,210 @@ export const generateSantriReports = (santriList: Santri[]): SantriReportItem[] 
       mumtazPercent,
       jayyidPercent,
       iadahPercent,
-      attendancePercent: isTop ? 98 : isBehind ? 91 : 94,
-      totalSessionsAttended: isTop ? 28 : isBehind ? 26 : 27,
-      totalSessionsScheduled: 29,
+      attendancePercent,
+      totalSessionsAttended,
+      totalSessionsScheduled,
       pacingStatus,
       pacingDeficitLines,
-      lastExam,
+      lastExam: null,
       iadahWeakPoints,
-      daysSinceLastMurojaah: (idx * 3) % 9,
+      daysSinceLastMurojaah,
     };
   });
 };
 
-// Data riwayat ujian tasmi' resmi
-export const MOCK_EXAM_RECORDS: ExamRecord[] = [
-  {
-    id: 'ex-001',
-    santriId: '6',
-    santriName: 'Utsman bin Affan',
-    nis: '2024008',
-    juzTarget: 25,
-    examDate: '26 Sep 2026',
-    examinerName: 'Ust. Hamzah Al-Hafidz',
-    ketukanCount: 1,
-    dibetulkanCount: 0,
-    tajwidScore: 97.0,
-    fashahahScore: 98.0,
-    kelancaranScore: 98.5,
-    finalScore: 97.8,
-    passed: true,
-    certificateQr: 'ITQAN-CERT-2026-09-001-UTSMAN',
-    notes: 'Makhraj huruf sempurna, nafas panjang, dan tawaqquf hanya 1x minor di Surah Fussilat.',
-  },
-  {
-    id: 'ex-002',
-    santriId: '4',
-    santriName: 'Abdullah bin Mas\'ud',
-    nis: '2024006',
-    juzTarget: 22,
-    examDate: '24 Sep 2026',
-    examinerName: 'Ust. Abdullah',
-    ketukanCount: 2,
-    dibetulkanCount: 0,
-    tajwidScore: 96.0,
-    fashahahScore: 95.5,
-    kelancaranScore: 96.0,
-    finalScore: 95.8,
-    passed: true,
-    certificateQr: 'ITQAN-CERT-2026-09-002-ABDULLAH',
-    notes: 'Kelancaran stabil, nada murottal konsisten standar Hijaz.',
-  },
-  {
-    id: 'ex-003',
-    santriId: '7',
-    santriName: 'Umar bin Khattab',
-    nis: '2024009',
-    juzTarget: 19,
-    examDate: '22 Sep 2026',
-    examinerName: 'Ust. Hamzah Al-Hafidz',
-    ketukanCount: 2,
-    dibetulkanCount: 1,
-    tajwidScore: 93.0,
-    fashahahScore: 94.0,
-    kelancaranScore: 92.5,
-    finalScore: 93.2,
-    passed: true,
-    certificateQr: 'ITQAN-CERT-2026-09-003-UMAR',
-    notes: 'Ada 1 fath di awal surah Maryam, selebihnya mutqin.',
-  },
-  {
-    id: 'ex-004',
-    santriId: '3',
-    santriName: 'Zaid bin Tsabit',
-    nis: '2024005',
-    juzTarget: 18,
-    examDate: '20 Sep 2026',
-    examinerName: 'Ust. Abdullah',
-    ketukanCount: 3,
-    dibetulkanCount: 0,
-    tajwidScore: 94.5,
-    fashahahScore: 94.0,
-    kelancaranScore: 93.0,
-    finalScore: 93.8,
-    passed: true,
-    certificateQr: 'ITQAN-CERT-2026-09-004-ZAID',
-    notes: 'Lancar sekali, bacaan tertata rapi.',
-  },
-  {
-    id: 'ex-005',
-    santriId: '5',
-    santriName: 'Ali bin Abi Thalib',
-    nis: '2024007',
-    juzTarget: 16,
-    examDate: '18 Sep 2026',
-    examinerName: 'Ust. Mansyur Al-Baqir',
-    ketukanCount: 1,
-    dibetulkanCount: 0,
-    tajwidScore: 98.0,
-    fashahahScore: 97.0,
-    kelancaranScore: 96.5,
-    finalScore: 97.2,
-    passed: true,
-    certificateQr: 'ITQAN-CERT-2026-09-005-ALI',
-    notes: 'Mumtaz Murtan. Sangat mutqin tanpa keraguan.',
-  },
-  {
-    id: 'ex-006',
-    santriId: '1',
-    santriName: 'Muhammad Faiz',
-    nis: '2024001',
-    juzTarget: 14,
-    examDate: '15 Sep 2026',
-    examinerName: 'Ust. Abdullah',
-    ketukanCount: 4,
-    dibetulkanCount: 1,
-    tajwidScore: 91.0,
-    fashahahScore: 92.0,
-    kelancaranScore: 90.0,
-    finalScore: 91.0,
-    passed: true,
-    certificateQr: 'ITQAN-CERT-2026-09-006-FAIZ',
-    notes: 'Lulus tasmi\' 1 juz sekali duduk. Perlu pemantapan waqaf di pertengahan ayat panjang.',
-  },
-  {
-    id: 'ex-007',
-    santriId: '11',
-    santriName: 'Ahmad Zaki',
-    nis: '2024002',
-    juzTarget: 8,
-    examDate: '10 Sep 2026',
-    examinerName: 'Ust. Mansyur Al-Baqir',
-    ketukanCount: 9,
-    dibetulkanCount: 4,
-    tajwidScore: 78.0,
-    fashahahScore: 80.0,
-    kelancaranScore: 72.0,
-    finalScore: 76.6,
-    passed: false,
-    certificateQr: '',
-    notes: 'Belum lulus. Terlalu banyak tawaqquf di halaman 155-158. Jadwalkan ujian remidi 2 pekan lagi.',
-  },
-];
+/**
+ * Sebaran Capaian Hafalan berdasarkan data riil santriList
+ */
+export const getJuzDistribution = (santriList: Santri[]): JuzDistributionItem[] => {
+  const buckets: { range: string; min: number; max: number; label: string; color: string }[] = [
+    { range: '1 - 5 Juz', min: 0, max: 5, label: 'Tahap Awal', color: '#94A3B8' },
+    { range: '6 - 10 Juz', min: 5.01, max: 10, label: 'Pondasi', color: '#38BDF8' },
+    { range: '11 - 15 Juz', min: 10.01, max: 15, label: 'Menengah', color: '#0070BA' },
+    { range: '16 - 20 Juz', min: 15.01, max: 20, label: 'Lanjutan', color: '#047857' },
+    { range: '21 - 30 Juz', min: 20.01, max: 30, label: 'Jelang Khatam', color: '#B45309' },
+  ];
 
-// Titik rawan i'adah di halaqoh
+  return buckets.map((b) => {
+    const count = santriList.filter((s) => {
+      const val = parseFloat(s.juzAchieved.replace(/[^0-9.]/g, '')) || 0;
+      return val >= b.min && val <= b.max;
+    }).length;
+
+    return {
+      range: b.range,
+      count,
+      label: b.label,
+      color: b.color,
+    };
+  });
+};
+
+/**
+ * Matriks Aktivitas Halaqoh 30 Hari berbasis data setoran riil
+ */
+export const generateMonthActivity = (setoranRecords: SetoranRecord[] = []): DayActivity[] => {
+  const days: DayActivity[] = [];
+  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-indexed
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Kelompokkan setoran berdasarkan tanggal (YYYY-MM-DD)
+  const lineMap: Record<string, { ziyadah: number; murojaah: number }> = {};
+  setoranRecords.forEach((r) => {
+    if (!r.createdAt) return;
+    const dateKey = r.createdAt.slice(0, 10);
+    if (!lineMap[dateKey]) {
+      lineMap[dateKey] = { ziyadah: 0, murojaah: 0 };
+    }
+    const lines = Number(r.totalLines) || 0;
+    if (r.type === 'ziyadah') {
+      lineMap[dateKey].ziyadah += lines;
+    } else {
+      lineMap[dateKey].murojaah += lines;
+    }
+  });
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const currentDate = new Date(year, month, d);
+    const dayOfWeek = currentDate.getDay();
+    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+    const setoranData = lineMap[dateKey] || { ziyadah: 0, murojaah: 0 };
+    const totalLines = setoranData.ziyadah + setoranData.murojaah;
+    const targetLines = dayOfWeek === 5 ? 100 : 250; // Jumat halaqoh ringan
+
+    let intensity: 0 | 1 | 2 | 3 | 4 = 0;
+    if (totalLines > 350) intensity = 4;
+    else if (totalLines > 200) intensity = 3;
+    else if (totalLines > 100) intensity = 2;
+    else if (totalLines > 0) intensity = 1;
+    else intensity = 0;
+
+    days.push({
+      date: dateKey,
+      dayName: dayNames[dayOfWeek],
+      dayOfMonth: d,
+      ziyadahLines: setoranData.ziyadah,
+      murojaahLines: setoranData.murojaah,
+      totalLines,
+      targetLines,
+      intensity,
+    });
+  }
+
+  return days;
+};
+
+/**
+ * Tren Setoran Mingguan (4 Pekan) berbasis data setoran riil
+ */
+export const getWeeklyTrendData = (
+  setoranRecords: SetoranRecord[] = [],
+  santriCount: number = 1
+): WeeklyTrendItem[] => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  // 4 rentang pekan dalam bulan berjalan
+  const weeks = [
+    { label: 'Pekan 1 (1–7)', start: 1, end: 7 },
+    { label: 'Pekan 2 (8–14)', start: 8, end: 14 },
+    { label: 'Pekan 3 (15–21)', start: 15, end: 21 },
+    { label: 'Pekan 4 (22–31)', start: 22, end: 31 },
+  ];
+
+  const standardTargetPerWeek = Math.max(100, santriCount * 20 * 6); // target baris 6 hari talaqqi
+
+  return weeks.map((w) => {
+    let ziyadah = 0;
+    let murojaah = 0;
+    let mumtazCount = 0;
+    let totalRecordsInWeek = 0;
+
+    setoranRecords.forEach((r) => {
+      if (!r.createdAt) return;
+      const d = new Date(r.createdAt);
+      if (isNaN(d.getTime())) return;
+
+      if (d.getFullYear() === year && d.getMonth() === month) {
+        const dayOfMonth = d.getDate();
+        if (dayOfMonth >= w.start && dayOfMonth <= w.end) {
+          totalRecordsInWeek++;
+          const lines = Number(r.totalLines) || 0;
+          if (r.type === 'ziyadah') {
+            ziyadah += lines;
+          } else {
+            murojaah += lines;
+          }
+          if (r.grade === 'mumtaz') {
+            mumtazCount++;
+          }
+        }
+      }
+    });
+
+    const mumtazRate = totalRecordsInWeek > 0 ? Math.round((mumtazCount / totalRecordsInWeek) * 100) : 100;
+
+    return {
+      label: w.label,
+      ziyadah,
+      murojaah,
+      target: standardTargetPerWeek,
+      mumtazRate,
+    };
+  });
+};
+
+/**
+ * Titik Rawan Lupa / I'adah diekstrak dari setoran riil yang berstatus 'iadah'
+ */
+export const getWeakPointsFromRecords = (setoranRecords: SetoranRecord[]): WeakPointSurah[] => {
+  const iadahRecords = setoranRecords.filter((r) => r.grade === 'iadah');
+  if (iadahRecords.length === 0) return [];
+
+  const map: Record<string, { surahName: string; juz: number; count: number; santriIds: Set<string> }> = {};
+
+  iadahRecords.forEach((r) => {
+    const key = `${r.surahName || 'Surah'}_${r.juz || 30}`;
+    if (!map[key]) {
+      map[key] = {
+        surahName: r.surahName || 'Surah',
+        juz: r.juz || 30,
+        count: 0,
+        santriIds: new Set<string>(),
+      };
+    }
+    map[key].count += 1;
+    if (r.santriId) {
+      map[key].santriIds.add(r.santriId);
+    }
+  });
+
+  const list = Object.values(map).map((item, idx) => {
+    const affected = item.santriIds.size || 1;
+    const severity: 'high' | 'medium' | 'low' =
+      item.count >= 5 ? 'high' : item.count >= 2 ? 'medium' : 'low';
+
+    return {
+      surahNumber: idx + 1,
+      surahName: item.surahName,
+      juz: item.juz,
+      iadahCount: item.count,
+      affectedSantriCount: affected,
+      severity,
+      commonMistakes: `Terdapat ${item.count}x koreksi/i'adah pada talaqqi juz ${item.juz}. Perlu pemantapan tajwid & kelancaran lafadz.`,
+    };
+  });
+
+  // Urutkan dari frekuensi koreksi terbanyak
+  return list.sort((a, b) => b.iadahCount - a.iadahCount);
+};
+
+// Fallback jika belum ada iadah sama sekali agar informasi panduan halaqoh tetap ada
 export const MOCK_WEAK_POINTS: WeakPointSurah[] = [
   {
     surahNumber: 83,
@@ -319,56 +485,4 @@ export const MOCK_WEAK_POINTS: WeakPointSurah[] = [
     severity: 'low',
     commonMistakes: 'Qalqalah kubra pada akhir ayat sering kurang memantul tegas.',
   },
-];
-
-// 30-day activity matrix untuk heatmap
-export const generateMonthActivity = (): DayActivity[] => {
-  const days: DayActivity[] = [];
-  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-  
-  for (let i = 1; i <= 30; i++) {
-    const dayOfWeek = (i + 1) % 7;
-    const isJumat = dayOfWeek === 5;
-    
-    // Jumat halaqoh libur / ringan
-    const ziyadah = isJumat ? 30 : 120 + ((i * 17) % 55);
-    const murojaah = isJumat ? 80 : 250 + ((i * 23) % 90);
-    const total = ziyadah + murojaah;
-    const target = isJumat ? 100 : 380;
-
-    let intensity: 0 | 1 | 2 | 3 | 4 = 0;
-    if (total > 450) intensity = 4;
-    else if (total > 380) intensity = 3;
-    else if (total > 260) intensity = 2;
-    else if (total > 100) intensity = 1;
-    else intensity = 0;
-
-    days.push({
-      date: `2026-09-${i < 10 ? '0' + i : i}`,
-      dayName: dayNames[dayOfWeek],
-      dayOfMonth: i,
-      ziyadahLines: ziyadah,
-      murojaahLines: murojaah,
-      totalLines: total,
-      targetLines: target,
-      intensity,
-    });
-  }
-  return days;
-};
-
-// Trend mingguan untuk chart perbandingan
-export const WEEKLY_TREND_DATA = [
-  { label: 'Pekan 1 (1-7 Sep)', ziyadah: 980, murojaah: 2650, target: 3500, mumtazRate: 86 },
-  { label: 'Pekan 2 (8-14 Sep)', ziyadah: 1040, murojaah: 2890, target: 3500, mumtazRate: 88 },
-  { label: 'Pekan 3 (15-21 Sep)', ziyadah: 1120, murojaah: 3010, target: 3500, mumtazRate: 91 },
-  { label: 'Pekan 4 (22-28 Sep)', ziyadah: 1180, murojaah: 3220, target: 3500, mumtazRate: 89 },
-];
-
-export const JUZ_DISTRIBUTION_DATA = [
-  { range: '1 - 5 Juz', count: 1, label: 'Tahap Awal', color: '#94A3B8' },
-  { range: '6 - 10 Juz', count: 2, label: 'Pondasi', color: '#38BDF8' },
-  { range: '11 - 15 Juz', count: 4, label: 'Menengah', color: '#0070BA' },
-  { range: '16 - 20 Juz', count: 3, label: 'Lanjutan', color: '#047857' },
-  { range: '21 - 30 Juz', count: 2, label: 'Jelang Khatam', color: '#B45309' },
 ];

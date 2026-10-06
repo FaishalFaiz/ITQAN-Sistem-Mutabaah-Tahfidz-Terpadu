@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  FileText,
   Share2,
   Printer,
   Search,
@@ -11,7 +10,6 @@ import {
   Clock,
   Sparkles,
   BookOpen,
-  Award,
   ArrowUpDown,
   X,
   FileSpreadsheet,
@@ -20,20 +18,22 @@ import {
   Send,
   ExternalLink,
 } from 'lucide-react';
-import type { Santri } from './types';
+import type { Santri, SetoranRecord } from './types';
+import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
 import { waGatewayService, type SendResult } from '../../services/waGatewayService';
 import {
   generateSantriReports,
-  MOCK_EXAM_RECORDS,
+  getJuzDistribution,
+  getWeeklyTrendData,
+  getWeakPointsFromRecords,
+  filterRecordsByPeriod,
   MOCK_WEAK_POINTS,
-  generateMonthActivity,
-  WEEKLY_TREND_DATA,
-  JUZ_DISTRIBUTION_DATA,
   type SantriReportItem,
-  type ExamRecord,
 } from './laporanData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RaporPrintModal } from './RaporPrintModal';
+import { toast } from '@/components/ui/sonner';
 
 interface LaporanPageProps {
   santriList: Santri[];
@@ -46,13 +46,12 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   onSetor,
   onDetail,
 }) => {
-  // Tab states: ringkasan | santri | retensi | tasmi
-  const [activeTab, setActiveTab] = useState<'ringkasan' | 'santri' | 'retensi' | 'tasmi'>('ringkasan');
+  // Tab states: ringkasan | santri | retensi
+  const [activeTab, setActiveTab] = useState<'ringkasan' | 'santri' | 'retensi'>('ringkasan');
 
   // Filter states
   const [selectedPeriod, setSelectedPeriod] = useState<'bulan_ini' | 'pekan_ini' | 'bulan_lalu' | 'semester'>('bulan_ini');
   const [selectedHalaqoh, setSelectedHalaqoh] = useState<string>('abu_bakar');
-  const [selectedSetoranType, setSelectedSetoranType] = useState<'all' | 'ziyadah' | 'murojaah'>('all');
 
   // Search & Filter in Santri Table
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,22 +59,58 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   const [sortBy, setSortBy] = useState<'capaian' | 'ziyadah' | 'kelancaran' | 'nama'>('capaian');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+  // Real Setoran records state from storageService
+  const [allSetoranRecords, setAllSetoranRecords] = useState<SetoranRecord[]>(() =>
+    storageService.getSetoranRecords()
+  );
+
+  // Reactive listener on storage changes
+  useEffect(() => {
+    const handleStoreChange = () => {
+      setAllSetoranRecords(storageService.getSetoranRecords());
+    };
+    window.addEventListener(EVENT_DATA_CHANGED, handleStoreChange);
+    return () => window.removeEventListener(EVENT_DATA_CHANGED, handleStoreChange);
+  }, []);
+
+  // Filter setoran by selected period
+  const periodFilteredRecords = useMemo(() => {
+    return filterRecordsByPeriod(allSetoranRecords, selectedPeriod);
+  }, [allSetoranRecords, selectedPeriod]);
+
   // Modals
   const [selectedRaporSantri, setSelectedRaporSantri] = useState<SantriReportItem | null>(null);
-  const [selectedExamDetail, setSelectedExamDetail] = useState<ExamRecord | null>(null);
   const [isWAModalOpen, setIsWAModalOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [broadcastTarget, setBroadcastTarget] = useState('081234567801');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastFeedback, setBroadcastFeedback] = useState<string | null>(null);
 
-  // Month activity heatmap data
-  const monthActivity = useMemo(() => generateMonthActivity(), []);
+  // Dynamic Weekly Trend data from real records
+  const weeklyTrendData = useMemo(
+    () => getWeeklyTrendData(allSetoranRecords, Math.max(1, santriList.length)),
+    [allSetoranRecords, santriList.length]
+  );
 
-  // Generate enriched santri reports
-  const santriReports = useMemo(() => generateSantriReports(santriList), [santriList]);
+  // Dynamic Sebaran Capaian Hafalan from real santriList
+  const juzDistributionData = useMemo(
+    () => getJuzDistribution(santriList),
+    [santriList]
+  );
 
-  // Aggregate stats calculations
+  // Titik rawan i'adah riil
+  const realWeakPoints = useMemo(() => {
+    const fromRecords = getWeakPointsFromRecords(allSetoranRecords);
+    return fromRecords.length > 0 ? fromRecords : MOCK_WEAK_POINTS;
+  }, [allSetoranRecords]);
+
+  // Generate enriched santri reports using real santriList and real filtered setoran
+  const santriReports = useMemo(
+    () => generateSantriReports(santriList, periodFilteredRecords),
+    [santriList, periodFilteredRecords]
+  );
+
+  // Aggregate stats calculations from real data
   const totalSantri = santriReports.length;
   const totalZiyadahLines = santriReports.reduce((acc, s) => acc + s.ziyadahLinesPeriod, 0);
   const totalZiyadahPages = +(totalZiyadahLines / 15).toFixed(1);
@@ -103,6 +138,13 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   const filteredSantri = useMemo(() => {
     return santriReports
       .filter((s) => {
+        const matchesHalaqoh =
+          selectedHalaqoh === 'all'
+            ? true
+            : selectedHalaqoh === 'abu_bakar'
+            ? !s.halaqahName || s.halaqahName.toLowerCase().includes('abu bakar')
+            : s.halaqahName?.toLowerCase().includes(selectedHalaqoh.replace('_', ' '));
+
         const matchesSearch =
           s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.nis.includes(searchQuery) ||
@@ -115,13 +157,13 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
             ? s.pacingStatus === 'on_track' || s.pacingStatus === 'accelerated'
             : s.pacingStatus === pacingFilter;
 
-        return matchesSearch && matchesPacing;
+        return matchesHalaqoh && matchesSearch && matchesPacing;
       })
       .sort((a, b) => {
         let comparison = 0;
         if (sortBy === 'capaian') {
-          const juzA = parseFloat(a.juzAchieved.replace(' Juz', '')) || 0;
-          const juzB = parseFloat(b.juzAchieved.replace(' Juz', '')) || 0;
+          const juzA = parseFloat(a.juzAchieved.replace(/[^0-9.]/g, '')) || 0;
+          const juzB = parseFloat(b.juzAchieved.replace(/[^0-9.]/g, '')) || 0;
           comparison = juzA - juzB;
         } else if (sortBy === 'ziyadah') {
           comparison = a.ziyadahLinesPeriod - b.ziyadahLinesPeriod;
@@ -132,7 +174,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
         }
         return sortOrder === 'desc' ? -comparison : comparison;
       });
-  }, [santriReports, searchQuery, pacingFilter, sortBy, sortOrder]);
+  }, [santriReports, selectedHalaqoh, searchQuery, pacingFilter, sortBy, sortOrder]);
 
   // Handle Export CSV
   const handleExportCSV = () => {
@@ -184,13 +226,29 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success('Laporan CSV berhasil diunduh!', {
+      description: `Periode: ${periodLabel} • ${filteredSantri.length} santri`,
+    });
   };
+
+  // Helper label periode dinamis
+  const periodLabel = useMemo(() => {
+    const now = new Date();
+    const monthName = now.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+    if (selectedPeriod === 'bulan_ini') return monthName;
+    if (selectedPeriod === 'pekan_ini') return 'Pekan Berjalan';
+    if (selectedPeriod === 'bulan_lalu') {
+      const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return prev.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+    }
+    return 'Semester Ganjil';
+  }, [selectedPeriod]);
 
   // WhatsApp Digest generator
   const waDigestMessage = useMemo(() => {
     return (
       `*REKAP MUTABA'AH HALAQOH - ITQAN*\n` +
-      `Periode: September 2026 | Halaqoh: Abu Bakar\n\n` +
+      `Periode: ${periodLabel} | Total Santri: ${totalSantri}\n\n` +
       `📊 *Ringkasan Hafalan:*\n` +
       `• Ziyadah Baru: *${totalZiyadahLines.toLocaleString()} baris* (~${totalZiyadahPages} Hal)\n` +
       `• Muroja'ah: *${totalMurojaahLines.toLocaleString()} baris* (~${totalMurojaahJuz} Juz)\n` +
@@ -206,6 +264,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
       `_Ust. Abdullah - ITQAN Tahfidz_`
     );
   }, [
+    periodLabel,
     totalZiyadahLines,
     totalZiyadahPages,
     totalMurojaahLines,
@@ -240,170 +299,150 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
     setIsBroadcasting(false);
     if (res.success) {
-      setBroadcastFeedback('Berhasil dikirim melalui WhatsApp Gateway!');
+      setBroadcastFeedback('Alhamdulillah! Pesan berhasil dikirim ke WhatsApp.');
     } else if (res.fallbackUrl) {
-      setBroadcastFeedback(res.notConfigured ? 'Gateway belum diatur. Mengalihkan ke Direct WA...' : 'Koneksi gateway gagal. Mengalihkan ke Direct WA...');
+      setBroadcastFeedback('Membuka pesan di WhatsApp...');
       window.open(res.fallbackUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* 1. Clean Header & Filter Toolbar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* 1. Header Ringkas & Terpadu */}
+      <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-                Laporan &amp; Analitik Mutaba'ah
-              </h2>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-[#EBF5FB] text-[#0070BA] border border-[#D6EAF8]">
-                September 2026
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Rekapitulasi capaian hafalan dan mutu kelancaran santri
+            <h2 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight">
+              Laporan Mutaba'ah
+            </h2>
+            <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+              Rekapitulasi setoran &amp; kelancaran hafalan santri
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsWAModalOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold h-9 px-3 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg shadow-2xs"
-            >
-              <Share2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Broadcast WA</span>
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+            {/* Filter Dropdowns (2 kolom di mobile) */}
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+              <div className="relative">
+                <select
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value as any)}
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium rounded-lg pl-2.5 pr-7 py-2 focus:border-[#0070BA] focus:outline-none cursor-pointer"
+                >
+                  <option value="bulan_ini">Bulan Ini</option>
+                  <option value="pekan_ini">Pekan Ini</option>
+                  <option value="bulan_lalu">Bulan Lalu</option>
+                  <option value="semester">Semester Ini</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleExportCSV}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold h-9 px-3 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg shadow-2xs"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-[#0070BA]" />
-              <span>Ekspor CSV</span>
-            </Button>
+              <div className="relative">
+                <select
+                  value={selectedHalaqoh}
+                  onChange={(e) => setSelectedHalaqoh(e.target.value)}
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium rounded-lg pl-2.5 pr-7 py-2 focus:border-[#0070BA] focus:outline-none cursor-pointer"
+                >
+                  <option value="abu_bakar">Halaqoh Abu Bakar</option>
+                  <option value="umar">Halaqoh Umar</option>
+                  <option value="utsman">Halaqoh Utsman</option>
+                  <option value="ali">Halaqoh Ali</option>
+                  <option value="all">Semua Halaqoh</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
 
-            <Button
-              type="button"
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold h-9 px-3.5 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Ekspor PDF / Cetak</span>
-            </Button>
-          </div>
-        </div>
+            {/* Action Buttons (3 kolom simetris di mobile) */}
+            <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsWAModalOpen(true)}
+                className="text-xs font-semibold h-8.5 sm:h-9 px-2 sm:px-3 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer justify-center"
+              >
+                <Share2 className="w-3.5 h-3.5 text-emerald-600 sm:mr-1.5" />
+                <span className="hidden sm:inline">Kirim WA</span>
+                <span className="sm:hidden">WA</span>
+              </Button>
 
-        {/* Filter Row */}
-        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2.5 text-xs">
-          <div className="relative">
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value as any)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-medium rounded-lg pl-3 pr-7 py-1.5 focus:border-[#0070BA] focus:outline-none cursor-pointer"
-            >
-              <option value="bulan_ini">Bulan Ini (Sep 2026)</option>
-              <option value="pekan_ini">Pekan Ini (22-28 Sep)</option>
-              <option value="bulan_lalu">Bulan Lalu (Agu 2026)</option>
-              <option value="semester">Semester Ganjil 2026/2027</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleExportCSV}
+                className="text-xs font-semibold h-8.5 sm:h-9 px-2 sm:px-3 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer justify-center"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-[#0070BA] sm:mr-1.5" />
+                <span className="hidden sm:inline">Unduh CSV</span>
+                <span className="sm:hidden">CSV</span>
+              </Button>
 
-          <div className="relative">
-            <select
-              value={selectedHalaqoh}
-              onChange={(e) => setSelectedHalaqoh(e.target.value)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-medium rounded-lg pl-3 pr-7 py-1.5 focus:border-[#0070BA] focus:outline-none cursor-pointer"
-            >
-              <option value="abu_bakar">Halaqoh Abu Bakar</option>
-              <option value="umar">Halaqoh Umar bin Khattab</option>
-              <option value="utsman">Halaqoh Utsman bin Affan</option>
-              <option value="ali">Halaqoh Ali bin Abi Thalib</option>
-              <option value="all">Semua Halaqoh</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-
-          <div className="relative">
-            <select
-              value={selectedSetoranType}
-              onChange={(e) => setSelectedSetoranType(e.target.value as any)}
-              className="appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-xs font-medium rounded-lg pl-3 pr-7 py-1.5 focus:border-[#0070BA] focus:outline-none cursor-pointer"
-            >
-              <option value="all">Semua Setoran</option>
-              <option value="ziyadah">Khusus Ziyadah</option>
-              <option value="murojaah">Khusus Muroja'ah</option>
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Button
+                type="button"
+                onClick={() => window.print()}
+                className="text-xs font-semibold h-8.5 sm:h-9 px-2.5 sm:px-3.5 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs cursor-pointer justify-center"
+              >
+                <Printer className="w-3.5 h-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">Cetak / PDF</span>
+                <span className="sm:hidden">Cetak</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Focused 4-Card Executive KPI Summary (Crisp & Balanced) */}
+      {/* 2. Ringkasan Utama (Clean & Focused) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* KPI 1: Ziyadah */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-xs font-medium text-slate-500 block">Total Ziyadah</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-2xl font-bold text-[#0070BA]">
+          <span className="text-xs text-slate-500 font-medium block">Total Ziyadah</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl sm:text-2xl font-bold text-[#0070BA]">
               {totalZiyadahLines.toLocaleString()}
             </span>
-            <span className="text-xs text-slate-500 font-medium">baris</span>
+            <span className="text-xs text-slate-500">baris</span>
           </div>
-          <div className="flex items-center justify-between text-xs text-slate-500 mt-2 pt-2 border-t border-slate-100">
-            <span>~{totalZiyadahPages} Halaman</span>
-            <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px]">+14.2%</span>
-          </div>
+          <span className="text-[11px] text-slate-400 mt-1 block">
+            ~{totalZiyadahPages} halaman
+          </span>
         </div>
 
         {/* KPI 2: Muroja'ah */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-xs font-medium text-slate-500 block">Total Muroja'ah</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-2xl font-bold text-slate-900">
+          <span className="text-xs text-slate-500 font-medium block">Total Muroja'ah</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl sm:text-2xl font-bold text-slate-900">
               {totalMurojaahLines.toLocaleString()}
             </span>
-            <span className="text-xs text-slate-500 font-medium">baris</span>
+            <span className="text-xs text-slate-500">baris</span>
           </div>
-          <div className="flex items-center justify-between text-xs text-slate-500 mt-2 pt-2 border-t border-slate-100">
-            <span>~{totalMurojaahJuz} Juz Diulang</span>
-            <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[11px]">+8.5%</span>
-          </div>
+          <span className="text-[11px] text-slate-400 mt-1 block">
+            ~{totalMurojaahJuz} juz diulang
+          </span>
         </div>
 
         {/* KPI 3: Mutu Kelancaran */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-xs font-medium text-slate-500 block">Mutu Kelancaran</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-2xl font-bold text-emerald-700">{avgMumtaz}%</span>
-            <span className="text-xs text-slate-500 font-medium">Mumtaz</span>
+          <span className="text-xs text-slate-500 font-medium block">Tingkat Lancar</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl sm:text-2xl font-bold text-emerald-700">{avgMumtaz}%</span>
+            <span className="text-xs text-slate-500">Mumtaz</span>
           </div>
-          <div className="flex items-center justify-between text-xs text-slate-500 mt-2 pt-2 border-t border-slate-100">
-            <div className="flex items-center gap-1.5">
-              <span className="text-amber-700 font-medium">Jayyid {avgJayyid}%</span>
-              <span>•</span>
-              <span className="text-red-700 font-medium">I'adah {avgIadah}%</span>
-            </div>
-          </div>
+          <span className="text-[11px] text-slate-400 mt-1 block">
+            {avgJayyid}% Jayyid • {avgIadah}% I'adah
+          </span>
         </div>
 
-        {/* KPI 4: Pacing Target */}
+        {/* KPI 4: Target Pacing */}
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-xs font-medium text-slate-500 block">Kepatuhan Target</span>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-2xl font-bold text-[#0070BA]">{onTrackPercentage}%</span>
-            <span className="text-xs text-slate-500 font-medium">On Track</span>
+          <span className="text-xs text-slate-500 font-medium block">Sesuai Target</span>
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl sm:text-2xl font-bold text-[#0070BA]">{onTrackPercentage}%</span>
+            <span className="text-xs text-slate-500">On Track</span>
           </div>
-          <div className="flex items-center justify-between text-xs text-slate-500 mt-2 pt-2 border-t border-slate-100">
-            <span>{onTrackCount} dari {totalSantri} Santri</span>
-            <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-medium text-[11px]">Hadir {avgAttendance}%</span>
-          </div>
+          <span className="text-[11px] text-slate-400 mt-1 block">
+            {onTrackCount} dari {totalSantri} santri
+          </span>
         </div>
       </div>
 
@@ -446,20 +485,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
             }`}
           >
             <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <span>Analisis Retensi ({MOCK_WEAK_POINTS.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('tasmi')}
-            className={`py-3 px-3.5 border-b-2 transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
-              activeTab === 'tasmi'
-                ? 'border-[#0070BA] text-[#0070BA]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <Award className="w-4 h-4 text-emerald-600" />
-            <span>Ujian Tasmi' ({MOCK_EXAM_RECORDS.length})</span>
+            <span>Analisis Retensi ({realWeakPoints.length})</span>
           </button>
         </div>
       </div>
@@ -498,11 +524,12 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
               {/* Bar Columns Container */}
               <div className="space-y-3.5 pt-1">
-                {WEEKLY_TREND_DATA.map((week, idx) => {
+                {weeklyTrendData.map((week, idx) => {
                   const total = week.ziyadah + week.murojaah;
-                  const ziyadahPercent = (week.ziyadah / 4500) * 100;
-                  const murojaahPercent = (week.murojaah / 4500) * 100;
-                  const isAboveTarget = total >= week.target;
+                  const maxWeeklyScale = Math.max(100, ...weeklyTrendData.map((w) => Math.max(w.ziyadah + w.murojaah, w.target)));
+                  const ziyadahPercent = (week.ziyadah / maxWeeklyScale) * 100;
+                  const murojaahPercent = (week.murojaah / maxWeeklyScale) * 100;
+                  const isAboveTarget = total >= week.target && total > 0;
 
                   return (
                     <div key={idx} className="space-y-1.5 text-xs">
@@ -516,7 +543,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                             className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                               isAboveTarget
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-slate-100 text-slate-600'
                             }`}
                           >
                             {week.mumtazRate}% Mumtaz
@@ -537,9 +564,9 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                           title={`Muroja'ah: ${week.murojaah} baris`}
                         />
                         <div
-                          style={{ left: `${(week.target / 4500) * 100}%` }}
+                          style={{ left: `${Math.min(100, (week.target / maxWeeklyScale) * 100)}%` }}
                           className="absolute top-0 bottom-0 w-0.5 bg-slate-600 z-10"
-                          title="Garis target: 3.500 baris"
+                          title={`Garis target: ${week.target} baris`}
                         />
                       </div>
                     </div>
@@ -548,8 +575,10 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
               </div>
 
               <div className="pt-2 text-xs text-slate-500 flex items-center justify-between border-t border-slate-100">
-                <span>Rata-rata pertumbuhan: <strong className="text-slate-700">+6.8% per pekan</strong></span>
-                <span className="text-emerald-700 font-medium">Tren stabil melampaui target</span>
+                <span>Total Setoran Periode: <strong className="text-slate-700">{(totalZiyadahLines + totalMurojaahLines).toLocaleString()} baris</strong></span>
+                <span className="text-emerald-700 font-medium">
+                  {totalZiyadahLines + totalMurojaahLines > 0 ? 'Data tersinkron otomatis' : 'Belum ada data setoran'}
+                </span>
               </div>
             </div>
 
@@ -638,89 +667,38 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
             </div>
           </div>
 
-          {/* Row 2: Sebaran Capaian Juz & Heatmap Aktivitas 30 Hari */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Sebaran Capaian Juz */}
-            <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-3">
-              <div className="pb-3 border-b border-slate-100">
+          {/* Baris 2: Sebaran Capaian Hafalan & Rekap Keaktifan Halaqoh (Clean & Calm) */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+              <div>
                 <h3 className="font-bold text-sm text-slate-900">
-                  Sebaran Capaian Hafalan
+                  Sebaran Capaian Hafalan Santri
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Distribusi hafalan {totalSantri} santri saat ini
+                  Distribusi tingkatan juz santri pada halaqoh saat ini
                 </p>
               </div>
-
-              <div className="space-y-2 text-xs">
-                {JUZ_DISTRIBUTION_DATA.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="w-2.5 h-2.5 rounded-xs shrink-0"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="font-semibold text-slate-800">{item.range}</span>
-                      <span className="text-[11px] text-slate-400">({item.label})</span>
-                    </div>
-                    <span className="font-bold text-slate-900">{item.count} Santri</span>
-                  </div>
-                ))}
-              </div>
+              <span className="text-xs font-semibold text-[#0070BA] bg-[#EBF5FB] px-2.5 py-1 rounded-md">
+                {totalSantri} Santri Terdaftar
+              </span>
             </div>
 
-            {/* Matriks Aktivitas Halaqoh 30 Hari (Heatmap Keaktifan) */}
-            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-slate-100 gap-2">
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900">
-                    Aktivitas Halaqoh 30 Hari
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Intensitas setoran baris per hari selama bulan berjalan
-                  </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {juzDistributionData.map((item, i) => (
+                <div key={i} className="p-3 rounded-lg bg-slate-50 border border-slate-100 flex flex-col justify-between">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2.5 h-2.5 rounded-xs shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="font-semibold text-slate-800 text-xs">{item.range}</span>
+                  </div>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <span className="text-lg font-bold text-slate-900">{item.count}</span>
+                    <span className="text-[11px] text-slate-400">{item.label}</span>
+                  </div>
                 </div>
-                {/* Legenda Intensitas */}
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                  <span>Rendah</span>
-                  <span className="w-2.5 h-2.5 rounded-xs bg-slate-100 border border-slate-200"></span>
-                  <span className="w-2.5 h-2.5 rounded-xs bg-sky-200"></span>
-                  <span className="w-2.5 h-2.5 rounded-xs bg-[#0070BA]"></span>
-                  <span className="w-2.5 h-2.5 rounded-xs bg-[#004A7F]"></span>
-                  <span>Tinggi</span>
-                </div>
-              </div>
-
-              {/* Grid 30 Hari */}
-              <div className="grid grid-cols-6 sm:grid-cols-10 gap-1.5 pt-1">
-                {monthActivity.map((day) => {
-                  const bgClass =
-                    day.intensity === 4
-                      ? 'bg-[#004A7F] text-white'
-                      : day.intensity === 3
-                      ? 'bg-[#0070BA] text-white'
-                      : day.intensity === 2
-                      ? 'bg-sky-200 text-slate-800'
-                      : day.intensity === 1
-                      ? 'bg-slate-100 text-slate-700'
-                      : 'bg-slate-50 text-slate-400 border border-slate-100';
-
-                  return (
-                    <div
-                      key={day.dayOfMonth}
-                      className={`p-1.5 rounded-md text-center text-xs transition-colors cursor-pointer ${bgClass}`}
-                      title={`${day.date}: ${day.totalLines} Baris (Z: ${day.ziyadahLines}, M: ${day.murojaahLines})`}
-                    >
-                      <span className="text-[10px] font-bold block">{day.dayOfMonth}</span>
-                      <span className="text-[9px] block opacity-80 leading-tight">{day.dayName}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="pt-2 text-xs text-slate-500 flex items-center justify-between border-t border-slate-100">
-                <span>Puncak setoran: <strong>26 Sep (510 baris)</strong></span>
-                <span className="text-slate-400">26 hari aktif halaqoh</span>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -875,12 +853,11 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
                 <tr>
                   <th className="py-2.5 px-3">Santri</th>
-                  <th className="py-2.5 px-3">Total Hafalan</th>
+                  <th className="py-2.5 px-3">Total Capaian</th>
                   <th className="py-2.5 px-3">Ziyadah</th>
                   <th className="py-2.5 px-3">Muroja'ah</th>
-                  <th className="py-2.5 px-3">Mutu</th>
-                  <th className="py-2.5 px-3">Pacing 3 Thn</th>
-                  <th className="py-2.5 px-3">Kehadiran</th>
+                  <th className="py-2.5 px-3">Mutu Kelancaran</th>
+                  <th className="py-2.5 px-3">Status Target</th>
                   <th className="py-2.5 px-3 text-right">Aksi</th>
                 </tr>
               </thead>
@@ -897,7 +874,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                           <span className="font-bold text-slate-900 block leading-tight">
                             {s.name}
                           </span>
-                          <span className="font-mono text-[10px] text-slate-400">
+                          <span className="text-[10px] text-slate-400">
                             NIS {s.nis}
                           </span>
                         </div>
@@ -930,19 +907,16 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                         {s.murojaahLinesPeriod} baris
                       </span>
                       <span className="text-[10px] text-slate-400">
-                        ~{s.murojaahJuzPeriod} Juz
+                        ~{s.murojaahJuzPeriod} juz
                       </span>
                     </td>
 
                     {/* Mutu Kelancaran */}
                     <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0"></span>
-                        <span className="font-semibold text-slate-800">{s.mumtazPercent}%</span>
-                      </div>
+                      <span className="font-semibold text-slate-800">{s.mumtazPercent}% Mumtaz</span>
                       {s.iadahPercent > 0 && (
                         <span className="text-[10px] text-red-600 block">
-                          I'adah: {s.iadahPercent}%
+                          {s.iadahPercent}% I'adah
                         </span>
                       )}
                     </td>
@@ -967,11 +941,6 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                           <span>Defisit ({s.pacingDeficitLines} B)</span>
                         </span>
                       )}
-                    </td>
-
-                    {/* Kehadiran */}
-                    <td className="py-2.5 px-3">
-                      <span className="font-semibold text-slate-800">{s.attendancePercent}%</span>
                     </td>
 
                     {/* Actions */}
@@ -1017,9 +986,9 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {MOCK_WEAK_POINTS.map((wp) => (
+              {realWeakPoints.map((wp) => (
                 <div
-                  key={wp.surahNumber}
+                  key={`${wp.surahNumber}-${wp.surahName}`}
                   className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2"
                 >
                   <div className="flex items-center justify-between">
@@ -1097,276 +1066,15 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
         </div>
       )}
 
-      {/* 7. Tab 4: Rekap Ujian Tasmi' */}
-      {activeTab === 'tasmi' && (
-        <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
-            <div>
-              <h3 className="font-bold text-sm sm:text-base text-slate-900">
-                Log Rekapitulasi Ujian Tasmi' Kenaikan Juz
-              </h3>
-              <p className="text-xs text-slate-500">
-                Pengujian tasmi' 1 juz sekali duduk
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                {MOCK_EXAM_RECORDS.filter((e) => e.passed).length} Lulus Tasmi'
-              </span>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded bg-red-50 text-red-800 border border-red-200">
-                {MOCK_EXAM_RECORDS.filter((e) => !e.passed).length} Remidi
-              </span>
-            </div>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
-                <tr>
-                  <th className="py-2.5 px-3">Santri</th>
-                  <th className="py-2.5 px-3">Juz Diuji</th>
-                  <th className="py-2.5 px-3">Tanggal</th>
-                  <th className="py-2.5 px-3">Penguji</th>
-                  <th className="py-2.5 px-3 text-center">Ketukan</th>
-                  <th className="py-2.5 px-3 text-center">Dibetulkan</th>
-                  <th className="py-2.5 px-3">Nilai</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3 text-right">Sertifikat</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {MOCK_EXAM_RECORDS.map((exam) => (
-                  <tr key={exam.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-2.5 px-3 font-bold text-slate-900">
-                      {exam.santriName}
-                      <span className="font-mono text-[10px] text-slate-400 block font-normal">
-                        NIS {exam.nis}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 font-bold text-[#0070BA]">
-                      Juz {exam.juzTarget}
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-600">{exam.examDate}</td>
-                    <td className="py-2.5 px-3 text-slate-800">{exam.examinerName}</td>
-                    <td className="py-2.5 px-3 text-center font-mono font-semibold">
-                      {exam.ketukanCount}x
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-mono font-semibold">
-                      {exam.dibetulkanCount}x
-                    </td>
-                    <td className="py-2.5 px-3 font-bold text-slate-900">
-                      {exam.finalScore.toFixed(1)}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      {exam.passed ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          LULUS
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
-                          REMIDI
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      {exam.passed ? (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedExamDetail(exam)}
-                          className="px-2.5 py-1 text-xs font-semibold rounded border border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB] transition-colors cursor-pointer"
-                        >
-                          Lihat QR
-                        </button>
-                      ) : (
-                        <span className="text-[11px] text-slate-400 italic">Belum Terbit</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
-      {/* 8. MODAL: Rapor Resmi Santri (Siap Cetak / Ekspor PDF) */}
-      {selectedRaporSantri &&
-        createPortal(
-          <div className="print-modal-backdrop fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150">
-            <div className="print-modal-container bg-white border border-slate-200 rounded-xl shadow-xl max-w-2xl w-full my-6 overflow-hidden">
-              {/* Modal Actions Bar (Sembunyi saat dicetak) */}
-              <div className="print-modal-header flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-slate-50 no-print">
-                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-[#0070BA]" />
-                  Format Cetak / Ekspor PDF Rapor Resmi
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => window.print()}
-                    className="h-8 px-3 text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5 cursor-pointer shadow-xs"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Ekspor ke PDF / Cetak</span>
-                  </Button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRaporSantri(null)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Official Report Document Body */}
-              <div className="print-page p-6 sm:p-8 space-y-5 text-slate-900 text-xs bg-white">
-                {/* Kop Pesantren */}
-                <div className="text-center pb-4 border-b-2 border-slate-900 space-y-1 avoid-break">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#0070BA] text-white font-extrabold text-base mb-1">
-                    IT
-                  </div>
-                  <h3 className="font-extrabold text-base uppercase tracking-wider text-slate-900">
-                    PESANTREN TAHFIDZ TERPADU ITQAN
-                  </h3>
-                  <p className="text-[11px] text-slate-600">
-                    Lembaga Pembinaan Al-Qur'an &amp; Mutaba'ah Berkelanjutan • Terakreditasi Kemenag
-                  </p>
-                  <p className="text-[10px] text-slate-500">
-                    Jl. Pesantren No. 101, Kompleks Masjid Jami' • Telp: (021) 8876-5432
-                  </p>
-                  <div className="pt-2 font-bold text-sm tracking-wide text-[#0070BA] uppercase">
-                    LEMBAR MUTABA'AH BULANAN SANTRI
-                  </div>
-                  <div className="text-[11px] text-slate-500 font-medium">
-                    Periode: September 2026 • Tahun Akademik 2026/2027
-                  </div>
-                </div>
-
-                {/* Data Santri */}
-                <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 avoid-break">
-                  <div className="space-y-1">
-                    <div className="flex">
-                      <span className="w-24 text-slate-500">Nama Santri</span>
-                      <span className="font-bold text-slate-900">: {selectedRaporSantri.name}</span>
-                    </div>
-                    <div className="flex">
-                      <span className="w-24 text-slate-500">NIS</span>
-                      <span className="font-mono font-semibold text-slate-800">: {selectedRaporSantri.nis}</span>
-                    </div>
-                    <div className="flex">
-                      <span className="w-24 text-slate-500">Halaqoh</span>
-                      <span className="text-slate-800 font-medium">: Abu Bakar Ash-Shiddiq</span>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex">
-                      <span className="w-24 text-slate-500">Musyrif</span>
-                      <span className="text-slate-800 font-medium">: Ust. Abdullah</span>
-                    </div>
-                    <div className="flex">
-                      <span className="w-24 text-slate-500">Target Program</span>
-                      <span className="text-slate-800 font-medium">: 30 Juz</span>
-                    </div>
-                    <div className="flex">
-                      <span className="w-24 text-slate-500">Status Pacing</span>
-                      <span className="font-bold text-[#0070BA]">: {selectedRaporSantri.pacingStatus.toUpperCase()}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Rekap Capaian Tabel */}
-                <div className="space-y-2 avoid-break">
-                  <h5 className="font-bold text-xs uppercase tracking-wider text-slate-800">
-                    I. Capaian Hafalan Al-Qur'an
-                  </h5>
-                  <table className="w-full text-left border border-slate-200">
-                    <thead className="bg-slate-100 text-slate-700 font-semibold text-[11px]">
-                      <tr>
-                        <th className="p-2 border-b border-slate-200">Parameter Evaluasi</th>
-                        <th className="p-2 border-b border-slate-200 text-right">Target</th>
-                        <th className="p-2 border-b border-slate-200 text-right">Realisasi</th>
-                        <th className="p-2 border-b border-slate-200 text-center">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 text-[11px]">
-                      <tr>
-                        <td className="p-2 font-medium">Total Akumulasi Hafalan</td>
-                        <td className="p-2 text-right">9.060 Baris</td>
-                        <td className="p-2 text-right font-bold text-[#0070BA]">{selectedRaporSantri.juzAchieved} ({selectedRaporSantri.totalLinesMemorized} B)</td>
-                        <td className="p-2 text-center text-emerald-700 font-semibold">Aktif</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2 font-medium">Ziyadah Bulan Ini</td>
-                        <td className="p-2 text-right">360 Baris</td>
-                        <td className="p-2 text-right font-bold">{selectedRaporSantri.ziyadahLinesPeriod} Baris (~{selectedRaporSantri.ziyadahPagesPeriod} Hal)</td>
-                        <td className="p-2 text-center text-emerald-700 font-semibold">Tercapai</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2 font-medium">Muroja'ah Bulan Ini</td>
-                        <td className="p-2 text-right">750 Baris</td>
-                        <td className="p-2 text-right font-bold">{selectedRaporSantri.murojaahLinesPeriod} Baris (~{selectedRaporSantri.murojaahJuzPeriod} Juz)</td>
-                        <td className="p-2 text-center text-emerald-700 font-semibold">Mutqin</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2 font-medium">Tingkat Kehadiran Talaqqi</td>
-                        <td className="p-2 text-right">100%</td>
-                        <td className="p-2 text-right font-bold">{selectedRaporSantri.attendancePercent}%</td>
-                        <td className="p-2 text-center font-semibold">Disiplin</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Penilaian Mutu Kelancaran */}
-                <div className="space-y-2 avoid-break">
-                  <h5 className="font-bold text-xs uppercase tracking-wider text-slate-800">
-                    II. Mutu &amp; Kualitas Bacaan
-                  </h5>
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50">
-                      <span className="text-[10px] text-emerald-700 block">Mumtaz (Lancar)</span>
-                      <span className="text-base font-bold text-emerald-800">{selectedRaporSantri.mumtazPercent}%</span>
-                    </div>
-                    <div className="p-2.5 rounded-lg border border-amber-200 bg-amber-50">
-                      <span className="text-[10px] text-amber-700 block">Jayyid (Cukup)</span>
-                      <span className="text-base font-bold text-amber-800">{selectedRaporSantri.jayyidPercent}%</span>
-                    </div>
-                    <div className="p-2.5 rounded-lg border border-red-200 bg-red-50">
-                      <span className="text-[10px] text-red-700 block">I'adah (Diulang)</span>
-                      <span className="text-base font-bold text-red-800">{selectedRaporSantri.iadahPercent}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Catatan Musyrif */}
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1 avoid-break">
-                  <span className="font-bold text-slate-900 block">Catatan &amp; Arahan Musyrif:</span>
-                  <p className="text-slate-600 leading-relaxed text-[11px]">
-                    Alhamdulillah, ananda menunjukkan disiplin tinggi dalam talaqqi harian. Pertahankan kelancaran makhraj huruf dan tingkatkan muroja'ah mandiri sebelum shalat fardhu.
-                  </p>
-                </div>
-
-                {/* Tanda Tangan */}
-                <div className="grid grid-cols-2 gap-8 pt-4 text-center avoid-break">
-                  <div className="space-y-12">
-                    <span className="text-slate-600 block">Koordinator Tahfidz,</span>
-                    <span className="font-bold text-slate-900 block border-t border-slate-300 pt-1">
-                      Ust. Hamzah Al-Hafidz, Lc.
-                    </span>
-                  </div>
-                  <div className="space-y-12">
-                    <span className="text-slate-600 block">Musyrif Halaqoh,</span>
-                    <span className="font-bold text-slate-900 block border-t border-slate-300 pt-1">
-                      Ust. Abdullah
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+      {/* 8. MODAL: Rapor Resmi Santri (Menggunakan Komponen Mandiri) */}
+      <RaporPrintModal
+        isOpen={Boolean(selectedRaporSantri)}
+        onClose={() => setSelectedRaporSantri(null)}
+        santri={selectedRaporSantri}
+        periodLabel={periodLabel}
+      />
 
       {/* 9. MODAL: Broadcast WhatsApp Digest */}
       {isWAModalOpen &&
@@ -1441,7 +1149,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 text-xs font-semibold h-9"
                     >
-                      <span>Direct WA</span>
+                      <span>Buka WhatsApp</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
@@ -1452,7 +1160,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                     className="text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 h-9 px-3.5 rounded-lg shadow-xs cursor-pointer"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>{isBroadcasting ? 'Mengirim...' : 'Kirim via Gateway'}</span>
+                    <span>{isBroadcasting ? 'Mengirim...' : 'Kirim Otomatis'}</span>
                   </Button>
                 </div>
               </div>
@@ -1461,85 +1169,6 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
           document.body
         )}
 
-      {/* 10. MODAL: Sertifikat Ujian Tasmi' ber-QR Code */}
-      {selectedExamDetail &&
-        createPortal(
-          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-4 animate-in fade-in duration-150">
-            <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-md w-full overflow-hidden p-6 space-y-4 text-center">
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setSelectedExamDetail(null)}
-                  className="text-slate-400 hover:text-slate-700 cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-700 mx-auto flex items-center justify-center">
-                <Award className="w-6 h-6" />
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="font-bold text-base text-slate-900">
-                  Sertifikat Kenaikan Juz {selectedExamDetail.juzTarget}
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Dokumen Resmi Kelulusan Tasmi' 1 Juz Sekali Duduk
-                </p>
-              </div>
-
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs text-left">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Nama Santri:</span>
-                  <span className="font-bold text-slate-900">{selectedExamDetail.santriName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Nilai Akhir:</span>
-                  <span className="font-bold text-emerald-700">{selectedExamDetail.finalScore} (Mumtaz)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Penguji:</span>
-                  <span className="font-semibold text-slate-800">{selectedExamDetail.examinerName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Tanggal Lulus:</span>
-                  <span className="text-slate-800">{selectedExamDetail.examDate}</span>
-                </div>
-              </div>
-
-              {/* QR Code Validation Box */}
-              <div className="p-4 border-2 border-dashed border-[#0070BA] bg-[#EBF5FB]/50 rounded-xl space-y-2">
-                <div className="w-28 h-28 mx-auto bg-white border border-slate-200 rounded-lg flex items-center justify-center p-2 shadow-2xs">
-                  <div className="grid grid-cols-4 gap-1 w-full h-full p-1 bg-slate-900 rounded-sm">
-                    <div className="bg-white col-span-2 row-span-2"></div>
-                    <div className="bg-white"></div>
-                    <div className="bg-white"></div>
-                    <div className="bg-white"></div>
-                    <div className="bg-white col-span-2 row-span-2"></div>
-                    <div className="bg-white"></div>
-                    <div className="bg-white"></div>
-                  </div>
-                </div>
-                <span className="font-mono text-[10px] text-slate-600 block">
-                  Kode Verifikasi: <strong>{selectedExamDetail.certificateQr}</strong>
-                </span>
-                <span className="text-[10px] text-emerald-700 font-semibold block">
-                  Tersinkronisasi &amp; Terverifikasi Resmi di Portal Santri
-                </span>
-              </div>
-
-              <Button
-                size="sm"
-                onClick={() => setSelectedExamDetail(null)}
-                className="w-full text-xs font-semibold bg-[#0070BA] text-white hover:bg-[#005C9E] cursor-pointer"
-              >
-                Tutup Pratinjau
-              </Button>
-            </div>
-          </div>,
-          document.body
-        )}
     </div>
   );
 };

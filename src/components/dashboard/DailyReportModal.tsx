@@ -100,12 +100,12 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
       } else if (result.fallbackUrl) {
         setStatusMessage({
           type: 'error',
-          text: `${result.message} Anda dapat membuka WhatsApp secara manual melalui tombol Direct WA.`,
+          text: 'Pesan belum terkirim otomatis. Anda dapat membuka WhatsApp secara langsung melalui tombol WhatsApp.',
         });
       } else {
         setStatusMessage({
           type: 'error',
-          text: result.message || 'Gagal mengirim pesan via WhatsApp Gateway.',
+          text: result.message || 'Gagal mengirim pesan WhatsApp.',
         });
       }
     } catch (err: unknown) {
@@ -190,14 +190,6 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
             </div>
 
           </div>
-
-          {/* Quick Notice */}
-          <div className="mt-3 p-2.5 bg-blue-50/70 border border-blue-100 rounded-lg flex items-start gap-2.5 text-xs text-blue-900">
-            <Info className="w-4 h-4 text-[#0070BA] shrink-0 mt-0.5" />
-            <p className="leading-relaxed">
-              <strong>Aturan Otomasi 1 Pesan/Hari:</strong> Setiap wali santri hanya dikirimi 1 pesan rekapitulasi mutaba'ah per hari yang merangkum seluruh sesi setoran (Ziyadah + Muroja'ah) hari ini. Santri yang sudah dikirimi pesan tidak akan dikirimi ulang secara otomatis.
-            </p>
-          </div>
         </DialogHeader>
 
         {/* Status Message Alert */}
@@ -243,7 +235,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                 style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
               ></div>
             </div>
-            <p className="text-[11px] text-blue-700 mt-1">Jeda aman 1.5 detik per pesan agar ramah antrian gateway.</p>
+            <p className="text-[11px] text-blue-700 mt-1">Mengirim laporan harian ke nomor WhatsApp wali santri...</p>
           </div>
         )}
 

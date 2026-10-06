@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  ArrowLeft, 
   UserPlus, 
   Search, 
   MessageSquare, 
@@ -21,7 +20,7 @@ import type { NavItemKey, Santri } from './types';
 
 interface OtherViewProps {
   currentView: NavItemKey;
-  onBackToBeranda: () => void;
+  onBackToBeranda?: () => void;
   santriList: Santri[];
   onSetor: (santri: Santri) => void;
   onDetail: (santri: Santri) => void;
@@ -30,7 +29,6 @@ interface OtherViewProps {
 
 export const OtherView: React.FC<OtherViewProps> = ({
   currentView,
-  onBackToBeranda,
   santriList,
   onSetor,
   onDetail,
@@ -56,19 +54,6 @@ export const OtherView: React.FC<OtherViewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* 1. Header Navigation Bar */}
-      <div className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-xs">
-        <button
-          onClick={onBackToBeranda}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#0070BA] transition-colors group cursor-pointer"
-        >
-          <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-[#EBF5FB] flex items-center justify-center text-slate-600 group-hover:text-[#0070BA] transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-          </div>
-          <span>Kembali ke Beranda</span>
-        </button>
-      </div>
-
       {currentView === 'laporan' && (
         <LaporanPage
           santriList={santriList}
@@ -91,10 +76,11 @@ export const OtherView: React.FC<OtherViewProps> = ({
             <button
               type="button"
               onClick={onOpenAddModal}
-              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] text-xs font-semibold transition-colors shadow-2xs shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 h-8.5 sm:h-9 px-2.5 sm:px-3.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] text-xs font-semibold transition-colors shadow-2xs shrink-0 cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5" />
-              <span>Tambah Santri</span>
+              <span className="hidden sm:inline">Tambah Santri</span>
+              <span className="sm:hidden">Tambah</span>
             </button>
           </div>
 

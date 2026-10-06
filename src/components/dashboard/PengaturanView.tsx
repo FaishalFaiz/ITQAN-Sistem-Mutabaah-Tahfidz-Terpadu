@@ -9,7 +9,8 @@ import {
   FileText, 
   Sliders, 
   Eye,
-  EyeOff
+  EyeOff,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +24,7 @@ export const PengaturanView: React.FC = () => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [testPhone, setTestPhone] = useState('081234567890');
   const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ success?: boolean; message?: string; fallbackUrl?: string } | null>(null);
   const [configSaved, setConfigSaved] = useState(false);
 
   // Halaqah settings state
@@ -89,8 +90,9 @@ export const PengaturanView: React.FC = () => {
     setTestResult({
       success: res.success,
       message: res.success 
-        ? `Sukses! Pesan verifikasi berhasil dikirim melalui gateway ${waConfig.provider.toUpperCase()}.`
-        : res.message || res.error || 'Pengujian gateway gagal.',
+        ? `Sukses! Pesan verifikasi berhasil dikirim melalui ${waConfig.provider.toUpperCase()}.`
+        : res.message || res.error || 'Pengujian pengiriman pesan belum berhasil.',
+      fallbackUrl: res.fallbackUrl,
     });
     refreshLogs();
   };
@@ -110,14 +112,14 @@ export const PengaturanView: React.FC = () => {
       <div>
         <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
           <Settings className="w-5 h-5 text-[#0070BA]" />
-          <span>Pengaturan Sistem &amp; WhatsApp Gateway</span>
+          <span>Pengaturan Sistem &amp; Notifikasi WhatsApp</span>
         </h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Konfigurasi koneksi WhatsApp Gateway, template laporan santri, dan parameter kurikulum halaqoh.
+          Atur pengiriman pesan WhatsApp ke wali santri, format laporan, dan data halaqoh.
         </p>
       </div>
 
-      {/* 1. SECTION: Konfigurasi WhatsApp Gateway */}
+      {/* 1. SECTION: Pengaturan Pengiriman WhatsApp */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
@@ -126,16 +128,16 @@ export const PengaturanView: React.FC = () => {
             </div>
             <div>
               <h3 className="font-bold text-sm text-slate-900">
-                Integrasi WhatsApp Gateway
+                Layanan Pengiriman WhatsApp Otomatis
               </h3>
               <p className="text-[11px] text-slate-500">
-                Hubungkan dengan provider gateway (Fonnte, WAHA / Baileys, Wablas, atau Custom Webhook)
+                Pilih layanan pengiriman pesan otomatis ke nomor wali santri
               </p>
             </div>
           </div>
 
           <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 self-start sm:self-center">
-            {waConfig.endpointUrl ? `Provider: ${waConfig.provider.toUpperCase()}` : 'Belum Terhubung'}
+            {waConfig.endpointUrl ? `Layanan: ${waConfig.provider.toUpperCase()}` : 'Belum Terhubung'}
           </span>
         </div>
 
@@ -143,14 +145,14 @@ export const PengaturanView: React.FC = () => {
           {/* Pilihan Provider Preset */}
           <div>
             <label className="block text-xs font-semibold text-slate-900 mb-1.5">
-              Pilih Provider Gateway
+              Pilihan Layanan WhatsApp
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                { id: 'fonnte', label: 'Fonnte API', desc: 'api.fonnte.com' },
-                { id: 'waha', label: 'WAHA / Localhost', desc: 'WhatsApp HTTP API' },
-                { id: 'wablas', label: 'Wablas API', desc: 'wablas.com' },
-                { id: 'custom', label: 'Custom REST API', desc: 'Webhook Sendiri' },
+                { id: 'fonnte', label: 'Fonnte', desc: 'Layanan Cloud Otomatis' },
+                { id: 'waha', label: 'WAHA Server', desc: 'Server Sekolah Lokal' },
+                { id: 'wablas', label: 'Wablas', desc: 'Layanan Cloud Otomatis' },
+                { id: 'custom', label: 'Layanan Lain', desc: 'Kustom / Webhook' },
               ].map((p) => (
                 <button
                   key={p.id}
@@ -173,7 +175,7 @@ export const PengaturanView: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-900 mb-1">
-                Endpoint URL API Gateway <span className="text-red-500">*</span>
+                Alamat Server Kirim Pesan <span className="text-red-500">*</span>
               </label>
               <Input
                 type="url"
@@ -184,32 +186,36 @@ export const PengaturanView: React.FC = () => {
                 className="text-xs h-9 bg-white"
               />
               <span className="text-[10px] text-slate-400 block mt-1">
-                URL tujuan HTTP POST untuk mengirim pesan teks.
+                Alamat koneksi pengiriman pesan (default sudah terisi).
               </span>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-900 mb-1">
-                API Key / Secret Token
+                Kunci Akses / Token {waConfig.provider === 'fonnte' && <span className="text-red-500">* (Wajib diisi)</span>}
               </label>
               <div className="relative">
                 <Input
                   type={showApiKey ? 'text' : 'password'}
                   value={waConfig.apiKey}
                   onChange={(e) => setWaConfig({ ...waConfig, apiKey: e.target.value })}
-                  placeholder="Masukkan API Token gateway Anda"
+                  placeholder={
+                    waConfig.provider === 'fonnte'
+                      ? 'Tempelkan token Fonnte Anda di sini'
+                      : 'Masukkan kunci akses'
+                  }
                   className="text-xs h-9 bg-white pr-9"
                 />
                 <button
                   type="button"
                   onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                  className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               <span className="text-[10px] text-slate-400 block mt-1">
-                Token otentikasi API dari provider gateway Anda.
+                Kunci akses akun WhatsApp Anda untuk mengirim pesan.
               </span>
             </div>
           </div>
@@ -273,25 +279,25 @@ export const PengaturanView: React.FC = () => {
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
             <span className="text-xs text-emerald-700 font-medium">
-              {configSaved && 'Pengaturan WhatsApp Gateway berhasil disimpan!'}
+              {configSaved && 'Pengaturan layanan WhatsApp berhasil disimpan!'}
             </span>
             <Button
               type="submit"
               className="bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold text-xs h-10 px-5 rounded-lg shadow-xs"
             >
-              Simpan Konfigurasi Gateway
+              Simpan Pengaturan WhatsApp
             </Button>
           </div>
         </form>
 
-        {/* Alat Uji Coba Gateway (Test Connection) */}
+        {/* Alat Uji Coba Kirim Pesan */}
         <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/80 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Send className="w-4 h-4 text-[#0070BA]" />
-              <span className="text-xs font-bold text-slate-900">Uji Coba Koneksi Gateway</span>
+              <span className="text-xs font-bold text-slate-900">Uji Coba Kirim Pesan</span>
             </div>
-            <span className="text-[11px] text-slate-500">Kirim pesan ping ke nomor Anda</span>
+            <span className="text-[11px] text-slate-500">Kirim pesan uji coba ke nomor Anda</span>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-2">
@@ -309,22 +315,35 @@ export const PengaturanView: React.FC = () => {
               onClick={handleTestConnection}
               className="w-full sm:w-auto text-xs font-semibold h-10 px-4 border-[#0070BA] text-[#0070BA] hover:bg-[#EBF5FB] rounded-lg"
             >
-              {isTesting ? 'Menguji Gateway...' : 'Kirim Pesan Uji Coba'}
+              {isTesting ? 'Menguji Pengiriman...' : 'Kirim Pesan Uji Coba'}
             </Button>
           </div>
 
           {testResult && (
-            <div className={`p-3 rounded-lg text-xs flex items-center gap-2 border ${
+            <div className={`p-3 rounded-lg text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 border ${
               testResult.success
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                 : 'bg-amber-50 border-amber-200 text-amber-900'
             }`}>
-              {testResult.success ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <div className="flex items-center gap-2">
+                {testResult.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                )}
+                <span className="leading-relaxed">{testResult.message}</span>
+              </div>
+              {testResult.fallbackUrl && (
+                <a
+                  href={testResult.fallbackUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs whitespace-nowrap self-start sm:self-center shrink-0 cursor-pointer shadow-xs"
+                >
+                  <span>Buka Direct WA</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
               )}
-              <span className="leading-relaxed">{testResult.message}</span>
             </div>
           )}
         </div>
@@ -519,11 +538,11 @@ export const PengaturanView: React.FC = () => {
                     <td className="py-2.5 px-3 whitespace-nowrap">
                       {l.status === 'success' ? (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Sukses (Gateway)
+                          Terkirim Otomatis
                         </span>
                       ) : l.status === 'fallback_opened' ? (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-[#0070BA] border border-blue-200">
-                          Direct wa.me
+                          Buka WhatsApp Web
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">

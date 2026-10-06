@@ -1,7 +1,8 @@
-import React, { useRef, useEffect } from 'react';
-import { Target, TrendingUp, AlertCircle, Clock } from 'lucide-react';
+import React, { useRef, useEffect, useMemo } from 'react';
+import { Target, TrendingUp, AlertCircle, Clock, BookOpen } from 'lucide-react';
 import gsap from 'gsap';
 import type { Santri } from './types';
+import { storageService } from '../../services/storageService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -24,6 +25,36 @@ export const HalaqahQuickFocus: React.FC<HalaqahQuickFocusProps> = ({
   const priorityList = santriList.filter(
     (s) => s.status === 'tidak_tercapai' || s.status === 'belum_setor'
   );
+
+  // Rekomendasi Giliran Simak Muroja'ah (Smart Queue)
+  const smartMurojaahQueue = useMemo(() => {
+    const allRecords = storageService.getSetoranRecords();
+    const now = new Date().getTime();
+
+    const evaluated = santriList.map((s) => {
+      const murojaahRecords = allRecords.filter((r) => r.santriId === s.id && r.type === 'murojaah');
+      let daysSinceLast = 999;
+      let lastJuz = Math.max(1, Math.floor(parseFloat(s.juzAchieved.replace(/[^0-9.]/g, '')) || 1));
+
+      if (murojaahRecords.length > 0) {
+        const sorted = [...murojaahRecords].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        const lastDate = new Date(sorted[0].createdAt).getTime();
+        daysSinceLast = Math.max(0, Math.floor((now - lastDate) / (1000 * 60 * 60 * 24)));
+        lastJuz = sorted[0].juz || lastJuz;
+      }
+
+      return {
+        santri: s,
+        daysSinceLast,
+        suggestedJuz: lastJuz,
+      };
+    });
+
+    // Urutkan yang paling lama tidak murojaah
+    return evaluated.sort((a, b) => b.daysSinceLast - a.daysSinceLast).slice(0, 3);
+  }, [santriList]);
 
   // Total lines accomplished today across all santri
   const totalLinesToday = santriList.reduce((acc, s) => acc + s.linesCompletedToday, 0);
@@ -121,7 +152,7 @@ export const HalaqahQuickFocus: React.FC<HalaqahQuickFocusProps> = ({
                     </Button>
                     <Button
                       onClick={() => onSetor(s)}
-                      className="text-xs font-semibold h-9 px-3 bg-primary hover:bg-primary/90 text-primary-foreground shadow-2xs rounded-lg justify-center"
+                      className="text-xs font-semibold h-9 px-3 bg-[#0070BA] hover:bg-[#005C9E] active:scale-[0.97] transition-all text-white shadow-2xs rounded-lg justify-center cursor-pointer"
                     >
                       Simak Setor
                     </Button>
@@ -131,10 +162,66 @@ export const HalaqahQuickFocus: React.FC<HalaqahQuickFocusProps> = ({
             )}
           </div>
 
-          <div className="pt-3 mt-4 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>Prioritas bimbingan musyrif sesi aktif ini</span>
-            <span className="font-semibold text-foreground">Total Rombel: {santriList.length} Santri</span>
-          </div>
+          {/* Rekomendasi Giliran Muroja'ah (Smart Queue) - Desain Konsisten */}
+          {smartMurojaahQueue.length > 0 && santriList.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-[#0070BA]" />
+                  <span className="text-xs font-bold text-foreground">
+                    Giliran Simak Muroja'ah Hari Ini
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground">Paling lama belum setor ulang</span>
+              </div>
+
+              <div className="space-y-2">
+                {smartMurojaahQueue.map(({ santri: s, daysSinceLast, suggestedJuz }) => (
+                  <div
+                    key={`murojaah-${s.id}`}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-border bg-muted/40 hover:bg-muted/80 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-background border border-border text-[#0070BA] font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        {s.avatarInitials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                          <span className="font-bold text-xs text-foreground truncate">{s.name}</span>
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-[#0070BA] border border-blue-200">
+                            Fokus Juz {suggestedJuz}
+                          </span>
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                            <Clock className="w-2.5 h-2.5 mr-1" />
+                            {daysSinceLast >= 30 ? 'Belum Muroja\'ah' : `${daysSinceLast} hari lalu`}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground block truncate mt-0.5">
+                          {s.juzAchieved} • Terakhir: {s.lastSurah}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 shrink-0">
+                      <Button
+                        variant="outline"
+                        onClick={() => onDetail(s)}
+                        className="text-xs font-semibold h-9 px-3 border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 justify-center"
+                      >
+                        Lihat Profil
+                      </Button>
+                      <Button
+                        onClick={() => onSetor(s)}
+                        className="text-xs font-semibold h-9 px-3 bg-[#0070BA] hover:bg-[#005C9E] active:scale-[0.97] transition-all text-white shadow-2xs rounded-lg justify-center cursor-pointer"
+                      >
+                        Simak Muroja'ah
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -176,10 +263,6 @@ export const HalaqahQuickFocus: React.FC<HalaqahQuickFocusProps> = ({
                 <b className="text-foreground">{santriList.length - priorityList.length} dari {santriList.length} Santri</b>
               </div>
             </div>
-          </div>
-
-          <div className="pt-3 mt-4 border-t border-border text-[11px] text-muted-foreground">
-            Target harian otomatis beradaptasi dengan kecepatan halaqoh
           </div>
         </CardContent>
       </Card>

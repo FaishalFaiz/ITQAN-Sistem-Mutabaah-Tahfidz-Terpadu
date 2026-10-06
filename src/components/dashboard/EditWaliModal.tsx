@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserCheck, Phone, Check } from 'lucide-react';
 import type { Santri } from './types';
 import { storageService } from '../../services/storageService';
+import { waGatewayService } from '../../services/waGatewayService';
 import {
   Dialog,
   DialogContent,
@@ -47,10 +48,12 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
       return;
     }
 
+    const cleanPhone = parentPhone.trim() ? waGatewayService.normalizePhoneNumber(parentPhone.trim()) : '';
+
     const updatedSantri: Santri = {
       ...santri,
       parentName: parentName.trim(),
-      parentPhone: parentPhone.trim(),
+      parentPhone: cleanPhone,
     };
 
     storageService.updateSantri(updatedSantri);
@@ -114,7 +117,7 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
               />
             </div>
             <span className="text-[10px] text-slate-400 block mt-1">
-              Nomor ini digunakan untuk pengiriman laporan harian mutaba'ah via WhatsApp Gateway.
+              Nomor WhatsApp aktif wali santri untuk menerima laporan mutaba'ah.
             </span>
           </div>
 

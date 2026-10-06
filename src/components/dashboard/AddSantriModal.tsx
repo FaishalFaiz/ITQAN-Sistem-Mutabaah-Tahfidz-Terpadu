@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserPlus } from 'lucide-react';
 import type { Santri } from './types';
+import { waGatewayService } from '../../services/waGatewayService';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/sonner';
 
 interface AddSantriModalProps {
   isOpen: boolean;
@@ -42,12 +44,14 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
         ? `${words[0][0]}${words[1][0]}`.toUpperCase()
         : name.slice(0, 2).toUpperCase();
 
+    const cleanPhone = parentPhone.trim() ? waGatewayService.normalizePhoneNumber(parentPhone.trim()) : '';
+
     const newSantri: Santri = {
       id: Date.now().toString(),
       name: name.trim(),
       nis: nis.trim() || `2024${Math.floor(100 + Math.random() * 900)}`,
       parentName: parentName.trim() || `Wali ${name.trim()}`,
-      parentPhone: parentPhone.trim() || '',
+      parentPhone: cleanPhone,
       avatarInitials: initials,
       juzAchieved: juzAchieved.trim() || '1.0 Juz',
       dailyTargetLines: Number(dailyTargetLines) || 15,
@@ -60,6 +64,9 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
     };
 
     onAddSantri(newSantri);
+    toast.success('Santri baru berhasil ditambahkan!', {
+      description: `${newSantri.name} • NIS ${newSantri.nis}`,
+    });
     onClose();
 
     // Reset form

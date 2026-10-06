@@ -47,27 +47,85 @@ Semua kode warna menggunakan format solid tanpa efek transisi/gradien:
 
 ## 3. Tipografi & Sistem Font / Typography & Font System
 
-Sistem tipografi ITQAN menggunakan kombinasi dua font utama dari Google Fonts: **Inter** untuk antarmuka umum dan **JetBrains Mono** untuk data teknis / angka / ID.
+Sistem tipografi ITQAN menggunakan dua font utama dari Google Fonts: **Inter** untuk antarmuka umum dan **JetBrains Mono** untuk data teknis, kode, badge, dan status angka/ID.
 
-*The ITQAN typography system utilizes two primary Google Fonts: **Inter** for general UI and **JetBrains Mono** for technical data / code / IDs.*
+*The ITQAN typography system utilizes two primary Google Fonts: **Inter** for general UI and **JetBrains Mono** for technical data, code, badges, and numeric metrics/IDs.*
 
-### 3.1. Sumber Font (HTML Entry Load) / Font Loading (`index.html`)
-- **Inter** (Weight: 400, 500, 600, 700, 800) — Font utama untuk semua teks UI, judul, tombol, dan tabel. (*Primary font for general UI text, headings, buttons, and tables.*)
-- **JetBrains Mono** (Weight: 400, 500) — Font monospace khusus untuk badge teknis, kode, prefix URL, ID santri/NIS, dan angka status. (*Monospace font for technical badges, code, URL prefixes, student IDs, and numeric metrics.*)
+---
+
+### 3.1. Pemuatan Font Google (HTML Entry) / Google Fonts Import (`index.html`)
+
+Font diimpor secara global melalui `index.html` dengan spesifikasi ketebalan (*weight*) berikut:
+*Fonts are loaded globally via `index.html` with the following weight specifications:*
+
+- **Inter** (Weight: 400, 500, 600, 700, 800) – Digunakan sebagai font sans-serif & serif global antarmuka pengguna. (*Used as the primary sans-serif & serif font for the global UI.*)
+- **JetBrains Mono** (Weight: 400, 500) – Digunakan sebagai font monospace untuk kode, label teknis, badge, dan angka/ID. (*Used as the monospace font for code, technical labels, badges, and status numbers/IDs.*)
 
 ```html
-<!-- Google Fonts Entry (/index.html) -->
+<!-- Google Fonts Import (/index.html) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 ```
 
-### 3.2. Prinsip Penggunaan Font dalam UI / Font Usage Rules
-1. **Sans-Serif (`font-sans`)**: Digunakan secara global untuk hampir seluruh elemen UI utama, navigasi, judul halaman, isi teks, dan tombol aksi. (*Used globally for main UI elements, navigation, page titles, body text, and action buttons.*)
-2. **Serif (`font-serif`)**: Mengarah ke font Inter untuk keselarasan visual jika kelas serif digunakan. (*Mapped to Inter for visual consistency whenever serif classes are invoked.*)
-3. **Monospace (`font-mono`)**: Digunakan khusus untuk label teknis/eyebrow, kode sistem, prefix URL (misal `tautan.site/`), NIS, serta ID dan angka kualifikasi. (*Dedicated for technical labels/eyebrows, system code, URL prefixes, Student IDs, and status metrics.*)
+---
 
-### 3.3. Panduan Ukuran & Ketebalan / Size & Weight Scale
+### 3.2. Konfigurasi Tailwind CSS / Tailwind CSS Configuration (`tailwind.config.js`)
+
+Konfigurasi keluarga font (*font family*) diatur pada `tailwind.config.js` untuk memastikan semua rujukan kelas Tailwind mengarah ke font yang sesuai:
+*The font family rules are configured in `tailwind.config.js` to ensure all Tailwind utility classes map accurately:*
+
+```javascript
+// tailwind.config.js
+export default {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        serif: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+      },
+    },
+  },
+}
+```
+
+---
+
+### 3.3. Penataan CSS Dasar Global / Global Base CSS Styling (`src/index.css`)
+
+Perataan font dan *anti-aliasing* diatur secara langsung pada file CSS utama (`src/index.css`):
+*Font rendering smoothers and base font assignments are defined in the main CSS file (`src/index.css`):*
+
+- **Default Body**: Menggunakan font family Inter dengan `-webkit-font-smoothing: antialiased` agar teks terlihat tajam dan mulus di semua browser. (*Uses Inter with `-webkit-font-smoothing: antialiased` for crisp rendering across all browsers.*)
+- **Headings (`h1`, `h2`, `h3`, `.font-display`)**: Diarahkan secara konsisten ke font Inter untuk keseragaman hirarki visual. (*Consistently mapped to Inter for uniform visual hierarchy.*)
+
+```css
+/* src/index.css */
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+```
+
+---
+
+### 3.4. Prinsip Penggunaan Font dalam UI / Font Usage Rules
+
+1. **Sans-Serif (`font-sans`)**: Digunakan untuk hampir semua elemen UI utama, judul, badan teks, tombol, dan navigasi. (*Used for almost all main UI elements, headings, body text, buttons, and navigation.*)
+2. **Serif (`font-serif`)**: Mengarah secara konsisten ke font Inter untuk menjaga keselarasan visual. (*Consistently mapped to Inter for visual harmony.*)
+3. **Monospace (`font-mono`)**: Digunakan khusus untuk label teknis/eyebrow, kode sistem, prefix URL (seperti `tautan.site/`), serta status angka/ID. (*Dedicated for technical/eyebrow labels, system code, URL prefixes like `tautan.site/`, and status metrics/IDs.*)
+
+---
+
+### 3.5. Panduan Ukuran & Ketebalan / Size & Weight Scale
 
 | Tingkatan / Level | Tailwind Class | Weight | Penggunaan (ID) | Usage (EN) |
 |:---|:---|:---|:---|:---|
