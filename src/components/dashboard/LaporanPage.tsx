@@ -33,6 +33,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RaporPrintModal } from './RaporPrintModal';
+import { RekapPrintModal } from './RekapPrintModal';
 import { TrendChart } from './TrendChart';
 import { toast } from '@/components/ui/sonner';
 
@@ -81,6 +82,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
   // Modals
   const [selectedRaporSantri, setSelectedRaporSantri] = useState<SantriReportItem | null>(null);
+  const [isRekapPrintModalOpen, setIsRekapPrintModalOpen] = useState(false);
   const [isWAModalOpen, setIsWAModalOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [broadcastTarget, setBroadcastTarget] = useState('081234567801');
@@ -380,7 +382,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
               <Button
                 type="button"
-                onClick={() => window.print()}
+                onClick={() => setIsRekapPrintModalOpen(true)}
                 className="text-xs font-semibold h-8.5 sm:h-9 px-2.5 sm:px-3.5 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg shadow-xs cursor-pointer justify-center"
               >
                 <Printer className="w-3.5 h-3.5 sm:mr-1.5" />
@@ -1072,7 +1074,21 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
 
 
-      {/* 8. MODAL: Rapor Resmi Santri (Menggunakan Komponen Mandiri) */}
+      {/* 8. MODAL: Rekapitulasi Cetak Resmi Halaqoh */}
+      <RekapPrintModal
+        isOpen={isRekapPrintModalOpen}
+        onClose={() => setIsRekapPrintModalOpen(false)}
+        santriReports={santriReports}
+        periodLabel={periodLabel}
+        totalZiyadahLines={totalZiyadahLines}
+        totalMurojaahLines={totalMurojaahLines}
+        avgMumtaz={avgMumtaz}
+        avgJayyid={avgJayyid}
+        avgIadah={avgIadah}
+        onTrackPercentage={onTrackPercentage}
+      />
+
+      {/* 9. MODAL: Rapor Resmi Santri (Menggunakan Komponen Mandiri) */}
       <RaporPrintModal
         isOpen={Boolean(selectedRaporSantri)}
         onClose={() => setSelectedRaporSantri(null)}

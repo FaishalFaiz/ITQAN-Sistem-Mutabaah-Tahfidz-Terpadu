@@ -172,10 +172,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
           </div>
 
           {/* Kontak Wali Santri (Walsan) */}
-          <div className="border-t border-slate-100 pt-3 space-y-2">
-            <span className="block text-xs font-bold text-slate-800">
-              Kontak Wali Santri
-            </span>
+          <div className="border-t border-slate-100 pt-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-900 mb-1">
