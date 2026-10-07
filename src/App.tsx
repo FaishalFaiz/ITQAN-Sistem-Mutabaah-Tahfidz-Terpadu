@@ -54,7 +54,7 @@ function SantriDetailRoute({
   );
 }
 
-export function App() {
+function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();

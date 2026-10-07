@@ -1,9 +1,4 @@
-import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings } from './types';
-
-// DATA AWAL KOSONG (ZERO DUMMY DATA)
-export const INITIAL_SANTRI_LIST: Santri[] = [];
-
-export const INITIAL_SETORAN_RECORDS: SetoranRecord[] = [];
+import type { WATemplateConfig, HalaqahSettings } from './types';
 
 export const DEFAULT_WA_TEMPLATE_CONFIG: WATemplateConfig = {
   templateDailyProgress: `*LAPORAN TAHFIDZ HARIAN - ITQAN*

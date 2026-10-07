@@ -38,7 +38,7 @@ import {
 import { toast } from '@/components/ui/sonner';
 import { formatJuz } from '@/lib/utils';
 
-export type DateFilterRange = 'semua' | 'hari_ini' | 'pekan_ini' | 'bulan_ini' | 'custom';
+type DateFilterRange = 'semua' | 'hari_ini' | 'pekan_ini' | 'bulan_ini' | 'custom';
 
 interface SantriDetailPageProps {
   santri: Santri;
