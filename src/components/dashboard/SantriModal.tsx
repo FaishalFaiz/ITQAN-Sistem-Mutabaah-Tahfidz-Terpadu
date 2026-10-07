@@ -23,17 +23,22 @@ export const SantriModal: React.FC<SantriModalProps> = ({
   onClose,
   onSaveSetor,
 }) => {
-  const [activeSantri, setActiveSantri] = React.useState<Santri | null>(santri);
-  const [activeType, setActiveType] = React.useState<'setor' | 'detail' | null>(type);
+  const [cachedSantri, setCachedSantri] = React.useState<Santri | null>(santri);
+  const [cachedType, setCachedType] = React.useState<'setor' | 'detail' | null>(type);
+  const [prevProps, setPrevProps] = React.useState({ santri, type });
 
-  React.useEffect(() => {
-    if (santri) setActiveSantri(santri);
-    if (type) setActiveType(type);
-  }, [santri, type]);
+  if (santri && santri !== prevProps.santri) {
+    setPrevProps((prev) => ({ ...prev, santri }));
+    setCachedSantri(santri);
+  }
+  if (type && type !== prevProps.type) {
+    setPrevProps((prev) => ({ ...prev, type }));
+    setCachedType(type);
+  }
 
   const isOpen = Boolean(type && santri);
-  const displaySantri = santri || activeSantri;
-  const displayType = type || activeType;
+  const displaySantri = santri || cachedSantri;
+  const displayType = type || cachedType;
 
   if (!displaySantri || !displayType) return null;
 

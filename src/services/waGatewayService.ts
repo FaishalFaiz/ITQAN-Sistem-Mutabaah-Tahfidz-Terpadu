@@ -114,7 +114,7 @@ export const waGatewayService = {
     const estPagesToday = (linesToday / 15).toFixed(1);
 
     // Format rincian sesi harian
-    let rincianSesi = '';
+    let rincianSesi: string;
     if (todayRecords.length === 0) {
       rincianSesi = `_Belum ada setoran hari ini._`;
     } else {
@@ -138,7 +138,7 @@ export const waGatewayService = {
     }
 
     // Status harian
-    let statusHarian = '';
+    let statusHarian: string;
     if (linesToday >= santri.dailyTargetLines) {
       statusHarian = '✅ Tercapai';
     } else if (linesToday > 0) {
@@ -149,7 +149,7 @@ export const waGatewayService = {
 
     // Status Pacing kurikulum 30 Juz
     const remainingLines = Math.max(0, (santri.totalLinesTarget || 9060) - (santri.totalLinesMemorized || 0));
-    let statusPacing = '';
+    let statusPacing: string;
     if (linesToday >= santri.dailyTargetLines) {
       statusPacing = 'Sesuai Target';
     } else {

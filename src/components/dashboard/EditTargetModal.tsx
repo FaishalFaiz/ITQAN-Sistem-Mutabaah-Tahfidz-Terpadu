@@ -71,7 +71,7 @@ export const EditTargetModal: React.FC<EditTargetModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-full max-w-md p-0 overflow-hidden rounded-2xl border-slate-200">
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-md max-h-[92vh] overflow-y-auto p-0 rounded-xl sm:rounded-2xl border-slate-200">
         <form onSubmit={handleSave} className="space-y-4">
           {/* Header */}
           <DialogHeader className="px-5 py-4 border-b border-slate-100 bg-slate-50/70 text-left">
@@ -105,7 +105,7 @@ export const EditTargetModal: React.FC<EditTargetModalProps> = ({
                 max="300"
                 value={dailyTargetLines}
                 onChange={(e) => setDailyTargetLines(Number(e.target.value))}
-                className="w-full text-xs px-3 h-9 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0070BA] focus:ring-1 focus:ring-[#0070BA] font-semibold text-slate-800"
+                className="w-full text-xs px-3 h-9 rounded-lg border border-slate-300 bg-slate-100/75 shadow-2xs transition-all hover:bg-slate-100 hover:border-slate-400 focus:outline-none focus:bg-white focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 font-semibold text-slate-800"
               />
               <p className="text-[10px] text-slate-400 mt-1">
                 Standar Mushaf Madinah: 15 baris per halaman. (Contoh: 15 baris = 1 hal, 30 baris = 2 hal).
@@ -132,7 +132,7 @@ export const EditTargetModal: React.FC<EditTargetModalProps> = ({
                   setTotalLinesMemorized(val);
                   setJuzAchieved(formatJuz(val / 300));
                 }}
-                className="w-full text-xs px-3 h-9 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0070BA] focus:ring-1 focus:ring-[#0070BA] font-semibold text-slate-800"
+                className="w-full text-xs px-3 h-9 rounded-lg border border-slate-300 bg-slate-100/75 shadow-2xs transition-all hover:bg-slate-100 hover:border-slate-400 focus:outline-none focus:bg-white focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 font-semibold text-slate-800"
               />
               <p className="text-[10px] text-slate-400 mt-1">
                 Diperbarui otomatis setiap sesi setoran ziyadah disimpan.
@@ -149,7 +149,7 @@ export const EditTargetModal: React.FC<EditTargetModalProps> = ({
                 placeholder="Contoh: 5 Juz atau Juz 1 - 5"
                 value={juzAchieved}
                 onChange={(e) => setJuzAchieved(e.target.value)}
-                className="w-full text-xs px-3 h-9 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0070BA] focus:ring-1 focus:ring-[#0070BA] text-slate-800 font-medium"
+                className="w-full text-xs px-3 h-9 rounded-lg border border-slate-300 bg-slate-100/75 shadow-2xs transition-all hover:bg-slate-100 hover:border-slate-400 focus:outline-none focus:bg-white focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 text-slate-800 font-medium placeholder:text-slate-400"
               />
             </div>
 
@@ -169,7 +169,7 @@ export const EditTargetModal: React.FC<EditTargetModalProps> = ({
                 max="9060"
                 value={totalLinesTarget}
                 onChange={(e) => setTotalLinesTarget(Number(e.target.value))}
-                className="w-full text-xs px-3 h-9 rounded-lg border border-slate-300 focus:outline-none focus:border-[#0070BA] focus:ring-1 focus:ring-[#0070BA] font-semibold text-slate-800"
+                className="w-full text-xs px-3 h-9 rounded-lg border border-slate-300 bg-slate-100/75 shadow-2xs transition-all hover:bg-slate-100 hover:border-slate-400 focus:outline-none focus:bg-white focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 font-semibold text-slate-800"
               />
               <p className="text-[10px] text-slate-400 mt-1">
                 Default program khatam 30 Juz = 9.060 baris (604 halaman × 15 baris).
@@ -178,18 +178,18 @@ export const EditTargetModal: React.FC<EditTargetModalProps> = ({
           </div>
 
           {/* Footer Action */}
-          <DialogFooter className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2">
+          <DialogFooter className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="h-9 px-3.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold"
+              className="w-full sm:w-auto h-9 px-3.5 rounded-lg border-slate-200 text-slate-600 text-xs font-semibold cursor-pointer"
             >
               Batal
             </Button>
             <Button
               type="submit"
-              className="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-bold shadow-xs cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-lg bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-bold shadow-xs cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>Simpan Perubahan</span>

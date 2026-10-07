@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authService } from '@/services/authService';
+import { syncService } from '@/services/syncService';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,11 +20,14 @@ export const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     const res = await authService.signIn(email, password);
-    setIsLoading(false);
 
     if (res.success) {
+      // Sinkronisasi data cloud Supabase ke lokal sebelum redirect
+      await syncService.syncAll();
+      setIsLoading(false);
       navigate('/beranda');
     } else {
+      setIsLoading(false);
       setErrorMessage(res.error || 'Gagal masuk. Periksa kembali email dan kata sandi Anda.');
     }
   };

@@ -111,7 +111,7 @@ export const EditSetoranModal: React.FC<EditSetoranModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto p-0 rounded-xl sm:rounded-2xl border-slate-200">
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-md max-h-[92vh] overflow-y-auto p-0 rounded-xl sm:rounded-2xl border-slate-200">
         <form onSubmit={handleSubmit}>
           {/* Header */}
           <DialogHeader className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
@@ -296,18 +296,18 @@ export const EditSetoranModal: React.FC<EditSetoranModalProps> = ({
           </div>
 
           {/* Footer */}
-          <DialogFooter className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2">
+          <DialogFooter className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="text-xs h-9 px-4 border-slate-200"
+              className="w-full sm:w-auto text-xs h-9 px-4 border-slate-200 cursor-pointer"
             >
               Batal
             </Button>
             <Button
               type="submit"
-              className="text-xs h-9 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5 shadow-xs"
+              className="w-full sm:w-auto text-xs h-9 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Simpan Perubahan</span>

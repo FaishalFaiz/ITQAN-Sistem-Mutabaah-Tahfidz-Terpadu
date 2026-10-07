@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { BarChart3 } from 'lucide-react';
 import gsap from 'gsap';
 import { storageService, EVENT_DATA_CHANGED } from '@/services/storageService';
@@ -13,55 +13,136 @@ interface BarDataPoint {
   date: string;
 }
 
-// Template Hari dalam Pekan Ini
-const PEKAN_TEMPLATE: BarDataPoint[] = [
-  { label: 'Sen', fullLabel: 'Senin', ziyadah: 95, murojaah: 40, target: 140, date: '22 Sep' },
-  { label: 'Sel', fullLabel: 'Selasa', ziyadah: 115, murojaah: 65, target: 140, date: '23 Sep' },
-  { label: 'Rab', fullLabel: 'Rabu', ziyadah: 80, murojaah: 40, target: 140, date: '24 Sep' },
-  { label: 'Kam', fullLabel: 'Kamis', ziyadah: 130, murojaah: 80, target: 140, date: '25 Sep' },
-  { label: 'Jum', fullLabel: 'Jumat', ziyadah: 100, murojaah: 55, target: 140, date: '26 Sep' },
-  { label: 'Sab', fullLabel: 'Sabtu', ziyadah: 110, murojaah: 65, target: 140, date: '27 Sep' },
-  { label: 'Ahd', fullLabel: 'Ahad (Hari ini)', ziyadah: 145, murojaah: 80, target: 140, date: '28 Sep' },
-];
-
-// Template Pekan dalam Bulan Ini
-const BULAN_TEMPLATE: BarDataPoint[] = [
-  { label: 'Pekan 1', fullLabel: 'Pekan 1', ziyadah: 580, murojaah: 310, target: 700, date: '1–7 Sep' },
-  { label: 'Pekan 2', fullLabel: 'Pekan 2', ziyadah: 620, murojaah: 290, target: 700, date: '8–14 Sep' },
-  { label: 'Pekan 3', fullLabel: 'Pekan 3', ziyadah: 540, murojaah: 350, target: 700, date: '15–21 Sep' },
-  { label: 'Pekan 4', fullLabel: 'Pekan 4 (Berjalan)', ziyadah: 775, murojaah: 425, target: 700, date: '22–28 Sep' },
-];
-
 export const TrendChart: React.FC = () => {
   const [activeRange, setActiveRange] = useState<'pekan' | 'bulan'>('pekan');
-  const [hoveredIdx, setHoveredIdx] = useState<number>(6);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [records, setRecords] = useState<SetoranRecord[]>(() => storageService.getSetoranRecords());
+  const [santriList, setSantriList] = useState(() => storageService.getSantriList());
 
   useEffect(() => {
     const handleUpdate = () => {
       setRecords(storageService.getSetoranRecords());
+      setSantriList(storageService.getSantriList());
     };
     window.addEventListener(EVENT_DATA_CHANGED, handleUpdate);
     return () => window.removeEventListener(EVENT_DATA_CHANGED, handleUpdate);
   }, []);
 
-  const hasRecords = records.length > 0;
-  const currentData = (activeRange === 'pekan' ? PEKAN_TEMPLATE : BULAN_TEMPLATE).map((item) => {
-    if (!hasRecords) {
-      return { ...item, ziyadah: 0, murojaah: 0, target: 0 };
-    }
-    return item;
-  });
-  const maxScale = activeRange === 'pekan' ? 250 : 1400;
-  const targetThreshold = activeRange === 'pekan' ? 140 : 700;
-  const gridLine1 = activeRange === 'pekan' ? 100 : 500;
-  const gridLine2 = activeRange === 'pekan' ? 200 : 1000;
+  const totalSantri = santriList.length || 1;
+  const targetHarianHalaqoh = santriList.reduce((sum, s) => sum + (s.dailyTargetLines || 20), 0) || (totalSantri * 20);
 
-  // Reset indeks terpilih saat rentang berubah
+  // Kalkulasi data riil 7 hari terakhir (Pekan Ini)
+  const pekanData = useMemo<BarDataPoint[]>(() => {
+    const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const fullDayNames = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const points: BarDataPoint[] = [];
+    const now = new Date();
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dateKey = d.toISOString().slice(0, 10);
+      const dayIdx = d.getDay();
+      const isToday = i === 0;
+
+      let ziyadah = 0;
+      let murojaah = 0;
+
+      records.forEach((r) => {
+        if (!r.createdAt) return;
+        if (r.createdAt.slice(0, 10) === dateKey) {
+          const lines = Number(r.totalLines) || 0;
+          if (r.type === 'ziyadah') ziyadah += lines;
+          else murojaah += lines;
+        }
+      });
+
+      const dayDateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+
+      points.push({
+        label: dayNames[dayIdx],
+        fullLabel: isToday ? `${fullDayNames[dayIdx]} (Hari Ini)` : fullDayNames[dayIdx],
+        ziyadah,
+        murojaah,
+        target: targetHarianHalaqoh,
+        date: dayDateStr,
+      });
+    }
+
+    return points;
+  }, [records, targetHarianHalaqoh]);
+
+  // Kalkulasi data riil 4 pekan dalam bulan berjalan (Bulan Ini)
+  const bulanData = useMemo<BarDataPoint[]>(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const monthName = now.toLocaleDateString('id-ID', { month: 'short' });
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const currentDay = now.getDate();
+
+    const weekRanges = [
+      { label: 'Pekan 1', start: 1, end: 7 },
+      { label: 'Pekan 2', start: 8, end: 14 },
+      { label: 'Pekan 3', start: 15, end: 21 },
+      { label: 'Pekan 4', start: 22, end: daysInMonth },
+    ];
+
+    const weeklyTarget = targetHarianHalaqoh * 6; // 6 hari halaqoh per pekan
+
+    return weekRanges.map((w) => {
+      let ziyadah = 0;
+      let murojaah = 0;
+
+      records.forEach((r) => {
+        if (!r.createdAt) return;
+        const d = new Date(r.createdAt);
+        if (isNaN(d.getTime())) return;
+
+        if (d.getFullYear() === year && d.getMonth() === month) {
+          const day = d.getDate();
+          if (day >= w.start && day <= w.end) {
+            const lines = Number(r.totalLines) || 0;
+            if (r.type === 'ziyadah') ziyadah += lines;
+            else murojaah += lines;
+          }
+        }
+      });
+
+      const isCurrentWeek = currentDay >= w.start && currentDay <= w.end;
+
+      return {
+        label: w.label,
+        fullLabel: isCurrentWeek ? `${w.label} (Berjalan)` : w.label,
+        ziyadah,
+        murojaah,
+        target: weeklyTarget,
+        date: `${w.start}–${w.end} ${monthName}`,
+      };
+    });
+  }, [records, targetHarianHalaqoh]);
+
+  const currentData = activeRange === 'pekan' ? pekanData : bulanData;
+
+  // Nilai maksimum skala dinamis dari data riil
+  const maxScale = useMemo(() => {
+    const maxVal = Math.max(
+      ...currentData.map((d) => Math.max(d.ziyadah + d.murojaah, d.target))
+    );
+    if (activeRange === 'pekan') {
+      return Math.max(100, Math.ceil((maxVal * 1.15) / 50) * 50);
+    }
+    return Math.max(500, Math.ceil((maxVal * 1.15) / 100) * 100);
+  }, [currentData, activeRange]);
+
+  const targetThreshold = activeRange === 'pekan' ? targetHarianHalaqoh : targetHarianHalaqoh * 6;
+  const gridLine1 = Math.round(maxScale * 0.4);
+  const gridLine2 = Math.round(maxScale * 0.8);
+
   const handleRangeChange = (range: 'pekan' | 'bulan') => {
     setActiveRange(range);
-    setHoveredIdx(range === 'pekan' ? PEKAN_TEMPLATE.length - 1 : BULAN_TEMPLATE.length - 1);
+    setHoveredIdx(null);
   };
 
   useEffect(() => {
@@ -85,10 +166,14 @@ export const TrendChart: React.FC = () => {
     return () => ctx.revert();
   }, [activeRange]);
 
-  const safeIdx = Math.min(hoveredIdx, currentData.length - 1);
-  const activeItem = currentData[safeIdx] || currentData[currentData.length - 1];
+  const defaultIdx = currentData.length - 1;
+  const safeIdx = hoveredIdx !== null && hoveredIdx >= 0 && hoveredIdx < currentData.length
+    ? hoveredIdx
+    : defaultIdx;
+  const activeItem = currentData[safeIdx] || currentData[defaultIdx];
   const activeTotal = activeItem.ziyadah + activeItem.murojaah;
-  const isSurpassing = activeTotal >= activeItem.target;
+  const isSurpassing = activeTotal >= activeItem.target && activeTotal > 0;
+  const hasAnyActivity = currentData.some((d) => d.ziyadah + d.murojaah > 0);
 
   return (
     <div
@@ -108,8 +193,8 @@ export const TrendChart: React.FC = () => {
               </h3>
               <p className="text-[11px] text-slate-500">
                 {activeRange === 'pekan'
-                  ? 'Akumulasi setoran harian halaqoh dalam 7 hari terakhir'
-                  : 'Akumulasi setoran mingguan halaqoh dalam bulan berjalan'}
+                  ? 'Akumulasi setoran harian halaqoh dalam 7 hari terakhir (Data Riil)'
+                  : 'Akumulasi setoran mingguan halaqoh dalam bulan berjalan (Data Riil)'}
               </p>
             </div>
           </div>
@@ -126,10 +211,6 @@ export const TrendChart: React.FC = () => {
             <span className="flex items-center gap-1.5 font-medium">
               <span className="w-2.5 h-2.5 rounded-sm bg-sky-400"></span>
               Muroja'ah
-            </span>
-            <span className="flex items-center gap-1.5 font-medium text-slate-500">
-              <span className="w-2.5 h-0.5 border-b-2 border-dashed border-slate-400"></span>
-              Target ({targetThreshold} Baris)
             </span>
           </div>
 
@@ -169,18 +250,14 @@ export const TrendChart: React.FC = () => {
           <div className="relative h-48 sm:h-52 w-full pt-6 pb-6 flex items-end">
             {/* Grid Line Target (Garis Putus-Putus) */}
             <div
-              className="absolute left-0 right-0 border-b border-dashed border-slate-300 z-0 flex items-center justify-end pr-1 pointer-events-none"
-              style={{ bottom: `${(targetThreshold / maxScale) * 100}%` }}
-            >
-              <span className="text-[10px] font-semibold text-slate-400 bg-white px-1 -translate-y-1/2">
-                Target Halaqoh: {targetThreshold} Baris
-              </span>
-            </div>
+              className="absolute left-0 right-0 border-b border-dashed border-slate-300 z-0 pointer-events-none"
+              style={{ bottom: `${Math.min(98, (targetThreshold / maxScale) * 100)}%` }}
+            />
 
             {/* Grid Line Atas */}
             <div
               className="absolute left-0 right-0 border-b border-slate-100 z-0 flex items-center justify-end pr-1 pointer-events-none"
-              style={{ bottom: `${(gridLine2 / maxScale) * 100}%` }}
+              style={{ bottom: `${Math.min(95, (gridLine2 / maxScale) * 100)}%` }}
             >
               <span className="text-[9px] text-slate-300 bg-white px-1 -translate-y-1/2">
                 {gridLine2}
@@ -190,7 +267,7 @@ export const TrendChart: React.FC = () => {
             {/* Grid Line Bawah */}
             <div
               className="absolute left-0 right-0 border-b border-slate-100 z-0 flex items-center justify-end pr-1 pointer-events-none"
-              style={{ bottom: `${(gridLine1 / maxScale) * 100}%` }}
+              style={{ bottom: `${Math.min(90, (gridLine1 / maxScale) * 100)}%` }}
             >
               <span className="text-[9px] text-slate-300 bg-white px-1 -translate-y-1/2">
                 {gridLine1}
@@ -222,7 +299,7 @@ export const TrendChart: React.FC = () => {
                           : 'text-slate-400 opacity-0 group-hover:opacity-100'
                       }`}
                     >
-                      {total} <span className="font-normal text-[9px] text-slate-400">b</span>
+                      {total.toLocaleString()} <span className="font-normal text-[9px] text-slate-400">b</span>
                     </div>
 
                     {/* Tiang Balok Bertumpuk (Stacked Bar) */}
@@ -236,7 +313,7 @@ export const TrendChart: React.FC = () => {
                           ? 'ring-1 ring-[#0070BA]/50'
                           : 'hover:brightness-95'
                       }`}
-                      style={{ height: `${totalHeightPercent}%` }}
+                      style={{ height: `${Math.max(total > 0 ? 4 : 0, totalHeightPercent)}%` }}
                     >
                       {/* Bagian Bawah: Ziyadah (Biru Solid ITQAN) */}
                       <div
@@ -294,7 +371,7 @@ export const TrendChart: React.FC = () => {
                 <span className="text-[11px] text-slate-500 block">Total Setoran</span>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-2xl font-extrabold text-slate-900">
-                    {activeTotal}
+                    {activeTotal.toLocaleString()}
                   </span>
                   <span className="text-xs text-slate-500 font-medium">baris</span>
                 </div>
@@ -303,11 +380,11 @@ export const TrendChart: React.FC = () => {
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
                   <span className="text-[10px] text-slate-500 block">Ziyadah</span>
-                  <span className="text-xs font-bold text-[#0070BA]">{activeItem.ziyadah} baris</span>
+                  <span className="text-xs font-bold text-[#0070BA]">{activeItem.ziyadah.toLocaleString()} baris</span>
                 </div>
                 <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-2xs">
                   <span className="text-[10px] text-slate-500 block">Muroja'ah</span>
-                  <span className="text-xs font-bold text-sky-700">{activeItem.murojaah} baris</span>
+                  <span className="text-xs font-bold text-sky-700">{activeItem.murojaah.toLocaleString()} baris</span>
                 </div>
               </div>
             </div>
@@ -315,17 +392,25 @@ export const TrendChart: React.FC = () => {
 
           <div className="pt-3 border-t border-slate-200 mt-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-600 font-medium">Target: {activeItem.target} Baris</span>
+              <span className="text-slate-600 font-medium">Target: {activeItem.target.toLocaleString()} Baris</span>
               <span
                 className={`font-bold px-2 py-0.5 rounded text-[11px] ${
-                  !hasRecords
+                  !hasAnyActivity
                     ? 'text-slate-600 bg-slate-100 border border-slate-200'
                     : isSurpassing
                     ? 'text-emerald-700 bg-emerald-100/80 border border-emerald-200'
-                    : 'text-amber-700 bg-amber-100/80 border border-amber-200'
+                    : activeTotal > 0
+                    ? 'text-amber-700 bg-amber-100/80 border border-amber-200'
+                    : 'text-slate-500 bg-slate-100 border border-slate-200'
                 }`}
               >
-                {!hasRecords ? 'Belum Ada Setoran' : isSurpassing ? 'Melampaui Target' : 'Di Bawah Target'}
+                {!hasAnyActivity
+                  ? 'Belum Ada Setoran'
+                  : isSurpassing
+                  ? 'Melampaui Target'
+                  : activeTotal > 0
+                  ? 'Di Bawah Target'
+                  : 'Nir-Setoran'}
               </span>
             </div>
           </div>

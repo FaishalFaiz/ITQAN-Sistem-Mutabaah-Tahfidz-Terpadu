@@ -70,12 +70,14 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
   // Edit Wali Contact Modal State
   const [currentSantri, setCurrentSantri] = useState<Santri>(santri);
+  const [prevSantriId, setPrevSantriId] = useState<string>(santri.id);
   const [isEditWaliModalOpen, setIsEditWaliModalOpen] = useState(false);
   const [isRaporModalOpen, setIsRaporModalOpen] = useState(false);
 
-  useEffect(() => {
+  if (santri.id !== prevSantriId) {
+    setPrevSantriId(santri.id);
     setCurrentSantri(santri);
-  }, [santri]);
+  }
 
   const loadRecords = useCallback(() => {
     setRecords(storageService.getSetoranBySantriId(santri.id));
@@ -229,24 +231,29 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   return (
     <div ref={detailContainerRef} className="space-y-4">
       {/* 1. Header Toolbar */}
-      <div className="flex items-center justify-between gap-2.5 sm:gap-3 bg-white border border-slate-200 rounded-xl p-2.5 sm:px-4 sm:py-2.5 shadow-xs">
+      <div className="flex items-center justify-between gap-2 sm:gap-3 bg-white border border-slate-200 rounded-xl p-2.5 sm:px-4 sm:py-2.5 shadow-xs">
+        {/* Tombol Kembali: Selalu Terlihat di Mobile & Desktop */}
         <button
+          type="button"
           onClick={onBack}
-          className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-[#0070BA] transition-colors group cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-[#0070BA] transition-colors group cursor-pointer shrink-0"
         >
-          <div className="w-7 h-7 rounded-lg bg-slate-100 group-hover:bg-[#EBF5FB] flex items-center justify-center text-slate-600 group-hover:text-[#0070BA] transition-colors">
+          <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-[#EBF5FB] flex items-center justify-center text-slate-600 group-hover:text-[#0070BA] transition-colors shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </div>
-          <span>Kembali ke Daftar Santri</span>
+          <span className="hidden sm:inline">Kembali ke Daftar Santri</span>
+          <span className="sm:hidden text-xs">Kembali</span>
         </button>
 
-        <div className="grid grid-cols-3 sm:flex sm:items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+        {/* Action Buttons: Rapi dan Proporsional di Mobile */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Cetak / Rapor PDF */}
           <Button
             type="button"
             variant="outline"
             onClick={() => setIsRaporModalOpen(true)}
             className="inline-flex items-center justify-center gap-1 text-xs font-semibold h-8.5 sm:h-9 px-2 sm:px-2.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
+            title="Cetak Rapor Santri"
           >
             <Printer className="w-3.5 h-3.5 text-[#0070BA] shrink-0" />
             <span className="hidden sm:inline">Cetak PDF</span>
@@ -259,10 +266,11 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             variant="outline"
             onClick={() => setIsWAModalOpen(true)}
             className="inline-flex items-center justify-center gap-1 text-xs font-semibold h-8.5 sm:h-9 px-2 sm:px-2.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
+            title="Kirim Laporan WhatsApp ke Wali"
           >
             <Share2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span className="hidden sm:inline">Laporan WA</span>
-            <span className="sm:hidden">Laporan</span>
+            <span className="sm:hidden">WA</span>
           </Button>
 
           {/* Input Setoran */}
@@ -312,22 +320,22 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
           {/* Quick Stats Strip */}
           <div className="grid grid-cols-3 gap-2 sm:gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 text-center min-w-0">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2 sm:p-2.5 text-center min-w-0">
               <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 block truncate">Total Capaian</span>
-              <span className="text-sm sm:text-base font-bold text-[#0070BA] block mt-0.5 truncate">{formatJuz(santri.juzAchieved)}</span>
-              <span className="text-[10px] text-slate-400 block truncate">~{pagesCompleted} Hal</span>
+              <span className="text-xs sm:text-base font-bold text-[#0070BA] block mt-0.5 truncate">{formatJuz(santri.juzAchieved)}</span>
+              <span className="text-[9px] sm:text-[10px] text-slate-400 block truncate">~{pagesCompleted} Hal</span>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 text-center min-w-0">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2 sm:p-2.5 text-center min-w-0">
               <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 block truncate">Hari Ini</span>
-              <span className="text-sm sm:text-base font-bold text-slate-900 block mt-0.5 truncate">
+              <span className="text-xs sm:text-base font-bold text-slate-900 block mt-0.5 truncate">
                 {santri.linesCompletedToday}
-                <span className="text-[10px] sm:text-xs font-normal text-slate-400">/{santri.dailyTargetLines}</span>
+                <span className="text-[9px] sm:text-xs font-normal text-slate-400">/{santri.dailyTargetLines}</span>
               </span>
-              <span className="text-[10px] text-slate-400 block">baris</span>
+              <span className="text-[9px] sm:text-[10px] text-slate-400 block">baris</span>
             </div>
 
-            <div className={`border rounded-lg p-2.5 text-center min-w-0 ${
+            <div className={`border rounded-lg p-2 sm:p-2.5 text-center min-w-0 ${
               santri.status === 'tercapai'
                 ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
                 : santri.status === 'tidak_tercapai'
@@ -335,12 +343,12 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 : 'bg-amber-50/70 border-amber-200 text-amber-800'
             }`}>
               <span className="text-[10px] sm:text-[11px] font-medium opacity-80 block truncate">Mutaba'ah</span>
-              <span className="text-xs font-bold block mt-0.5 truncate">
+              <span className="text-[11px] sm:text-xs font-bold block mt-0.5 truncate">
                 {santri.status === 'tercapai' && '92% Mumtaz'}
                 {santri.status === 'tidak_tercapai' && 'Perlu I\'adah'}
                 {santri.status === 'belum_setor' && 'Belum Setor'}
               </span>
-              <span className="text-[9px] sm:text-[10px] opacity-75 block truncate">
+              <span className="hidden sm:block text-[9px] sm:text-[10px] opacity-75 truncate">
                 {statusConfig.subText}
               </span>
             </div>
@@ -453,8 +461,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
               <div className="space-y-2.5">
                 {/* Ziyadah Card */}
-                <div className="p-3 rounded-lg border border-blue-100 bg-[#F4F9FD] flex items-center justify-between gap-3">
-                  <div className="space-y-0.5">
+                <div className="p-3 rounded-lg border border-blue-100 bg-[#F4F9FD] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+                  <div className="space-y-0.5 min-w-0">
                     <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-[#0070BA] px-1.5 py-0.5 rounded">
                       Ziyadah
                     </span>
@@ -471,15 +479,15 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                     type="button"
                     size="sm"
                     onClick={() => onSetor(santri)}
-                    className="text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white shrink-0 h-8 px-3 rounded-lg cursor-pointer"
+                    className="w-full sm:w-auto text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white shrink-0 h-8 px-3 rounded-lg cursor-pointer"
                   >
                     Setor
                   </Button>
                 </div>
 
                 {/* Muroja'ah Card */}
-                <div className="p-3 rounded-lg border border-amber-100 bg-[#FFFDF7] flex items-center justify-between gap-3">
-                  <div className="space-y-0.5">
+                <div className="p-3 rounded-lg border border-amber-100 bg-[#FFFDF7] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+                  <div className="space-y-0.5 min-w-0">
                     <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
                       Muroja'ah
                     </span>
@@ -495,7 +503,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => onSetor(santri)}
-                    className="text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 shrink-0 h-8 px-3 rounded-lg cursor-pointer"
+                    className="w-full sm:w-auto text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 shrink-0 h-8 px-3 rounded-lg cursor-pointer"
                   >
                     Simak
                   </Button>
@@ -523,12 +531,12 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-100 space-y-2 text-xs">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
                     <div>
                       <span className="text-[11px] text-slate-400 block">Nama Wali / Orang Tua:</span>
                       <span className="font-bold text-slate-900 text-sm block mt-0.5">{currentSantri.parentName || 'Belum diisi'}</span>
                     </div>
-                    <span className="font-mono text-xs font-semibold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">
+                    <span className="self-start sm:self-auto font-mono text-xs font-semibold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">
                       {currentSantri.parentPhone || 'No WA belum ada'}
                     </span>
                   </div>
@@ -952,7 +960,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
       {/* 7. MODAL: Kirim Laporan WhatsApp Digest */}
       <Dialog open={isWAModalOpen} onOpenChange={setIsWAModalOpen}>
-        <DialogContent className="max-w-lg p-5">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-5 rounded-xl sm:rounded-2xl">
           <DialogHeader className="pb-3 border-b border-slate-100">
             <DialogTitle className="flex items-center gap-2 text-slate-900 font-bold text-sm">
               <Share2 className="w-4 h-4 text-emerald-600" />
@@ -980,21 +988,21 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             </div>
           )}
 
-          <DialogFooter className="flex flex-row flex-wrap items-center justify-between gap-2 pt-2 sm:justify-between">
+          <DialogFooter className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 pt-2">
             <button
               type="button"
               onClick={handleCopyWADigest}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer"
+              className="w-full sm:w-auto px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer text-center"
             >
               {copyFeedback ? 'Tersalin ke Clipboard!' : 'Salin Teks'}
             </button>
 
-            <div className="flex items-center gap-2">
+            <div className="w-full sm:w-auto flex items-center justify-end gap-2">
               {currentSantri.parentPhone ? (
                 <Button
                   type="button"
                   onClick={handleOpenWADigestDirect}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs cursor-pointer"
                 >
                   <span>Buka WhatsApp</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -1007,7 +1015,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                     setIsWAModalOpen(false);
                     setIsEditWaliModalOpen(true);
                   }}
-                  className="text-xs border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                  className="w-full sm:w-auto text-xs border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
                 >
                   <Edit2 className="w-3.5 h-3.5 mr-1" />
                   Atur No. HP Wali Dulu

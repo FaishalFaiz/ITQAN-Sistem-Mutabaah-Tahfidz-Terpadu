@@ -24,7 +24,6 @@ import {
   getWeeklyTrendData,
   getWeakPointsFromRecords,
   filterRecordsByPeriod,
-  MOCK_WEAK_POINTS,
   type SantriReportItem,
 } from './laporanData';
 import { Button } from '@/components/ui/button';
@@ -105,8 +104,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
   // Titik rawan i'adah riil
   const realWeakPoints = useMemo(() => {
-    const fromRecords = getWeakPointsFromRecords(allSetoranRecords);
-    return fromRecords.length > 0 ? fromRecords : MOCK_WEAK_POINTS;
+    return getWeakPointsFromRecords(allSetoranRecords);
   }, [allSetoranRecords]);
 
   // Generate enriched santri reports using real santriList and real filtered setoran
@@ -134,10 +132,6 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
   const onTrackCount = santriReports.filter((s) => s.pacingStatus !== 'behind').length;
   const onTrackPercentage = Math.round((onTrackCount / (totalSantri || 1)) * 100);
-
-  const avgAttendance = (
-    santriReports.reduce((acc, s) => acc + s.attendancePercent, 0) / (totalSantri || 1)
-  ).toFixed(1);
 
   // Filtered & sorted table data
   const filteredSantri = useMemo(() => {
@@ -237,17 +231,16 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   };
 
   // Helper label periode dinamis
-  const periodLabel = useMemo(() => {
-    const now = new Date();
-    const monthName = now.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-    if (selectedPeriod === 'bulan_ini') return monthName;
-    if (selectedPeriod === 'pekan_ini') return 'Pekan Berjalan';
-    if (selectedPeriod === 'bulan_lalu') {
-      const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      return prev.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-    }
-    return 'Semester Ganjil';
-  }, [selectedPeriod]);
+  let periodLabel = 'Semester Ganjil';
+  const currentNow = new Date();
+  if (selectedPeriod === 'bulan_ini') {
+    periodLabel = currentNow.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+  } else if (selectedPeriod === 'pekan_ini') {
+    periodLabel = 'Pekan Berjalan';
+  } else if (selectedPeriod === 'bulan_lalu') {
+    const prevMonth = new Date(currentNow.getFullYear(), currentNow.getMonth() - 1, 1);
+    periodLabel = prevMonth.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+  }
 
   // WhatsApp Digest generator
   const waDigestMessage = useMemo(() => {
@@ -275,12 +268,8 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
     totalMurojaahLines,
     totalMurojaahJuz,
     avgMumtaz,
-    avgJayyid,
-    avgIadah,
     onTrackCount,
     totalSantri,
-    onTrackPercentage,
-    avgAttendance,
     santriReports,
   ]);
 
@@ -315,7 +304,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
               <div className="relative">
                 <select
                   value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value as any)}
+                  onChange={(e) => setSelectedPeriod(e.target.value as 'bulan_ini' | 'pekan_ini' | 'bulan_lalu' | 'semester')}
                   className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium rounded-lg pl-2.5 pr-7 py-2 focus:border-[#0070BA] focus:outline-none cursor-pointer"
                 >
                   <option value="bulan_ini">Bulan Ini</option>
@@ -766,7 +755,10 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                         </span>
                         <button
                           type="button"
-                          onClick={() => onSetor(s as any)}
+                          onClick={() => {
+                            const found = santriList.find((item) => item.id === s.id);
+                            if (found) onSetor(found);
+                          }}
                           className="px-2 py-1 rounded bg-[#0070BA] text-white hover:bg-[#005C9E] font-semibold text-[11px]"
                         >
                           Bimbing
@@ -809,7 +801,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
               <select
                 value={pacingFilter}
-                onChange={(e) => setPacingFilter(e.target.value as any)}
+                onChange={(e) => setPacingFilter(e.target.value as 'all' | 'on_track' | 'behind')}
                 className="text-xs py-1.5 px-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 focus:border-[#0070BA] focus:outline-none cursor-pointer"
               >
                 <option value="all">Semua Status</option>
@@ -819,7 +811,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
+                onChange={(e) => setSortBy(e.target.value as 'capaian' | 'ziyadah' | 'kelancaran')}
                 className="text-xs py-1.5 px-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 focus:border-[#0070BA] focus:outline-none cursor-pointer"
               >
                 <option value="capaian">Urut Capaian Juz</option>
@@ -947,7 +939,10 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
                       <button
                         type="button"
-                        onClick={() => onDetail(s as any)}
+                        onClick={() => {
+                          const found = santriList.find((item) => item.id === s.id);
+                          if (found) onDetail(found);
+                        }}
                         className="px-2.5 py-1 text-xs font-semibold rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer"
                       >
                         Detail
@@ -977,40 +972,49 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-              {realWeakPoints.map((wp) => (
-                <div
-                  key={`${wp.surahNumber}-${wp.surahName}`}
-                  className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-md bg-[#EBF5FB] text-[#0070BA] font-bold text-xs flex items-center justify-center">
-                        {wp.surahNumber}
+            {realWeakPoints.length === 0 ? (
+              <div className="py-8 px-4 text-center rounded-xl bg-slate-50 border border-dashed border-slate-200">
+                <p className="text-xs font-semibold text-slate-700">Belum ada titik rawan tercatat</p>
+                <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
+                  Semua setoran santri saat ini berstatus Mumtaz atau Jayyid. Titik rawan akan muncul otomatis saat ada talaqqi bertingkat koreksi (I'adah).
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {realWeakPoints.map((wp) => (
+                  <div
+                    key={`${wp.surahNumber}-${wp.surahName}`}
+                    className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/60 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-md bg-[#EBF5FB] text-[#0070BA] font-bold text-xs flex items-center justify-center">
+                          {wp.surahNumber}
+                        </span>
+                        <h4 className="font-bold text-sm text-slate-900">
+                          Surah {wp.surahName} (Juz {wp.juz})
+                        </h4>
+                      </div>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                          wp.severity === 'high'
+                            ? 'bg-red-50 text-red-700 border border-red-200'
+                            : wp.severity === 'medium'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        {wp.iadahCount}x I'adah ({wp.affectedSantriCount} santri)
                       </span>
-                      <h4 className="font-bold text-sm text-slate-900">
-                        Surah {wp.surahName} (Juz {wp.juz})
-                      </h4>
                     </div>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                        wp.severity === 'high'
-                          ? 'bg-red-50 text-red-700 border border-red-200'
-                          : wp.severity === 'medium'
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                          : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      {wp.iadahCount}x I'adah ({wp.affectedSantriCount} santri)
-                    </span>
-                  </div>
 
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    <strong className="text-slate-800">Catatan:</strong> {wp.commonMistakes}
-                  </p>
-                </div>
-              ))}
-            </div>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      <strong className="text-slate-800">Catatan:</strong> {wp.commonMistakes}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Section 2: Santri yang Jeda Muroja'ah > 7 Hari */}
@@ -1046,7 +1050,10 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => onSetor(s as any)}
+                      onClick={() => {
+                        const found = santriList.find((item) => item.id === s.id);
+                        if (found) onSetor(found);
+                      }}
                       className="px-3 py-1.5 rounded-lg bg-[#0070BA] text-white hover:bg-[#005C9E] font-semibold text-xs shrink-0 self-start sm:self-center cursor-pointer"
                     >
                       Jadwalkan Simak
@@ -1065,6 +1072,11 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
         isOpen={Boolean(selectedRaporSantri)}
         onClose={() => setSelectedRaporSantri(null)}
         santri={selectedRaporSantri}
+        records={
+          selectedRaporSantri
+            ? allSetoranRecords.filter((r) => r.santriId === selectedRaporSantri.id)
+            : []
+        }
         periodLabel={periodLabel}
       />
 

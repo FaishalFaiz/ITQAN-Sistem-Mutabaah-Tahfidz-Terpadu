@@ -133,27 +133,30 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
         className="print-modal-container bg-white border border-slate-200 rounded-xl shadow-2xl max-w-2xl w-full my-6 overflow-hidden cursor-default"
       >
         {/* Modal Header Bar (Hanya tampil di layar browser) */}
-        <div className="print-modal-header flex items-center justify-between px-5 py-3 border-b border-slate-200 bg-slate-50 no-print">
-          <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-[#0070BA]" />
-            <span className="text-xs font-bold text-slate-800">
-              Format Lembar Rapor Resmi A4 (Siap Cetak / PDF)
+        <div className="print-modal-header flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3 border-b border-slate-200 bg-slate-50 no-print gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <FileText className="w-4 h-4 text-[#0070BA] shrink-0" />
+            <span className="text-xs font-bold text-slate-800 truncate">
+              <span className="hidden sm:inline">Format Lembar Rapor Resmi A4 (Siap Cetak / PDF)</span>
+              <span className="sm:hidden">Pratinjau Rapor Resmi</span>
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <Button
               type="button"
               size="sm"
               onClick={() => window.print()}
-              className="h-8 px-3.5 text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5 cursor-pointer shadow-xs font-semibold"
+              className="h-8 px-2.5 sm:px-3.5 text-xs bg-[#0070BA] hover:bg-[#005C9E] text-white flex items-center gap-1.5 cursor-pointer shadow-xs font-semibold"
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Cetak / Ekspor PDF</span>
+              <Printer className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">Cetak / Ekspor PDF</span>
+              <span className="sm:hidden">Cetak</span>
             </Button>
             <button
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
+              aria-label="Tutup"
             >
               <X className="w-4 h-4" />
             </button>
@@ -161,7 +164,7 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
         </div>
 
         {/* ================= OFFICIAL PRINTABLE SHEET (A4) ================= */}
-        <div className="print-page p-6 sm:p-8 space-y-4 text-slate-900 text-xs bg-white">
+        <div className="print-page p-4 sm:p-8 space-y-4 text-slate-900 text-xs bg-white overflow-x-auto">
           
           {/* 1. KOP SURAT FORMAL LEMBAGA PESANTREN */}
           <div className="text-center pb-3 border-b-2 border-slate-900 space-y-1 avoid-break">

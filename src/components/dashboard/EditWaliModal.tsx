@@ -63,7 +63,7 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[95vw] sm:w-full sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-xl sm:rounded-2xl">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-8 h-8 rounded-lg bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center">
@@ -98,7 +98,7 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
                 setErrorMsg('');
               }}
               placeholder="Contoh: Bpk. Fajar Ramli"
-              className="text-xs h-9 bg-white"
+              className="text-xs h-9"
             />
           </div>
 
@@ -113,7 +113,7 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
                 value={parentPhone}
                 onChange={(e) => setParentPhone(e.target.value)}
                 placeholder="Contoh: 081234567808 atau 6281234567808"
-                className="text-xs h-9 pl-9 font-mono bg-white"
+                className="text-xs h-9 pl-9 font-mono"
               />
             </div>
             <span className="text-[10px] text-slate-400 block mt-1">
@@ -121,18 +121,18 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
             </span>
           </div>
 
-          <DialogFooter className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+          <DialogFooter className="pt-3 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 border-t border-slate-100">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="text-xs font-semibold h-9.5 px-4 border-slate-200 rounded-lg"
+              className="w-full sm:w-auto text-xs font-semibold h-9.5 px-4 border-slate-200 rounded-lg cursor-pointer"
             >
               Batal
             </Button>
             <Button
               type="submit"
-              className="text-xs font-semibold h-9.5 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg flex items-center gap-1.5 shadow-xs"
+              className="w-full sm:w-auto text-xs font-semibold h-9.5 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white rounded-lg flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Simpan Perubahan</span>

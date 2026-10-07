@@ -4,6 +4,7 @@ import {
   DEFAULT_HALAQAH_SETTINGS 
 } from '../components/dashboard/mockData';
 import { formatJuz } from '../lib/utils';
+import { syncService, ensureUUID } from './syncService';
 
 // Base keys
 const BASE_KEYS = {
@@ -37,7 +38,9 @@ if (typeof window !== 'undefined') {
     localStorage.removeItem('itqan_setoran_records');
     localStorage.removeItem('itqan_exam_records');
     localStorage.removeItem('itqan_wa_logs');
-  } catch {}
+  } catch {
+    /* ignore purge error */
+  }
 }
 
 export const storageService = {
@@ -67,7 +70,9 @@ export const storageService = {
           }
         }
       }
-    } catch {}
+    } catch {
+      /* fallback to default */
+    }
     return 'u_default';
   },
 
@@ -81,7 +86,15 @@ export const storageService = {
   getSantriList(): Santri[] {
     try {
       const key = this.getScopedKey(BASE_KEYS.SANTRI);
-      const data = localStorage.getItem(key);
+      let data = localStorage.getItem(key);
+      if (!data || data === '[]') {
+        // Fallback: cek jika ada data di scope default di browser ini
+        const fallback = localStorage.getItem(`${BASE_KEYS.SANTRI}_u_default`);
+        if (fallback && fallback !== '[]') {
+          data = fallback;
+          localStorage.setItem(key, fallback);
+        }
+      }
       if (!data) {
         // Setiap akun baru selalu mulai dari 0 santri
         localStorage.setItem(key, JSON.stringify([]));
@@ -91,6 +104,7 @@ export const storageService = {
       // Normalisasi format juzAchieved agar format bulat seperti 1.0 atau 30.0 menjadi 1 Juz / 30 Juz
       return list.map((s) => ({
         ...s,
+        id: ensureUUID(s.id),
         juzAchieved: formatJuz(s.juzAchieved),
       }));
     } catch {
@@ -113,10 +127,13 @@ export const storageService = {
     const list = this.getSantriList();
     const formatted: Santri = {
       ...newSantri,
+      id: ensureUUID(newSantri.id),
       juzAchieved: formatJuz(newSantri.juzAchieved),
     };
     const updated = [formatted, ...list];
     this.saveSantriList(updated);
+    // Push ke Supabase di background
+    syncService.pushSantri(formatted);
     return updated;
   },
 
@@ -128,6 +145,8 @@ export const storageService = {
     };
     const updated = list.map((s) => (s.id === formatted.id ? formatted : s));
     this.saveSantriList(updated);
+    // Push ke Supabase di background
+    syncService.pushSantri(formatted);
     return updated;
   },
 
@@ -135,6 +154,8 @@ export const storageService = {
     const list = this.getSantriList();
     const updated = list.filter((s) => s.id !== id);
     this.saveSantriList(updated);
+    // Push ke Supabase di background
+    syncService.deleteSantri(id);
     return updated;
   },
 
@@ -169,15 +190,33 @@ export const storageService = {
   getSetoranRecords(): SetoranRecord[] {
     try {
       const key = this.getScopedKey(BASE_KEYS.SETORAN);
-      const data = localStorage.getItem(key);
+      let data = localStorage.getItem(key);
+      if (!data || data === '[]') {
+        const fallback = localStorage.getItem(`${BASE_KEYS.SETORAN}_u_default`);
+        if (fallback && fallback !== '[]') {
+          data = fallback;
+          localStorage.setItem(key, fallback);
+        }
+      }
       if (!data) {
         localStorage.setItem(key, JSON.stringify([]));
         return [];
       }
-      return JSON.parse(data);
+      const records: SetoranRecord[] = JSON.parse(data);
+      return records.map((r) => ({
+        ...r,
+        id: ensureUUID(r.id),
+        santriId: ensureUUID(r.santriId),
+      }));
     } catch {
       return [];
     }
+  },
+
+  saveSetoranList(list: SetoranRecord[]): void {
+    const key = this.getScopedKey(BASE_KEYS.SETORAN);
+    localStorage.setItem(key, JSON.stringify(list));
+    emitChange('setoran_list_updated');
   },
 
   getSetoranBySantriId(santriId: string): SetoranRecord[] {
@@ -213,9 +252,14 @@ export const storageService = {
       minute: '2-digit',
     }).format(now);
 
+    const generatedId = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : ensureUUID(`setor-${Date.now()}-${Math.floor(Math.random() * 1000)}`);
+
     const record: SetoranRecord = {
       ...input,
-      id: `setor-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: generatedId,
+      santriId: ensureUUID(input.santriId),
       createdAt: now.toISOString(),
       formattedDate: `${timeFormatted} WIB`,
     };
@@ -253,6 +297,9 @@ export const storageService = {
     if (updatedSantriTarget) {
       this.saveSantriList(updatedList);
     }
+
+    // Push ke Supabase di background
+    syncService.pushSetoran(record, updatedSantriTarget || undefined);
 
     emitChange('setoran_added');
     return {
@@ -315,6 +362,8 @@ export const storageService = {
     localStorage.setItem(key, JSON.stringify(records));
 
     const updatedSantri = this.recalculateSantriMetrics(updatedRecord.santriId);
+    // Push update ke Supabase di background
+    syncService.pushSetoran(updatedRecord, updatedSantri || undefined);
     emitChange('setoran_updated');
     return updatedSantri;
   },
@@ -326,6 +375,8 @@ export const storageService = {
     localStorage.setItem(key, JSON.stringify(updatedRecords));
 
     const updatedSantri = this.recalculateSantriMetrics(santriId);
+    // Delete dari Supabase di background
+    syncService.deleteSetoran(recordId, santriId, updatedSantri);
     emitChange('setoran_deleted');
     return updatedSantri;
   },
@@ -373,7 +424,7 @@ export const storageService = {
       const key = this.getScopedKey(BASE_KEYS.SETTINGS);
       const data = localStorage.getItem(key);
       if (!data) {
-        let customSettings = { ...DEFAULT_HALAQAH_SETTINGS };
+        const customSettings = { ...DEFAULT_HALAQAH_SETTINGS };
         const rawUser = localStorage.getItem('itqan_current_musyrif');
         if (rawUser) {
           try {
@@ -382,7 +433,9 @@ export const storageService = {
               customSettings.musyrifName = u.fullName;
               customSettings.halaqahName = `Halaqoh ${u.fullName}`;
             }
-          } catch {}
+          } catch {
+            /* ignore parse error */
+          }
         }
         localStorage.setItem(key, JSON.stringify(customSettings));
         return customSettings;

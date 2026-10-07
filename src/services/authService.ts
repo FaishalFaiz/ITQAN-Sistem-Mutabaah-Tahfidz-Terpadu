@@ -15,7 +15,9 @@ export const authService = {
     try {
       const raw = localStorage.getItem(LOCAL_USER_KEY);
       if (raw) return JSON.parse(raw);
-    } catch {}
+    } catch {
+      /* ignore parse error */
+    }
     return null;
   },
 
@@ -81,8 +83,9 @@ export const authService = {
       }
 
       return { success: false, error: 'User tidak ditemukan.' };
-    } catch (err: any) {
-      return { success: false, error: err?.message || 'Terjadi kesalahan saat menghubungi Supabase.' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Terjadi kesalahan saat menghubungi Supabase.';
+      return { success: false, error: msg };
     }
   },
 
@@ -119,8 +122,9 @@ export const authService = {
       }
 
       return { success: false, error: 'Pendaftaran gagal dilakukan.' };
-    } catch (err: any) {
-      return { success: false, error: err?.message || 'Terjadi kesalahan saat pendaftaran ke Supabase.' };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Terjadi kesalahan saat pendaftaran ke Supabase.';
+      return { success: false, error: msg };
     }
   },
 

@@ -58,7 +58,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
         }`}
       >
         <div className="flex items-center justify-center sm:justify-between w-full mb-1 sm:mb-2">
-          <span className="text-[11px] sm:text-xs font-semibold text-emerald-800 uppercase tracking-wide truncate">
+          <span className="text-[10px] sm:text-xs font-semibold text-emerald-800 uppercase tracking-wide truncate">
             Tercapai
           </span>
           <div className="hidden sm:flex w-7 h-7 rounded-lg bg-emerald-100/90 border border-emerald-300/60 items-center justify-center text-emerald-700 shrink-0">
@@ -91,8 +91,8 @@ export const StatCards: React.FC<StatCardsProps> = ({
         }`}
       >
         <div className="flex items-center justify-center sm:justify-between w-full mb-1 sm:mb-2">
-          <span className="text-[11px] sm:text-xs font-semibold text-red-800 uppercase tracking-wide truncate">
-            Tidak
+          <span className="text-[10px] sm:text-xs font-semibold text-red-800 uppercase tracking-wide truncate">
+            Tidak Tercapai
           </span>
           <div className="hidden sm:flex w-7 h-7 rounded-lg bg-red-100/90 border border-red-300/60 items-center justify-center text-red-700 shrink-0">
             <AlertCircle className="w-3.5 h-3.5" />
@@ -124,8 +124,8 @@ export const StatCards: React.FC<StatCardsProps> = ({
         }`}
       >
         <div className="flex items-center justify-center sm:justify-between w-full mb-1 sm:mb-2">
-          <span className="text-[11px] sm:text-xs font-semibold text-amber-800 uppercase tracking-wide truncate">
-            Belum
+          <span className="text-[10px] sm:text-xs font-semibold text-amber-800 uppercase tracking-wide truncate">
+            Belum Setor
           </span>
           <div className="hidden sm:flex w-7 h-7 rounded-lg bg-amber-100/90 border border-amber-300/60 items-center justify-center text-amber-700 shrink-0">
             <Clock className="w-3.5 h-3.5" />

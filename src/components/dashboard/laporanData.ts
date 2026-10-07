@@ -150,9 +150,9 @@ export const generateSantriReports = (
 
     // Kualitas talaqqi
     const totalSetoranCount = santriSetoran.length;
-    let mumtazPercent = 0;
-    let jayyidPercent = 0;
-    let iadahPercent = 0;
+    let mumtazPercent: number;
+    let jayyidPercent: number;
+    let iadahPercent: number;
 
     if (totalSetoranCount > 0) {
       const mumtazCount = santriSetoran.filter((r) => r.grade === 'mumtaz').length;
@@ -187,8 +187,8 @@ export const generateSantriReports = (
 
     // Status Pacing berdasarkan status harian & capaian
     const juzNum = parseFloat(s.juzAchieved.replace(/[^0-9.]/g, '')) || 0;
-    let pacingStatus: 'on_track' | 'behind' | 'accelerated' = 'on_track';
-    let pacingDeficitLines = 0;
+    let pacingStatus: 'on_track' | 'behind' | 'accelerated';
+    let pacingDeficitLines: number;
 
     if (s.status === 'tidak_tercapai') {
       pacingStatus = 'behind';
@@ -319,7 +319,7 @@ export const generateMonthActivity = (setoranRecords: SetoranRecord[] = []): Day
     const totalLines = setoranData.ziyadah + setoranData.murojaah;
     const targetLines = dayOfWeek === 5 ? 100 : 250; // Jumat halaqoh ringan
 
-    let intensity: 0 | 1 | 2 | 3 | 4 = 0;
+    let intensity: 0 | 1 | 2 | 3 | 4;
     if (totalLines > 350) intensity = 4;
     else if (totalLines > 200) intensity = 3;
     else if (totalLines > 100) intensity = 2;
@@ -446,43 +446,3 @@ export const getWeakPointsFromRecords = (setoranRecords: SetoranRecord[]): WeakP
   // Urutkan dari frekuensi koreksi terbanyak
   return list.sort((a, b) => b.iadahCount - a.iadahCount);
 };
-
-// Fallback jika belum ada iadah sama sekali agar informasi panduan halaqoh tetap ada
-export const MOCK_WEAK_POINTS: WeakPointSurah[] = [
-  {
-    surahNumber: 83,
-    surahName: 'Al-Muthaffifin',
-    juz: 30,
-    iadahCount: 14,
-    affectedSantriCount: 5,
-    severity: 'high',
-    commonMistakes: 'Ayat 10-25 sering terbalik susunan lafadz dan tawaqquf pada mad wajib.',
-  },
-  {
-    surahNumber: 81,
-    surahName: 'At-Takwir',
-    juz: 30,
-    iadahCount: 9,
-    affectedSantriCount: 4,
-    severity: 'medium',
-    commonMistakes: 'Peralihan idgham bighunnah dan makhraj ta marbuthah pada waqaf.',
-  },
-  {
-    surahNumber: 79,
-    surahName: 'An-Nazi\'at',
-    juz: 30,
-    iadahCount: 8,
-    affectedSantriCount: 3,
-    severity: 'medium',
-    commonMistakes: 'Rangkaian ayat kisah Nabi Musa (ayat 15-26) sering terlewat urutannya.',
-  },
-  {
-    surahNumber: 85,
-    surahName: 'Al-Buruj',
-    juz: 30,
-    iadahCount: 6,
-    affectedSantriCount: 3,
-    severity: 'low',
-    commonMistakes: 'Qalqalah kubra pada akhir ayat sering kurang memantul tegas.',
-  },
-];

@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { Menu, Calendar, Send } from 'lucide-react';
 import gsap from 'gsap';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
+import { syncService } from './services/syncService';
 import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
 import { SantriListSection, type SetoranFilterType } from './components/dashboard/SantriListSection';
@@ -11,12 +12,34 @@ import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
 import { SantriModal } from './components/dashboard/SantriModal';
 import { AddSantriModal } from './components/dashboard/AddSantriModal';
 import { DailyReportModal } from './components/dashboard/DailyReportModal';
-import { SantriDetailPage } from './components/dashboard/SantriDetailPage';
-import { OtherView } from './components/dashboard/OtherViews';
-import { LoginPage } from './pages/auth/LoginPage';
-import { SignupPage } from './pages/auth/SignupPage';
 import { authService } from './services/authService';
 import { Toaster } from './components/ui/sonner';
+
+// Lazy loaded page components for optimal production chunking
+const SantriDetailPage = lazy(() =>
+  import('./components/dashboard/SantriDetailPage').then((m) => ({ default: m.SantriDetailPage }))
+);
+const OtherView = lazy(() =>
+  import('./components/dashboard/OtherViews').then((m) => ({ default: m.OtherView }))
+);
+const LoginPage = lazy(() =>
+  import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage }))
+);
+const SignupPage = lazy(() =>
+  import('./pages/auth/SignupPage').then((m) => ({ default: m.SignupPage }))
+);
+const NotFoundPage = lazy(() =>
+  import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
+);
+
+function PageLoadingFallback() {
+  return (
+    <div className="w-full py-16 flex flex-col items-center justify-center">
+      <div className="w-6 h-6 border-2 border-[#0070BA] border-t-transparent rounded-full animate-spin" />
+      <span className="text-xs text-slate-400 mt-2.5 font-medium">Memuat halaman...</span>
+    </div>
+  );
+}
 
 // Helper component for /santri/:id route
 function SantriDetailRoute({
@@ -77,13 +100,18 @@ function App() {
     return Boolean(authService.getStoredUser());
   });
 
-  // Verifikasi status login musyrif dari Supabase
+  // Verifikasi status login musyrif dari Supabase dan sinkronisasi data cloud
   useEffect(() => {
     let isMounted = true;
-    authService.getCurrentUser().then((user) => {
+    authService.getCurrentUser().then(async (user) => {
       if (isMounted) {
         setIsAuthenticated(Boolean(user));
-        setSantriList(storageService.getSantriList());
+        if (user) {
+          await syncService.syncAll();
+        }
+        if (isMounted) {
+          setSantriList(storageService.getSantriList());
+        }
       }
     });
 
@@ -194,12 +222,55 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);
 
+  // Dynamic Browser Document Title
+  useEffect(() => {
+    const p = location.pathname;
+    let title = 'ITQAN — Sistem Mutabaah Tahfidz Terpadu';
+    if (p === '/' || p === '/beranda') {
+      title = `Beranda • ${halaqahName} | ITQAN`;
+    } else if (p.startsWith('/santri/')) {
+      const id = p.split('/')[2];
+      const s = santriList.find((item) => item.id === id);
+      title = `${s ? s.name : 'Detail Santri'} | ITQAN`;
+    } else if (p.startsWith('/santri')) {
+      title = 'Manajemen Santri | ITQAN';
+    } else if (p.startsWith('/laporan')) {
+      title = 'Laporan Capaian | ITQAN';
+    } else if (p.startsWith('/pengaturan')) {
+      title = 'Pengaturan Halaqoh | ITQAN';
+    } else if (p === '/login') {
+      title = 'Masuk Portal Muhaffizh | ITQAN';
+    } else if (p === '/signup') {
+      title = 'Daftar Akun Muhaffizh | ITQAN';
+    }
+    document.title = title;
+  }, [location.pathname, halaqahName, santriList]);
+
   // Auth routes (render standalone full page)
   if (location.pathname === '/login' || location.pathname === '/signup') {
     if (isAuthenticated === true || Boolean(authService.getStoredUser())) {
       return <Navigate to="/beranda" replace />;
     }
-    return location.pathname === '/login' ? <LoginPage /> : <SignupPage />;
+    return (
+      <Suspense fallback={<PageLoadingFallback />}>
+        {location.pathname === '/login' ? <LoginPage /> : <SignupPage />}
+      </Suspense>
+    );
+  }
+
+  // Jika auth state masih dicek pertama kali dan belum ada cache user di localStorage
+  if (isAuthenticated === null && !authService.getStoredUser()) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-center mb-3">
+          <img src="/favicon.svg" alt="ITQAN" className="w-7 h-7 object-contain" />
+        </div>
+        <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
+          <div className="w-3.5 h-3.5 border-2 border-[#0070BA] border-t-transparent rounded-full animate-spin" />
+          <span>Memuat Portal ITQAN...</span>
+        </div>
+      </div>
+    );
   }
 
   // Jika belum login dan tidak ada sesi tersimpan di localStorage, alihkan ke /login
@@ -275,129 +346,134 @@ function App() {
           </div>
         </header>
 
-        {/* Dynamic Route View dengan Animasi Halus */}
+        {/* Dynamic Route View dengan Animasi Halus & Lazy Suspense */}
         <main ref={mainContentRef} className="flex-1 p-3 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
-          <Routes>
-            {/* Beranda Dashboard */}
-            <Route
-              path="/"
-              element={
-                <div className="space-y-4">
-                  <StatCards
-                    tercapaiCount={tercapaiCount}
-                    tidakTercapaiCount={tidakTercapaiCount}
-                    belumSetorCount={belumSetorCount}
-                    activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
-                  />
+          <Suspense fallback={<PageLoadingFallback />}>
+            <Routes>
+              {/* Beranda Dashboard */}
+              <Route
+                path="/"
+                element={
+                  <div className="space-y-4">
+                    <StatCards
+                      tercapaiCount={tercapaiCount}
+                      tidakTercapaiCount={tidakTercapaiCount}
+                      belumSetorCount={belumSetorCount}
+                      activeFilter={activeFilter}
+                      onFilterChange={setActiveFilter}
+                    />
 
-                  <TodayProgressCard
-                    santriList={santriList}
-                    activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
-                  />
+                    <TodayProgressCard
+                      santriList={santriList}
+                      activeFilter={activeFilter}
+                      onFilterChange={setActiveFilter}
+                    />
 
-                  <SantriListSection
+                    <SantriListSection
+                      santriList={santriList}
+                      activeFilter={activeFilter}
+                      onFilterChange={setActiveFilter}
+                      onSetor={handleOpenSetor}
+                      onDetail={handleOpenDetail}
+                      onOpenAddModal={() => setIsAddModalOpen(true)}
+                    />
+                  </div>
+                }
+              />
+
+              <Route
+                path="/beranda"
+                element={
+                  <div className="space-y-4">
+                    <StatCards
+                      tercapaiCount={tercapaiCount}
+                      tidakTercapaiCount={tidakTercapaiCount}
+                      belumSetorCount={belumSetorCount}
+                      activeFilter={activeFilter}
+                      onFilterChange={setActiveFilter}
+                    />
+
+                    <TodayProgressCard
+                      santriList={santriList}
+                      activeFilter={activeFilter}
+                      onFilterChange={setActiveFilter}
+                    />
+
+                    <SantriListSection
+                      santriList={santriList}
+                      activeFilter={activeFilter}
+                      onFilterChange={setActiveFilter}
+                      onSetor={handleOpenSetor}
+                      onDetail={handleOpenDetail}
+                      onOpenAddModal={() => setIsAddModalOpen(true)}
+                    />
+                  </div>
+                }
+              />
+
+              {/* Dedicated Detail Santri with URL /santri/:id */}
+              <Route
+                path="/santri/:id"
+                element={
+                  <SantriDetailRoute
                     santriList={santriList}
-                    activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
+                    onSetor={handleOpenSetor}
+                  />
+                }
+              />
+
+              {/* Sub-halaman Ber-URL */}
+              <Route
+                path="/santri"
+                element={
+                  <OtherView
+                    currentView="santri"
+                    onBackToBeranda={() => navigate('/beranda')}
+                    santriList={santriList}
                     onSetor={handleOpenSetor}
                     onDetail={handleOpenDetail}
                     onOpenAddModal={() => setIsAddModalOpen(true)}
                   />
-                </div>
-              }
-            />
+                }
+              />
 
-            <Route
-              path="/beranda"
-              element={
-                <div className="space-y-4">
-                  <StatCards
-                    tercapaiCount={tercapaiCount}
-                    tidakTercapaiCount={tidakTercapaiCount}
-                    belumSetorCount={belumSetorCount}
-                    activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
-                  />
-
-                  <TodayProgressCard
+              <Route
+                path="/laporan"
+                element={
+                  <OtherView
+                    currentView="laporan"
+                    onBackToBeranda={() => navigate('/beranda')}
                     santriList={santriList}
-                    activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
-                  />
-
-                  <SantriListSection
-                    santriList={santriList}
-                    activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
                     onSetor={handleOpenSetor}
                     onDetail={handleOpenDetail}
                     onOpenAddModal={() => setIsAddModalOpen(true)}
                   />
-                </div>
-              }
-            />
+                }
+              />
 
-            {/* Dedicated Detail Santri with URL /santri/:id */}
-            <Route
-              path="/santri/:id"
-              element={
-                <SantriDetailRoute
-                  santriList={santriList}
-                  onSetor={handleOpenSetor}
-                />
-              }
-            />
+              <Route
+                path="/pengaturan"
+                element={
+                  <OtherView
+                    currentView="pengaturan"
+                    onBackToBeranda={() => navigate('/beranda')}
+                    santriList={santriList}
+                    onSetor={handleOpenSetor}
+                    onDetail={handleOpenDetail}
+                    onOpenAddModal={() => setIsAddModalOpen(true)}
+                  />
+                }
+              />
 
-            {/* Sub-halaman Ber-URL */}
-            <Route
-              path="/santri"
-              element={
-                <OtherView
-                  currentView="santri"
-                  onBackToBeranda={() => navigate('/beranda')}
-                  santriList={santriList}
-                  onSetor={handleOpenSetor}
-                  onDetail={handleOpenDetail}
-                  onOpenAddModal={() => setIsAddModalOpen(true)}
-                />
-              }
-            />
+              <Route
+                path="/ujian-tasmi"
+                element={<Navigate to="/santri" replace />}
+              />
 
-            <Route
-              path="/laporan"
-              element={
-                <OtherView
-                  currentView="laporan"
-                  onBackToBeranda={() => navigate('/beranda')}
-                  santriList={santriList}
-                  onSetor={handleOpenSetor}
-                  onDetail={handleOpenDetail}
-                  onOpenAddModal={() => setIsAddModalOpen(true)}
-                />
-              }
-            />
-
-            <Route
-              path="/pengaturan"
-              element={
-                <OtherView
-                  currentView="pengaturan"
-                  onBackToBeranda={() => navigate('/beranda')}
-                  santriList={santriList}
-                  onSetor={handleOpenSetor}
-                  onDetail={handleOpenDetail}
-                  onOpenAddModal={() => setIsAddModalOpen(true)}
-                />
-              }
-            />
-
-            <Route
-              path="/ujian-tasmi"
-              element={<Navigate to="/santri" replace />}
-            />
-          </Routes>
+              {/* 404 Wildcard Page */}
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
 
