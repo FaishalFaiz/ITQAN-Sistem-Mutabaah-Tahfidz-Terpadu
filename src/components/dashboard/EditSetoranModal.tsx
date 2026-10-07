@@ -169,7 +169,7 @@ export const EditSetoranModal: React.FC<EditSetoranModalProps> = ({
                 <select
                   value={surahName}
                   onChange={handleSurahChange}
-                  className="w-full h-9 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#0070BA] font-medium"
+                  className="w-full h-9.5 px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs hover:border-slate-400 focus:outline-none focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 cursor-pointer transition-all"
                 >
                   {QURAN_SURAHS.map((s) => (
                     <option key={s.number} value={s.name}>
@@ -188,7 +188,7 @@ export const EditSetoranModal: React.FC<EditSetoranModalProps> = ({
                   max={30}
                   value={juz}
                   onChange={(e) => setJuz(parseInt(e.target.value) || 1)}
-                  className="h-9 font-medium"
+                  className="h-9.5 font-medium"
                 />
               </div>
             </div>

@@ -30,6 +30,7 @@ export interface SantriRow {
   nis: string | null;
   parent_name: string | null;
   parent_phone: string | null;
+  halaqah_id?: string | null;
   juz_achieved: number | null;
   lines_completed_today: number | null;
   daily_target_lines: number | null;
@@ -41,6 +42,50 @@ export interface SantriRow {
   last_daily_report_sent_date?: string | null;
   last_daily_report_sent_time?: string | null;
   is_active?: boolean;
+}
+
+export const HALAQAH_PRESET_UUIDS: Record<string, string> = {
+  'abu bakar': 'a0000000-0000-4000-8000-000000000001',
+  'umar': 'a0000000-0000-4000-8000-000000000002',
+  'utsman': 'a0000000-0000-4000-8000-000000000003',
+  'ali': 'a0000000-0000-4000-8000-000000000004',
+};
+
+export const HALAQAH_UUID_NAMES: Record<string, string> = {
+  'a0000000-0000-4000-8000-000000000001': 'Halaqoh Abu Bakar Ash-Shiddiq',
+  'a0000000-0000-4000-8000-000000000002': 'Halaqoh Umar bin Khattab',
+  'a0000000-0000-4000-8000-000000000003': 'Halaqoh Utsman bin Affan',
+  'a0000000-0000-4000-8000-000000000004': 'Halaqoh Ali bin Abi Thalib',
+};
+
+export function resolveHalaqahUUID(nameOrId?: string | null): string {
+  if (!nameOrId) return 'a0000000-0000-4000-8000-000000000001';
+  const clean = nameOrId.trim().toLowerCase();
+  if (clean.includes('abu bakar') || clean.includes('abu-bakar')) return 'a0000000-0000-4000-8000-000000000001';
+  if (clean.includes('umar')) return 'a0000000-0000-4000-8000-000000000002';
+  if (clean.includes('utsman')) return 'a0000000-0000-4000-8000-000000000003';
+  if (clean.includes('ali')) return 'a0000000-0000-4000-8000-000000000004';
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(nameOrId)) return nameOrId;
+  return ensureUUID(nameOrId);
+}
+
+export function resolveHalaqahName(raw?: string | null): string {
+  if (!raw) return 'Halaqoh Abu Bakar Ash-Shiddiq';
+  const clean = raw.trim();
+  if (HALAQAH_UUID_NAMES[clean.toLowerCase()]) {
+    return HALAQAH_UUID_NAMES[clean.toLowerCase()];
+  }
+  const lower = clean.toLowerCase();
+  if (lower.includes('abu bakar') || lower.includes('abu-bakar')) return 'Halaqoh Abu Bakar Ash-Shiddiq';
+  if (lower.includes('umar')) return 'Halaqoh Umar bin Khattab';
+  if (lower.includes('utsman')) return 'Halaqoh Utsman bin Affan';
+  if (lower.includes('ali')) return 'Halaqoh Ali bin Abi Thalib';
+  return clean;
+}
+
+export function resolveHalaqahId(nameOrId?: string | null): string {
+  return resolveHalaqahUUID(nameOrId);
 }
 
 export interface SetoranRow {
@@ -64,12 +109,17 @@ export interface SetoranRow {
 
 // Mapper: Supabase row -> Santri client model
 export function mapRowToSantri(row: SantriRow): Santri {
+  const rawHalaqah = (row as any).halaqah_name || row.halaqah_id;
+  const halaqahName = resolveHalaqahName(rawHalaqah);
+  const halaqahId = row.halaqah_id || resolveHalaqahUUID(halaqahName);
   return {
     id: row.id,
     name: row.name,
     nis: row.nis || '',
     parentName: row.parent_name || '',
     parentPhone: row.parent_phone || '',
+    halaqahName: halaqahName,
+    halaqahId: halaqahId,
     juzAchieved: formatJuz(row.juz_achieved || 0),
     linesCompletedToday: row.lines_completed_today || 0,
     dailyTargetLines: row.daily_target_lines || 15,
@@ -86,12 +136,15 @@ export function mapRowToSantri(row: SantriRow): Santri {
 // Mapper: Santri client model -> Supabase row
 export function mapSantriToRow(s: Santri): SantriRow {
   const juzNum = parseFloat(String(s.juzAchieved).replace(/[^0-9.]/g, '')) || 0;
+  const halaqahName = s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq';
+  const halaqahUUID = resolveHalaqahUUID(s.halaqahId || halaqahName);
   return {
     id: ensureUUID(s.id),
     name: s.name,
     nis: s.nis || `NIS-${Date.now()}`,
     parent_name: s.parentName || null,
     parent_phone: s.parentPhone || null,
+    halaqah_id: halaqahUUID,
     juz_achieved: juzNum,
     lines_completed_today: s.linesCompletedToday || 0,
     daily_target_lines: s.dailyTargetLines || 15,
@@ -222,7 +275,34 @@ export const syncService = {
 
       // KASUS A: Cloud memiliki data -> Perbarui local cache dan unggah data lokal yang belum ada
       if (cloudSantri && cloudSantri.length > 0) {
-        const mappedSantri = cloudSantri.map(mapRowToSantri);
+        const mappedSantri = cloudSantri.map((row) => {
+          const s = mapRowToSantri(row);
+          // Pertahankan halaqahName lokal jika data lokal memiliki pemindahan halaqoh yang belum ada di cloud
+          const localMatch = localSantri.find(
+            (ls) => ls.id === s.id || ensureUUID(ls.id) === s.id
+          );
+          if (localMatch?.halaqahName) {
+            const localHalaqahUUID = resolveHalaqahUUID(localMatch.halaqahName);
+            if (!row.halaqah_id || row.halaqah_id !== localHalaqahUUID) {
+              s.halaqahName = localMatch.halaqahName;
+              s.halaqahId = localHalaqahUUID;
+            }
+          }
+          return s;
+        });
+
+        // Sinkronkan data santri yang diperbarui di lokal ke Supabase (misal baru dipindahkan halaqoh)
+        const santriToPush = mappedSantri.filter((s) => {
+          const cloudMatch = cloudSantri.find((cs) => cs.id === s.id);
+          const currentHalaqahUUID = resolveHalaqahUUID(s.halaqahName);
+          return s.halaqahName && (!cloudMatch?.halaqah_id || cloudMatch.halaqah_id !== currentHalaqahUUID);
+        });
+        if (santriToPush.length > 0) {
+          const rowsToPush = santriToPush.map(mapSantriToRow);
+          const { error: pushErr } = await supabase.from('santri').upsert(rowsToPush, { onConflict: 'id' });
+          if (pushErr) console.error('Gagal sync halaqah santri ke Supabase:', pushErr);
+        }
+
         const mappedSetoran = (cloudSetoran || []).map((row) => {
           const s = mapRowToSetoran(row);
           const foundSantri = mappedSantri.find((item) => item.id === s.santriId);
@@ -331,7 +411,10 @@ export const syncService = {
     if (!isSupabaseConfigured) return;
     try {
       const row = mapSantriToRow(santri);
-      await supabase.from('santri').upsert(row, { onConflict: 'id' });
+      const { error } = await supabase.from('santri').upsert(row, { onConflict: 'id' });
+      if (error) {
+        console.error('Gagal push santri ke Supabase:', error);
+      }
     } catch (err) {
       console.error('Gagal push santri ke Supabase:', err);
     }

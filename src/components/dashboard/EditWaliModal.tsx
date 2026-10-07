@@ -29,12 +29,17 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
 }) => {
   const [parentName, setParentName] = useState('');
   const [parentPhone, setParentPhone] = useState('');
+  const [selectedHalaqah, setSelectedHalaqah] = useState('');
+  const [halaqahList, setHalaqahList] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     if (santri) {
       setParentName(santri.parentName || '');
       setParentPhone(santri.parentPhone || '');
+      setSelectedHalaqah(santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
+      const list = storageService.getHalaqahList().map((h) => h.name);
+      setHalaqahList(list);
       setErrorMsg('');
     }
   }, [santri, isOpen]);
@@ -54,6 +59,7 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
       ...santri,
       parentName: parentName.trim(),
       parentPhone: cleanPhone,
+      halaqahName: selectedHalaqah || santri.halaqahName,
     };
 
     storageService.updateSantri(updatedSantri);
@@ -98,7 +104,7 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
                 setErrorMsg('');
               }}
               placeholder="Contoh: Bpk. Fajar Ramli"
-              className="text-xs h-9"
+              className="text-xs h-9.5 bg-slate-100/80 border-slate-300 text-slate-900 placeholder:text-slate-400 shadow-xs hover:border-slate-400 focus:bg-white focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20"
             />
           </div>
 
@@ -113,12 +119,29 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
                 value={parentPhone}
                 onChange={(e) => setParentPhone(e.target.value)}
                 placeholder="Contoh: 081234567808 atau 6281234567808"
-                className="text-xs h-9 pl-9 font-mono"
+                className="text-xs h-9.5 pl-9 font-mono bg-slate-100/80 border-slate-300 text-slate-900 placeholder:text-slate-400 shadow-xs hover:border-slate-400 focus:bg-white focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20"
               />
             </div>
             <span className="text-[10px] text-slate-400 block mt-1">
               Nomor WhatsApp aktif wali santri untuk menerima laporan mutaba'ah.
             </span>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Kelompok Halaqoh Santri
+            </label>
+            <select
+              value={selectedHalaqah}
+              onChange={(e) => setSelectedHalaqah(e.target.value)}
+              className="w-full h-9.5 px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 bg-slate-100/80 text-slate-900 shadow-xs hover:border-slate-400 focus:bg-white focus:outline-none focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 cursor-pointer transition-all"
+            >
+              {halaqahList.map((hName) => (
+                <option key={hName} value={hName}>
+                  {hName}
+                </option>
+              ))}
+            </select>
           </div>
 
           <DialogFooter className="pt-3 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 border-t border-slate-100">

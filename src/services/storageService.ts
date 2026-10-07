@@ -1,7 +1,9 @@
-import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings, ExamRecord } from '../components/dashboard/types';
+import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings, ExamRecord, HalaqahGroup } from '../components/dashboard/types';
 import { 
   DEFAULT_WA_TEMPLATE_CONFIG, 
-  DEFAULT_HALAQAH_SETTINGS 
+  DEFAULT_HALAQAH_SETTINGS,
+  DEFAULT_HALAQAH_LIST,
+  INITIAL_MOCK_SANTRI,
 } from '../components/dashboard/mockData';
 import { formatJuz } from '../lib/utils';
 import { syncService, ensureUUID } from './syncService';
@@ -12,6 +14,7 @@ const BASE_KEYS = {
   SETORAN: 'itqan_setoran_records',
   WA_TEMPLATES: 'itqan_wa_template_config',
   SETTINGS: 'itqan_halaqah_settings',
+  HALAQAH_LIST: 'itqan_halaqah_list',
   EXAMS: 'itqan_exam_records',
 };
 
@@ -82,7 +85,7 @@ export const storageService = {
     return `${baseKey}_${scope}`;
   },
 
-  // ================= SANTRI (START DARI 0) =================
+  // ================= SANTRI =================
   getSantriList(): Santri[] {
     try {
       const key = this.getScopedKey(BASE_KEYS.SANTRI);
@@ -95,18 +98,62 @@ export const storageService = {
           localStorage.setItem(key, fallback);
         }
       }
-      if (!data) {
-        // Setiap akun baru selalu mulai dari 0 santri
-        localStorage.setItem(key, JSON.stringify([]));
-        return [];
+
+      let list: Santri[] = [];
+      if (data && data !== '[]') {
+        try {
+          list = JSON.parse(data);
+        } catch {
+          list = [];
+        }
       }
-      const list: Santri[] = JSON.parse(data);
-      // Normalisasi format juzAchieved agar format bulat seperti 1.0 atau 30.0 menjadi 1 Juz / 30 Juz
-      return list.map((s) => ({
+
+      // Ambil daftar ID santri yang sengaja dihapus oleh musyrif
+      let deletedIds = new Set<string>();
+      try {
+        const delKey = this.getScopedKey('itqan_deleted_santri_ids');
+        const rawDel = localStorage.getItem(delKey);
+        if (rawDel) {
+          const arr: string[] = JSON.parse(rawDel);
+          deletedIds = new Set(arr);
+        }
+      } catch {
+        /* ignore */
+      }
+
+      // Pastikan mock santri selalu ada untuk setiap halaqoh jika belum pernah dihapus secara sengaja
+      const existingIds = new Set(list.map((s) => s.id));
+      const existingUUIDs = new Set(list.map((s) => ensureUUID(s.id)));
+      let addedMock = false;
+
+      for (const mock of INITIAL_MOCK_SANTRI) {
+        const uuid = ensureUUID(mock.id);
+        if (!deletedIds.has(mock.id) && !deletedIds.has(uuid)) {
+          if (!existingIds.has(mock.id) && !existingUUIDs.has(uuid)) {
+            list.push({
+              ...mock,
+              id: uuid,
+              halaqahName: mock.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
+              juzAchieved: formatJuz(mock.juzAchieved),
+            });
+            addedMock = true;
+          }
+        }
+      }
+
+      // Normalisasi format juzAchieved dan pastikan halaqahName terisi
+      const normalized = list.map((s) => ({
         ...s,
         id: ensureUUID(s.id),
+        halaqahName: s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
         juzAchieved: formatJuz(s.juzAchieved),
       }));
+
+      if (addedMock || !data || data === '[]') {
+        localStorage.setItem(key, JSON.stringify(normalized));
+      }
+
+      return normalized;
     } catch {
       return [];
     }
@@ -114,7 +161,7 @@ export const storageService = {
 
   getSantriById(id: string): Santri | undefined {
     const list = this.getSantriList();
-    return list.find((s) => s.id === id);
+    return list.find((s) => s.id === id || ensureUUID(s.id) === ensureUUID(id));
   },
 
   saveSantriList(list: Santri[]): void {
@@ -128,6 +175,7 @@ export const storageService = {
     const formatted: Santri = {
       ...newSantri,
       id: ensureUUID(newSantri.id),
+      halaqahName: newSantri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
       juzAchieved: formatJuz(newSantri.juzAchieved),
     };
     const updated = [formatted, ...list];
@@ -139,11 +187,19 @@ export const storageService = {
 
   updateSantri(updatedSantri: Santri): Santri[] {
     const list = this.getSantriList();
+    const targetId = ensureUUID(updatedSantri.id);
     const formatted: Santri = {
       ...updatedSantri,
+      id: targetId,
+      halaqahName: updatedSantri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
       juzAchieved: formatJuz(updatedSantri.juzAchieved),
     };
-    const updated = list.map((s) => (s.id === formatted.id ? formatted : s));
+    const updated = list.map((s) => {
+      if (s.id === targetId || ensureUUID(s.id) === targetId || s.id === updatedSantri.id) {
+        return formatted;
+      }
+      return s;
+    });
     this.saveSantriList(updated);
     // Push ke Supabase di background
     syncService.pushSantri(formatted);
@@ -152,10 +208,24 @@ export const storageService = {
 
   deleteSantri(id: string): Santri[] {
     const list = this.getSantriList();
-    const updated = list.filter((s) => s.id !== id);
+    const targetId = ensureUUID(id);
+    const updated = list.filter((s) => s.id !== targetId && ensureUUID(s.id) !== targetId && s.id !== id);
     this.saveSantriList(updated);
+
+    // Rekam ID yang dihapus agar mock tidak memulihkannya kembali
+    try {
+      const delKey = this.getScopedKey('itqan_deleted_santri_ids');
+      const rawDel = localStorage.getItem(delKey);
+      const arr: string[] = rawDel ? JSON.parse(rawDel) : [];
+      if (!arr.includes(targetId)) arr.push(targetId);
+      if (!arr.includes(id)) arr.push(id);
+      localStorage.setItem(delKey, JSON.stringify(arr));
+    } catch {
+      /* ignore */
+    }
+
     // Push ke Supabase di background
-    syncService.deleteSantri(id);
+    syncService.deleteSantri(targetId);
     return updated;
   },
 
@@ -450,6 +520,68 @@ export const storageService = {
     const key = this.getScopedKey(BASE_KEYS.SETTINGS);
     localStorage.setItem(key, JSON.stringify(settings));
     emitChange('halaqah_settings_updated');
+  },
+
+  // ================= HALAQAH LIST & ACTIVE SELECTION =================
+  getHalaqahList(): HalaqahGroup[] {
+    try {
+      const key = this.getScopedKey(BASE_KEYS.HALAQAH_LIST);
+      const data = localStorage.getItem(key);
+      if (!data) {
+        localStorage.setItem(key, JSON.stringify(DEFAULT_HALAQAH_LIST));
+        return DEFAULT_HALAQAH_LIST;
+      }
+      return JSON.parse(data);
+    } catch {
+      return DEFAULT_HALAQAH_LIST;
+    }
+  },
+
+  saveHalaqahList(list: HalaqahGroup[]): void {
+    const key = this.getScopedKey(BASE_KEYS.HALAQAH_LIST);
+    localStorage.setItem(key, JSON.stringify(list));
+    emitChange('halaqah_list_updated');
+  },
+
+  addHalaqah(group: Omit<HalaqahGroup, 'id'>): HalaqahGroup {
+    const list = this.getHalaqahList();
+    const newGroup: HalaqahGroup = {
+      ...group,
+      id: `halaqah-${Date.now()}`,
+    };
+    const updated = [...list, newGroup];
+    this.saveHalaqahList(updated);
+    return newGroup;
+  },
+
+  getActiveHalaqah(): HalaqahGroup {
+    const list = this.getHalaqahList();
+    const settings = this.getHalaqahSettings();
+    if (settings.activeHalaqahId) {
+      const found = list.find((h) => h.id === settings.activeHalaqahId);
+      if (found) return found;
+    }
+    // Cocokkan berdasarkan nama halaqoh jika ada
+    if (settings.halaqahName) {
+      const foundByName = list.find((h) => h.name.toLowerCase() === settings.halaqahName.toLowerCase());
+      if (foundByName) return foundByName;
+    }
+    return list[0] || DEFAULT_HALAQAH_LIST[0];
+  },
+
+  setActiveHalaqah(halaqahId: string): void {
+    const list = this.getHalaqahList();
+    const found = list.find((h) => h.id === halaqahId);
+    if (!found) return;
+
+    const current = this.getHalaqahSettings();
+    const updated: HalaqahSettings = {
+      ...current,
+      activeHalaqahId: found.id,
+      halaqahName: found.name,
+    };
+    this.saveHalaqahSettings(updated);
+    emitChange('active_halaqah_switched');
   },
 
   // ================= UJIAN TASMI' =================

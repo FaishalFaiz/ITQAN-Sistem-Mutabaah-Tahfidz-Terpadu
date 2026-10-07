@@ -19,6 +19,7 @@ import { PengaturanView } from './PengaturanView';
 import { EditWaliModal } from './EditWaliModal';
 import { EditTargetModal } from './EditTargetModal';
 import { waGatewayService } from '../../services/waGatewayService';
+import { storageService } from '../../services/storageService';
 import { formatJuz } from '@/lib/utils';
 import type { NavItemKey, Santri } from './types';
 
@@ -40,6 +41,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
 }) => {
   const [santriSearch, setSantriSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
+  const [halaqahFilter, setHalaqahFilter] = useState<string>('all');
   const [editingWaliSantri, setEditingWaliSantri] = useState<Santri | null>(null);
   const [editingTargetSantri, setEditingTargetSantri] = useState<Santri | null>(null);
   const [santriSubTab, setSantriSubTab] = useState<'kontak' | 'target'>('kontak');
@@ -50,12 +52,17 @@ export const OtherView: React.FC<OtherViewProps> = ({
 
   const filteredSantri = santriList.filter((s) => {
     const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
+    const sHalaqah = s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq';
+    const matchesHalaqah =
+      halaqahFilter === 'all' ||
+      sHalaqah.toLowerCase() === halaqahFilter.toLowerCase();
     const matchesSearch =
       s.name.toLowerCase().includes(santriSearch.toLowerCase()) ||
       s.nis.includes(santriSearch) ||
       s.lastSurah.toLowerCase().includes(santriSearch.toLowerCase()) ||
+      (s.halaqahName && s.halaqahName.toLowerCase().includes(santriSearch.toLowerCase())) ||
       (s.parentName && s.parentName.toLowerCase().includes(santriSearch.toLowerCase()));
-    return matchesStatus && matchesSearch;
+    return matchesStatus && matchesHalaqah && matchesSearch;
   });
 
   return (
@@ -136,52 +143,68 @@ export const OtherView: React.FC<OtherViewProps> = ({
           {/* TAB 1: INFORMASI & KONTAK WALI */}
           {santriSubTab === 'kontak' && (
             <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-xs space-y-4">
-              {/* Status Filter Chips */}
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    statusFilter === 'all'
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200/70'
-                  }`}
-                >
-                  Semua <span className="ml-1 opacity-75 font-mono text-[11px]">{santriList.length}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('tercapai')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    statusFilter === 'tercapai'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100'
-                  }`}
-                >
-                  Tercapai <span className="ml-1 opacity-75 font-mono text-[11px]">{countTercapai}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('tidak_tercapai')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    statusFilter === 'tidak_tercapai'
-                      ? 'bg-red-600 text-white shadow-xs'
-                      : 'bg-red-50 border border-red-200 text-red-800 hover:bg-red-100'
-                  }`}
-                >
-                  Defisit <span className="ml-1 opacity-75 font-mono text-[11px]">{countTidak}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('belum_setor')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    statusFilter === 'belum_setor'
-                      ? 'bg-amber-600 text-white shadow-xs'
-                      : 'bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100'
-                  }`}
-                >
-                  Belum Setor <span className="ml-1 opacity-75 font-mono text-[11px]">{countBelum}</span>
-                </button>
+              {/* Status & Halaqoh Filter Chips */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('all')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      statusFilter === 'all'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200/70'
+                    }`}
+                  >
+                    Semua <span className="ml-1 opacity-75 font-mono text-[11px]">{santriList.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('tercapai')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      statusFilter === 'tercapai'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100'
+                    }`}
+                  >
+                    Tercapai <span className="ml-1 opacity-75 font-mono text-[11px]">{countTercapai}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('tidak_tercapai')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      statusFilter === 'tidak_tercapai'
+                        ? 'bg-red-600 text-white shadow-xs'
+                        : 'bg-red-50 border border-red-200 text-red-800 hover:bg-red-100'
+                    }`}
+                  >
+                    Defisit <span className="ml-1 opacity-75 font-mono text-[11px]">{countTidak}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('belum_setor')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      statusFilter === 'belum_setor'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100'
+                    }`}
+                  >
+                    Belum Setor <span className="ml-1 opacity-75 font-mono text-[11px]">{countBelum}</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="text-xs text-slate-500 whitespace-nowrap">Filter Halaqoh:</span>
+                  <select
+                    value={halaqahFilter}
+                    onChange={(e) => setHalaqahFilter(e.target.value)}
+                    className="h-9 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg font-medium text-slate-800 shadow-xs hover:border-slate-400 cursor-pointer focus:outline-none focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 transition-all"
+                  >
+                    <option value="all">Semua Halaqoh</option>
+                    {storageService.getHalaqahList().map((h) => (
+                      <option key={h.id} value={h.name}>{h.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {santriList.length === 0 ? (
@@ -340,6 +363,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[11px]">
                         <tr>
                           <th className="py-3 px-4">Nama Santri</th>
+                          <th className="py-3 px-4">Halaqoh</th>
                           <th className="py-3 px-4">NIS</th>
                           <th className="py-3 px-4">Kontak Wali (WA)</th>
                           <th className="py-3 px-4">Capaian Juz</th>
@@ -357,6 +381,11 @@ export const OtherView: React.FC<OtherViewProps> = ({
                                 {santri.avatarInitials}
                               </span>
                               <span>{santri.name}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="inline-block text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                                {santri.halaqahName?.replace('Halaqoh ', '') || 'Abu Bakar'}
+                              </span>
                             </td>
                             <td className="py-3 px-4 font-mono text-slate-500">{santri.nis}</td>
                             <td className="py-3 px-4">

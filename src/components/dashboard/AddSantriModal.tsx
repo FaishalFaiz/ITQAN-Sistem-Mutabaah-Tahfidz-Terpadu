@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserPlus } from 'lucide-react';
-import type { Santri } from './types';
+import type { Santri, HalaqahGroup } from './types';
+import { storageService } from '../../services/storageService';
 import { waGatewayService } from '../../services/waGatewayService';
 import {
   Dialog,
@@ -33,6 +34,17 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
   const [juzAchieved, setJuzAchieved] = useState('');
   const [dailyTargetLines, setDailyTargetLines] = useState(15);
   const [lastSurah, setLastSurah] = useState('');
+  const [halaqahList, setHalaqahList] = useState<HalaqahGroup[]>([]);
+  const [selectedHalaqahName, setSelectedHalaqahName] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      const groups = storageService.getHalaqahList();
+      const active = storageService.getActiveHalaqah();
+      setHalaqahList(groups);
+      setSelectedHalaqahName(active.name);
+    }
+  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,12 +77,12 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
       lastSurah: lastSurah.trim() || 'Al-Fatihah 1-7',
       totalLinesMemorized: 15 * 15,
       totalLinesTarget: 9060,
-      halaqahName: 'Halaqoh Abu Bakar Ash-Shiddiq',
+      halaqahName: selectedHalaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
     };
 
     onAddSantri(newSantri);
     toast.success('Santri baru berhasil ditambahkan!', {
-      description: `${newSantri.name} • NIS ${newSantri.nis}`,
+      description: `${newSantri.name} • ${newSantri.halaqahName}`,
     });
     onClose();
 
@@ -105,18 +117,37 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3.5 pt-1">
-          <div>
-            <label className="block text-xs font-semibold text-slate-800 mb-1">
-              Nama Lengkap Santri <span className="text-red-500">*</span>
-            </label>
-            <Input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Contoh: Zaid bin Haritsah"
-              className="text-xs h-9.5 bg-slate-100/80 border-slate-300 text-slate-900 placeholder:text-slate-400 shadow-2xs hover:bg-slate-100 hover:border-slate-400 focus:bg-white focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-800 mb-1">
+                Nama Lengkap Santri <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Contoh: Zaid bin Haritsah"
+                className="text-xs h-9.5 bg-slate-100/80 border-slate-300 text-slate-900 placeholder:text-slate-400 shadow-2xs hover:bg-slate-100 hover:border-slate-400 focus:bg-white focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-800 mb-1">
+                Halaqoh Santri
+              </label>
+              <select
+                value={selectedHalaqahName}
+                onChange={(e) => setSelectedHalaqahName(e.target.value)}
+                className="w-full h-9.5 px-3 py-2 text-xs font-medium rounded-lg bg-slate-100/80 border border-slate-300 text-slate-900 shadow-xs hover:bg-slate-100 hover:border-slate-400 focus:bg-white focus:outline-none focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 cursor-pointer transition-all"
+              >
+                {halaqahList.map((h) => (
+                  <option key={h.id} value={h.name}>
+                    {h.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

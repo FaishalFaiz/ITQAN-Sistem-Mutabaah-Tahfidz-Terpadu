@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Share2,
   Printer,
@@ -11,12 +11,12 @@ import {
   BookOpen,
   ArrowUpDown,
   FileSpreadsheet,
-  ChevronDown,
   Check,
   ExternalLink,
 } from 'lucide-react';
 import type { Santri, SetoranRecord } from './types';
 import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
+import { ensureUUID } from '../../services/syncService';
 import { waGatewayService } from '../../services/waGatewayService';
 import {
   generateSantriReports,
@@ -57,7 +57,12 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
   // Filter states
   const [selectedPeriod, setSelectedPeriod] = useState<'bulan_ini' | 'pekan_ini' | 'bulan_lalu' | 'semester'>('bulan_ini');
-  const [selectedHalaqoh, setSelectedHalaqoh] = useState<string>('abu_bakar');
+  
+  // Halaqoh Filter: Default mengikuti halaqoh yang aktif diampu oleh guru
+  const halaqahList = useMemo(() => storageService.getHalaqahList(), []);
+  const [selectedHalaqoh, setSelectedHalaqoh] = useState<string>(() => {
+    return storageService.getActiveHalaqah()?.id || 'halaqah-abu-bakar';
+  });
 
   // Search & Filter in Santri Table
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,10 +75,46 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
     storageService.getSetoranRecords()
   );
 
-  // Reactive listener on storage changes
+  // Helper pencocokan santri ke halaqoh
+  const matchesSantriHalaqah = useCallback((s: Santri, targetHalaqahIdOrName: string) => {
+    if (targetHalaqahIdOrName === 'all') return true;
+    const sHalaqah = (s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq').toLowerCase();
+    const target = targetHalaqahIdOrName.toLowerCase();
+
+    // ID presets
+    if (target === 'halaqah-abu-bakar' || target === 'hal-abu-bakar' || target === 'abu_bakar') {
+      return sHalaqah.includes('abu bakar');
+    }
+    if (target === 'halaqah-umar' || target === 'hal-umar' || target === 'umar') {
+      return sHalaqah.includes('umar');
+    }
+    if (target === 'halaqah-utsman' || target === 'hal-utsman' || target === 'utsman') {
+      return sHalaqah.includes('utsman');
+    }
+    if (target === 'halaqah-ali' || target === 'hal-ali' || target === 'ali') {
+      return sHalaqah.includes('ali');
+    }
+
+    const foundGroup = halaqahList.find((h) => h.id.toLowerCase() === target || h.name.toLowerCase() === target);
+    if (foundGroup) {
+      return sHalaqah === foundGroup.name.toLowerCase() || sHalaqah.includes(foundGroup.name.toLowerCase());
+    }
+
+    return (
+      sHalaqah === target ||
+      sHalaqah.includes(target) ||
+      (s.halaqahId && s.halaqahId.toLowerCase() === target)
+    );
+  }, [halaqahList]);
+
+  // Reactive listener on storage changes (records / pergantian halaqoh aktif)
   useEffect(() => {
     const handleStoreChange = () => {
       setAllSetoranRecords(storageService.getSetoranRecords());
+      const activeH = storageService.getActiveHalaqah();
+      if (activeH?.id) {
+        setSelectedHalaqoh(activeH.id);
+      }
     };
     window.addEventListener(EVENT_DATA_CHANGED, handleStoreChange);
     return () => window.removeEventListener(EVENT_DATA_CHANGED, handleStoreChange);
@@ -84,36 +125,80 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
     return filterRecordsByPeriod(allSetoranRecords, selectedPeriod);
   }, [allSetoranRecords, selectedPeriod]);
 
+  // 1. Santri disaring khusus halaqoh yang dipilih
+  const halaqahSantriList = useMemo(() => {
+    return santriList.filter((s) => matchesSantriHalaqah(s, selectedHalaqoh));
+  }, [santriList, selectedHalaqoh, matchesSantriHalaqah]);
+
+  // 2. Set ID santri dari halaqoh ini
+  const halaqahSantriIdSet = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of halaqahSantriList) {
+      set.add(s.id);
+      set.add(ensureUUID(s.id));
+    }
+    return set;
+  }, [halaqahSantriList]);
+
+  // 3. Catatan setoran disaring khusus santri pada halaqoh ini
+  const halaqahPeriodRecords = useMemo(() => {
+    if (selectedHalaqoh === 'all') return periodFilteredRecords;
+    return periodFilteredRecords.filter((r) => 
+      halaqahSantriIdSet.has(r.santriId) || halaqahSantriIdSet.has(ensureUUID(r.santriId))
+    );
+  }, [periodFilteredRecords, halaqahSantriIdSet, selectedHalaqoh]);
+
+  const halaqahAllRecords = useMemo(() => {
+    if (selectedHalaqoh === 'all') return allSetoranRecords;
+    return allSetoranRecords.filter((r) => 
+      halaqahSantriIdSet.has(r.santriId) || halaqahSantriIdSet.has(ensureUUID(r.santriId))
+    );
+  }, [allSetoranRecords, halaqahSantriIdSet, selectedHalaqoh]);
+
+  // Info nama kelompok halaqoh saat ini
+  const selectedHalaqahGroup = useMemo(() => {
+    if (selectedHalaqoh === 'all') return null;
+    return halaqahList.find((h) => 
+      h.id.toLowerCase() === selectedHalaqoh.toLowerCase() || 
+      h.name.toLowerCase() === selectedHalaqoh.toLowerCase() ||
+      matchesSantriHalaqah({ halaqahName: h.name } as Santri, selectedHalaqoh)
+    );
+  }, [halaqahList, selectedHalaqoh, matchesSantriHalaqah]);
+
+  const halaqahDisplayName = selectedHalaqahGroup 
+    ? selectedHalaqahGroup.name 
+    : (selectedHalaqoh === 'all' ? 'Semua Halaqoh' : 'Halaqoh');
+
   // Modals
   const [selectedRaporSantri, setSelectedRaporSantri] = useState<SantriReportItem | null>(null);
   const [isWAModalOpen, setIsWAModalOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [broadcastTarget, setBroadcastTarget] = useState('081234567801');
 
-  // Dynamic Weekly Trend data from real records
+  // Dynamic Weekly Trend data khusus setoran santri halaqoh ini
   const weeklyTrendData = useMemo(
-    () => getWeeklyTrendData(allSetoranRecords, Math.max(1, santriList.length)),
-    [allSetoranRecords, santriList.length]
+    () => getWeeklyTrendData(halaqahAllRecords, Math.max(1, halaqahSantriList.length)),
+    [halaqahAllRecords, halaqahSantriList.length]
   );
 
-  // Dynamic Sebaran Capaian Hafalan from real santriList
+  // Dynamic Sebaran Capaian Hafalan dari santri halaqoh ini
   const juzDistributionData = useMemo(
-    () => getJuzDistribution(santriList),
-    [santriList]
+    () => getJuzDistribution(halaqahSantriList),
+    [halaqahSantriList]
   );
 
-  // Titik rawan i'adah riil
+  // Titik rawan i'adah riil dari setoran santri halaqoh ini
   const realWeakPoints = useMemo(() => {
-    return getWeakPointsFromRecords(allSetoranRecords);
-  }, [allSetoranRecords]);
+    return getWeakPointsFromRecords(halaqahAllRecords);
+  }, [halaqahAllRecords]);
 
-  // Generate enriched santri reports using real santriList and real filtered setoran
+  // Generate enriched santri reports khusus santri halaqoh ini
   const santriReports = useMemo(
-    () => generateSantriReports(santriList, periodFilteredRecords),
-    [santriList, periodFilteredRecords]
+    () => generateSantriReports(halaqahSantriList, halaqahPeriodRecords),
+    [halaqahSantriList, halaqahPeriodRecords]
   );
 
-  // Aggregate stats calculations from real data
+  // Aggregate stats calculations khusus santri halaqoh ini
   const totalSantri = santriReports.length;
   const totalZiyadahLines = santriReports.reduce((acc, s) => acc + s.ziyadahLinesPeriod, 0);
   const totalZiyadahPages = +(totalZiyadahLines / 15).toFixed(1);
@@ -137,13 +222,6 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   const filteredSantri = useMemo(() => {
     return santriReports
       .filter((s) => {
-        const matchesHalaqoh =
-          selectedHalaqoh === 'all'
-            ? true
-            : selectedHalaqoh === 'abu_bakar'
-            ? !s.halaqahName || s.halaqahName.toLowerCase().includes('abu bakar')
-            : s.halaqahName?.toLowerCase().includes(selectedHalaqoh.replace('_', ' '));
-
         const matchesSearch =
           s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           s.nis.includes(searchQuery) ||
@@ -156,7 +234,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
             ? s.pacingStatus === 'on_track' || s.pacingStatus === 'accelerated'
             : s.pacingStatus === pacingFilter;
 
-        return matchesHalaqoh && matchesSearch && matchesPacing;
+        return matchesSearch && matchesPacing;
       })
       .sort((a, b) => {
         let comparison = 0;
@@ -173,7 +251,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
         }
         return sortOrder === 'desc' ? -comparison : comparison;
       });
-  }, [santriReports, selectedHalaqoh, searchQuery, pacingFilter, sortBy, sortOrder]);
+  }, [santriReports, searchQuery, pacingFilter, sortBy, sortOrder]);
 
   // Handle Export CSV
   const handleExportCSV = () => {
@@ -220,13 +298,13 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
     link.setAttribute('href', encodedUri);
     link.setAttribute(
       'download',
-      `Rekap_Mutabaah_${selectedPeriod}_${new Date().toISOString().slice(0, 10)}.csv`
+      `Rekap_${halaqahDisplayName.replace(/[^a-zA-Z0-9]/g, '_')}_${selectedPeriod}_${new Date().toISOString().slice(0, 10)}.csv`
     );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     toast.success('Laporan CSV berhasil diunduh!', {
-      description: `Periode: ${periodLabel} • ${filteredSantri.length} santri`,
+      description: `${halaqahDisplayName} • Periode: ${periodLabel} • ${filteredSantri.length} santri`,
     });
   };
 
@@ -245,7 +323,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   // WhatsApp Digest generator
   const waDigestMessage = useMemo(() => {
     return (
-      `*REKAP MUTABA'AH HALAQOH - ITQAN*\n` +
+      `*REKAP MUTABA'AH ${halaqahDisplayName.toUpperCase()} - ITQAN*\n` +
       `Periode: ${periodLabel} | Total Santri: ${totalSantri}\n\n` +
       `📊 *Ringkasan Hafalan:*\n` +
       `• Ziyadah Baru: *${totalZiyadahLines.toLocaleString()} baris* (~${totalZiyadahPages} Hal)\n` +
@@ -253,15 +331,18 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
       `• Kelancaran: *${avgMumtaz}% Lancar (Mumtaz)*\n` +
       `• Target Pacing: *${onTrackCount} dari ${totalSantri} Santri On Track*\n\n` +
       `🏅 *Santri Paling Aktif Pekan Ini:*\n` +
-      santriReports
-        .slice(0, 3)
-        .map((s, i) => `${i + 1}. *${s.name}* (${formatJuz(s.juzAchieved)})`)
-        .join('\n') +
+      (santriReports.length > 0
+        ? santriReports
+            .slice(0, 3)
+            .map((s, i) => `${i + 1}. *${s.name}* (${formatJuz(s.juzAchieved)})`)
+            .join('\n')
+        : '-(Belum ada catatan setoran pekan ini)-') +
       `\n\n` +
       `Mohon Ayah/Bunda terus mendampingi muroja'ah di rumah.\n` +
-      `_Ust. Abdullah - ITQAN Tahfidz_`
+      `_Muhaffizh ${halaqahDisplayName} - ITQAN Tahfidz_`
     );
   }, [
+    halaqahDisplayName,
     periodLabel,
     totalZiyadahLines,
     totalZiyadahPages,
@@ -290,45 +371,45 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
       <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-5 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h2 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight">
-              Laporan Mutaba'ah
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight">
+                Laporan Mutaba'ah
+              </h2>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-[#EBF5FB] text-[#0070BA] border border-[#D6EAF8]">
+                {halaqahDisplayName}
+              </span>
+            </div>
             <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-              Rekapitulasi setoran &amp; kelancaran hafalan santri
+              Rekapitulasi setoran &amp; kelancaran hafalan santri {selectedHalaqoh !== 'all' ? halaqahDisplayName : 'seluruh halaqoh'}
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
             {/* Filter Dropdowns (2 kolom di mobile) */}
             <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
-              <div className="relative">
-                <select
-                  value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value as 'bulan_ini' | 'pekan_ini' | 'bulan_lalu' | 'semester')}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium rounded-lg pl-2.5 pr-7 py-2 focus:border-[#0070BA] focus:outline-none cursor-pointer"
-                >
-                  <option value="bulan_ini">Bulan Ini</option>
-                  <option value="pekan_ini">Pekan Ini</option>
-                  <option value="bulan_lalu">Bulan Lalu</option>
-                  <option value="semester">Semester Ini</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value as 'bulan_ini' | 'pekan_ini' | 'bulan_lalu' | 'semester')}
+                className="w-full bg-white border border-slate-300 text-slate-800 text-xs font-medium rounded-lg h-9 px-3 py-1.5 shadow-xs hover:border-slate-400 focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 focus:outline-none cursor-pointer transition-all"
+              >
+                <option value="bulan_ini">Bulan Ini</option>
+                <option value="pekan_ini">Pekan Ini</option>
+                <option value="bulan_lalu">Bulan Lalu</option>
+                <option value="semester">Semester Ini</option>
+              </select>
 
-              <div className="relative">
-                <select
-                  value={selectedHalaqoh}
-                  onChange={(e) => setSelectedHalaqoh(e.target.value)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium rounded-lg pl-2.5 pr-7 py-2 focus:border-[#0070BA] focus:outline-none cursor-pointer"
-                >
-                  <option value="abu_bakar">Halaqoh Abu Bakar</option>
-                  <option value="umar">Halaqoh Umar</option>
-                  <option value="utsman">Halaqoh Utsman</option>
-                  <option value="ali">Halaqoh Ali</option>
-                  <option value="all">Semua Halaqoh</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+              <select
+                value={selectedHalaqoh}
+                onChange={(e) => setSelectedHalaqoh(e.target.value)}
+                className="w-full bg-white border border-slate-300 text-slate-800 text-xs font-semibold rounded-lg h-9 px-3 py-1.5 shadow-xs hover:border-slate-400 focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 focus:outline-none cursor-pointer transition-all"
+              >
+                {halaqahList.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.name}
+                  </option>
+                ))}
+                <option value="all">Semua Halaqoh</option>
+              </select>
             </div>
 
             {/* Action Buttons (3 kolom simetris di mobile) */}
@@ -795,14 +876,14 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cari santri / NIS..."
-                  className="w-40 sm:w-48 text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none"
+                  className="w-40 sm:w-48 text-xs pl-8 pr-3 h-9 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 focus:outline-none shadow-xs"
                 />
               </div>
 
               <select
                 value={pacingFilter}
                 onChange={(e) => setPacingFilter(e.target.value as 'all' | 'on_track' | 'behind')}
-                className="text-xs py-1.5 px-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 focus:border-[#0070BA] focus:outline-none cursor-pointer"
+                className="h-9 text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs hover:border-slate-400 focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 focus:outline-none cursor-pointer transition-all font-medium"
               >
                 <option value="all">Semua Status</option>
                 <option value="on_track">On Track Saja</option>
@@ -812,7 +893,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'capaian' | 'ziyadah' | 'kelancaran')}
-                className="text-xs py-1.5 px-2.5 rounded-lg border border-slate-300 bg-white text-slate-800 focus:border-[#0070BA] focus:outline-none cursor-pointer"
+                className="h-9 text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-800 shadow-xs hover:border-slate-400 focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 focus:outline-none cursor-pointer transition-all font-medium"
               >
                 <option value="capaian">Urut Capaian Juz</option>
                 <option value="ziyadah">Urut Ziyadah</option>
@@ -823,7 +904,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
               <button
                 type="button"
                 onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-                className="p-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-600 cursor-pointer"
+                className="h-9 px-2.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 cursor-pointer shadow-xs transition-all flex items-center justify-center"
                 title={`Urutan: ${sortOrder === 'desc' ? 'Tinggi ke Rendah' : 'Rendah ke Tinggi'}`}
               >
                 <ArrowUpDown className="w-3.5 h-3.5" />
@@ -846,7 +927,19 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredSantri.map((s) => (
+                {filteredSantri.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 px-4 text-center text-slate-500">
+                      <p className="text-xs font-semibold text-slate-700">Belum ada santri yang sesuai</p>
+                      <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
+                        {selectedHalaqoh !== 'all'
+                          ? `Belum ada santri yang terdaftar dalam rombel ${halaqahDisplayName}.`
+                          : 'Tidak ada santri yang cocok dengan filter atau kata kunci pencarian.'}
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredSantri.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50/80 transition-colors">
                     {/* Santri Name */}
                     <td className="py-2.5 px-3">
@@ -949,7 +1042,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                       </button>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>

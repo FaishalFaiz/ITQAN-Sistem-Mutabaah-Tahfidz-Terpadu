@@ -250,7 +250,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
             <select
               value={selectedSantriId}
               onChange={(e) => handleSantriChange(e.target.value)}
-              className="w-full h-9.5 rounded-xl border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20"
+              className="w-full h-9.5 px-3 py-2 text-xs font-medium rounded-lg border border-slate-300 bg-white text-slate-900 shadow-xs hover:border-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 cursor-pointer transition-all"
             >
               {allSantri.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -371,7 +371,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
               <select
                 value={juz}
                 onChange={(e) => handleJuzChange(Number(e.target.value))}
-                className="w-full h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-900 font-semibold focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]/20 cursor-pointer"
+                className="w-full h-9.5 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white text-slate-900 shadow-xs hover:border-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-2 focus:ring-[#0070BA]/20 cursor-pointer transition-all"
               >
                 {Array.from({ length: 30 }, (_, i) => i + 1).map((j) => (
                   <option key={j} value={j}>Juz {j}</option>

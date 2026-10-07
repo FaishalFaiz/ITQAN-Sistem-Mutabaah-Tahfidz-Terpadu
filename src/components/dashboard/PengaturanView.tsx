@@ -10,12 +10,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { storageService } from '../../services/storageService';
-import type { HalaqahSettings, WATemplateConfig } from './types';
+import type { HalaqahSettings, WATemplateConfig, HalaqahGroup } from './types';
+import { Layers, Plus } from 'lucide-react';
 
 export const PengaturanView: React.FC = () => {
   // Halaqah settings state
   const [settings, setSettings] = useState<HalaqahSettings>(storageService.getHalaqahSettings());
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [halaqahList, setHalaqahList] = useState<HalaqahGroup[]>(() => storageService.getHalaqahList());
+  const [newHalaqahName, setNewHalaqahName] = useState('');
+  const [newHalaqahRoom, setNewHalaqahRoom] = useState('');
 
   // WA Template config state
   const [waTemplates, setWaTemplates] = useState<WATemplateConfig>(storageService.getWATemplateConfig());
@@ -133,6 +137,118 @@ export const PengaturanView: React.FC = () => {
             </Button>
           </div>
         </form>
+      </div>
+
+      {/* 2. SECTION: Daftar & Manajemen Kelompok Halaqoh */}
+      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center shrink-0">
+              <Layers className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-slate-900">
+                Daftar Kelompok Halaqoh
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Kelola rombel halaqoh yang dapat diampu oleh guru tahfidz
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Form Tambah Halaqoh */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!newHalaqahName.trim()) return;
+            storageService.addHalaqah({
+              name: newHalaqahName.trim(),
+              room: newHalaqahRoom.trim() || undefined,
+            });
+            setHalaqahList(storageService.getHalaqahList());
+            setNewHalaqahName('');
+            setNewHalaqahRoom('');
+          }}
+          className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3"
+        >
+          <span className="text-xs font-bold text-slate-800 block">Tambah Kelompok Halaqoh Baru</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="sm:col-span-2">
+              <Input
+                type="text"
+                required
+                value={newHalaqahName}
+                onChange={(e) => setNewHalaqahName(e.target.value)}
+                placeholder="Nama Halaqoh (misal: Halaqoh Zubair)"
+                className="text-xs h-9 bg-white"
+              />
+            </div>
+            <div>
+              <Input
+                type="text"
+                value={newHalaqahRoom}
+                onChange={(e) => setNewHalaqahRoom(e.target.value)}
+                placeholder="Ruang / Lokasi (opsional)"
+                className="text-xs h-9 bg-white"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              className="text-xs h-8.5 px-4 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              <span>Tambah Halaqoh</span>
+            </Button>
+          </div>
+        </form>
+
+        {/* List of Halaqohs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          {halaqahList.map((h) => {
+            const isActive = storageService.getActiveHalaqah().id === h.id;
+            return (
+              <div
+                key={h.id}
+                className={`p-3.5 rounded-xl border transition-all flex items-center justify-between ${
+                  isActive
+                    ? 'bg-[#EBF5FB]/60 border-[#0070BA]/30 shadow-2xs'
+                    : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="min-w-0 pr-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-xs text-slate-900 truncate block">
+                      {h.name}
+                    </span>
+                    {isActive && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#0070BA] text-white shrink-0">
+                        Sedang Diampu
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-slate-500 block mt-0.5 truncate">
+                    {h.room ? `Ruang: ${h.room}` : h.description || 'Kelompok Halaqoh'}
+                  </span>
+                </div>
+                {!isActive && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      storageService.setActiveHalaqah(h.id);
+                      setHalaqahList(storageService.getHalaqahList());
+                    }}
+                    className="text-xs font-semibold text-[#0070BA] hover:underline px-2.5 py-1 bg-white border border-slate-200 rounded-lg shrink-0 cursor-pointer shadow-2xs"
+                  >
+                    Ampu Ini
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* 2. SECTION: Format Teks Pesan WhatsApp (wa.me) */}

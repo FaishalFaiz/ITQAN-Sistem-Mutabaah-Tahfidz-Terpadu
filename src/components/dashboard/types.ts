@@ -13,6 +13,7 @@ export interface Santri {
   lastSurah: string;
   avatarInitials: string;
   halaqahName?: string;
+  halaqahId?: string;
   lastDailyReportSentDate?: string; // e.g. "2026-09-30"
   lastDailyReportSentTime?: string; // e.g. "17:30 WIB"
 }
@@ -46,10 +47,18 @@ export interface WATemplateConfig {
   templateHalaqahDigest: string;
 }
 
+export interface HalaqahGroup {
+  id: string;
+  name: string;
+  description?: string;
+  room?: string;
+}
+
 export interface HalaqahSettings {
   halaqahName: string;
   musyrifName: string;
   standardDailyTargetLines: number;
+  activeHalaqahId?: string;
 }
 
 export interface ExamRecord {

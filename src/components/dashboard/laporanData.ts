@@ -1,4 +1,5 @@
 import type { Santri, SetoranRecord } from './types';
+import { ensureUUID } from '../../services/syncService';
 
 export interface SantriReportItem {
   id: string;
@@ -138,7 +139,9 @@ export const generateSantriReports = (
   const now = new Date();
 
   return santriList.map((s) => {
-    const santriSetoran = setoranRecords.filter((r) => r.santriId === s.id);
+    const santriSetoran = setoranRecords.filter(
+      (r) => r.santriId === s.id || ensureUUID(r.santriId) === ensureUUID(s.id)
+    );
     const ziyadahRecords = santriSetoran.filter((r) => r.type === 'ziyadah');
     const murojaahRecords = santriSetoran.filter((r) => r.type === 'murojaah');
 

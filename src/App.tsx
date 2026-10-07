@@ -3,12 +3,13 @@ import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 're
 import { Menu, Calendar, Send } from 'lucide-react';
 import gsap from 'gsap';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
-import { syncService } from './services/syncService';
+import { syncService, ensureUUID } from './services/syncService';
 import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
 import { SantriListSection, type SetoranFilterType } from './components/dashboard/SantriListSection';
 import { TodayProgressCard } from './components/dashboard/TodayProgressCard';
 import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
+import { HalaqahSwitcher } from './components/dashboard/HalaqahSwitcher';
 import { SantriModal } from './components/dashboard/SantriModal';
 import { AddSantriModal } from './components/dashboard/AddSantriModal';
 import { DailyReportModal } from './components/dashboard/DailyReportModal';
@@ -51,7 +52,7 @@ function SantriDetailRoute({
 }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const santri = santriList.find((s) => s.id === id);
+  const santri = santriList.find((s) => s.id === id || ensureUUID(s.id) === ensureUUID(id || ''));
 
   if (!santri) {
     return (
@@ -151,9 +152,15 @@ function App() {
     setSantriList(updated);
   };
 
-  // Dynamic header title based on URL
-  const halaqahSettings = storageService.getHalaqahSettings();
-  const halaqahName = halaqahSettings?.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq';
+  // Active Halaqah State
+  const activeHalaqah = storageService.getActiveHalaqah();
+  const halaqahName = activeHalaqah?.name || 'Halaqoh Abu Bakar Ash-Shiddiq';
+
+  // Filter santri sesuai halaqoh aktif yang sedang diampu (wajib 1 halaqoh aktif)
+  const currentHalaqahSantriList = santriList.filter((s) => {
+    const sHalaqah = s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq';
+    return sHalaqah.toLowerCase() === halaqahName.toLowerCase();
+  });
 
   const getHeaderTitle = () => {
     const p = location.pathname;
@@ -169,13 +176,13 @@ function App() {
     return 'ITQAN';
   };
 
-  // Recalculate dynamic stats from santriList
-  const tercapaiCount = santriList.filter((s) => s.status === 'tercapai').length;
-  const tidakTercapaiCount = santriList.filter((s) => s.status === 'tidak_tercapai').length;
-  const belumSetorCount = santriList.filter((s) => s.status === 'belum_setor').length;
+  // Recalculate dynamic stats from halaqoh aktif santriList
+  const tercapaiCount = currentHalaqahSantriList.filter((s) => s.status === 'tercapai').length;
+  const tidakTercapaiCount = currentHalaqahSantriList.filter((s) => s.status === 'tidak_tercapai').length;
+  const belumSetorCount = currentHalaqahSantriList.filter((s) => s.status === 'belum_setor').length;
 
   const todayKey = getTodayDateKey();
-  const pendingDailyReportsCount = santriList.filter(
+  const pendingDailyReportsCount = currentHalaqahSantriList.filter(
     (s) => s.lastDailyReportSentDate !== todayKey && s.parentPhone && s.parentPhone.trim().length > 5
   ).length;
 
@@ -292,7 +299,7 @@ function App() {
         <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-xs">
           <div className="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3">
             <div className="flex items-center justify-between gap-2">
-              {/* Sisi Kiri: Hamburger Button + Title */}
+              {/* Sisi Kiri: Hamburger Button + Halaqah Switcher / Title */}
               <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
                 {/* Tombol Hamburger di Mobile (lg:hidden) */}
                 <button
@@ -304,11 +311,18 @@ function App() {
                   <Menu className="w-5 h-5" />
                 </button>
 
-                <div className="min-w-0">
-                  <h1 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight truncate leading-tight">
-                    {getHeaderTitle()}
-                  </h1>
-                </div>
+                {/* Di halaman Beranda, tampilkan HalaqahSwitcher interaktif agar guru bisa memilih halaqoh yang diampu */}
+                {location.pathname === '/' || location.pathname === '/beranda' ? (
+                  <div className="flex items-center gap-2">
+                    <HalaqahSwitcher />
+                  </div>
+                ) : (
+                  <div className="min-w-0">
+                    <h1 className="font-bold text-sm sm:text-base text-slate-900 tracking-tight truncate leading-tight">
+                      {getHeaderTitle()}
+                    </h1>
+                  </div>
+                )}
               </div>
 
               {/* Sisi Kanan: Laporan Harian WA Button + Tanggal */}
@@ -364,13 +378,13 @@ function App() {
                     />
 
                     <TodayProgressCard
-                      santriList={santriList}
+                      santriList={currentHalaqahSantriList}
                       activeFilter={activeFilter}
                       onFilterChange={setActiveFilter}
                     />
 
                     <SantriListSection
-                      santriList={santriList}
+                      santriList={currentHalaqahSantriList}
                       activeFilter={activeFilter}
                       onFilterChange={setActiveFilter}
                       onSetor={handleOpenSetor}
@@ -394,13 +408,13 @@ function App() {
                     />
 
                     <TodayProgressCard
-                      santriList={santriList}
+                      santriList={currentHalaqahSantriList}
                       activeFilter={activeFilter}
                       onFilterChange={setActiveFilter}
                     />
 
                     <SantriListSection
-                      santriList={santriList}
+                      santriList={currentHalaqahSantriList}
                       activeFilter={activeFilter}
                       onFilterChange={setActiveFilter}
                       onSetor={handleOpenSetor}

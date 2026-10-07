@@ -16,6 +16,9 @@ export default {
       },
     },
     extend: {
+      spacing: {
+        '9.5': '2.375rem',
+      },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         serif: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
