@@ -34,7 +34,7 @@ export const SantriCard: React.FC<SantriCardProps> = ({
     : formattedJuz;
 
   return (
-    <Card className="santri-card-item rounded-xl p-4 shadow-xs hover:border-primary/40 hover:shadow-md transition-all duration-200 flex flex-col justify-between group">
+    <Card className="santri-card-item rounded-xl p-4 shadow-xs hover:border-primary/40 hover:shadow-md transition-[border-color,box-shadow] duration-150 flex flex-col justify-between group">
       {/* Top section: Avatar, Name, "Sekian Juz" */}
       <div>
         <div className="flex items-center gap-3 mb-3">

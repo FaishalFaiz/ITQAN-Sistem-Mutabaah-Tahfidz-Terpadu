@@ -14,9 +14,9 @@ import {
   Check,
   ExternalLink,
 } from 'lucide-react';
-import type { Santri, SetoranRecord } from './types';
+import type { Santri, SetoranRecord, ExamRecord } from './types';
 import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
-import { ensureUUID } from '../../services/syncService';
+import { syncService, ensureUUID } from '../../services/syncService';
 import { waGatewayService } from '../../services/waGatewayService';
 import {
   generateSantriReports,
@@ -74,6 +74,9 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   const [allSetoranRecords, setAllSetoranRecords] = useState<SetoranRecord[]>(() =>
     storageService.getSetoranRecords()
   );
+  const [allExams, setAllExams] = useState<ExamRecord[]>(() =>
+    storageService.getExamRecords()
+  );
 
   // Helper pencocokan santri ke halaqoh
   const matchesSantriHalaqah = useCallback((s: Santri, targetHalaqahIdOrName: string) => {
@@ -111,12 +114,22 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   useEffect(() => {
     const handleStoreChange = () => {
       setAllSetoranRecords(storageService.getSetoranRecords());
+      setAllExams(storageService.getExamRecords());
       const activeH = storageService.getActiveHalaqah();
       if (activeH?.id) {
         setSelectedHalaqoh(activeH.id);
       }
     };
     window.addEventListener(EVENT_DATA_CHANGED, handleStoreChange);
+
+    // Sinkronkan data cloud Supabase secara otomatis saat membuka /laporan
+    syncService.syncAll().then((res) => {
+      if (res.success) {
+        setAllSetoranRecords(storageService.getSetoranRecords());
+        setAllExams(storageService.getExamRecords());
+      }
+    });
+
     return () => window.removeEventListener(EVENT_DATA_CHANGED, handleStoreChange);
   }, []);
 
@@ -194,8 +207,8 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
   // Generate enriched santri reports khusus santri halaqoh ini
   const santriReports = useMemo(
-    () => generateSantriReports(halaqahSantriList, halaqahPeriodRecords),
-    [halaqahSantriList, halaqahPeriodRecords]
+    () => generateSantriReports(halaqahSantriList, halaqahPeriodRecords, allExams),
+    [halaqahSantriList, halaqahPeriodRecords, allExams]
   );
 
   // Aggregate stats calculations khusus santri halaqoh ini

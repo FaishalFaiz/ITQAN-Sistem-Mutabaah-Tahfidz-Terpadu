@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, UserPlus } from 'lucide-react';
-import gsap from 'gsap';
 import type { Santri } from './types';
 import { SantriCard } from './SantriCard';
 import { Card } from '@/components/ui/card';
@@ -28,7 +27,6 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
   onOpenAddModal,
 }) => {
   const [search, setSearch] = useState('');
-  const sectionRef = useRef<HTMLDivElement>(null);
 
   const countTercapai = santriList.filter((s) => s.status === 'tercapai').length;
   const countTidak = santriList.filter((s) => s.status === 'tidak_tercapai').length;
@@ -51,31 +49,8 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
     return matchesFilter && matchesSearch;
   });
 
-  useEffect(() => {
-    if (!sectionRef.current) return;
-    const cards = sectionRef.current.querySelectorAll('.santri-card-item');
-    if (!cards || cards.length === 0) return;
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        cards,
-        { opacity: 0, y: 16, scale: 0.98 },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.4,
-          stagger: 0.04,
-          ease: 'power3.out',
-        }
-      );
-    }, sectionRef);
-
-    return () => ctx.revert();
-  }, [filtered.length, search, activeFilter]);
-
   return (
-    <Card ref={sectionRef} className="p-3.5 sm:p-6 shadow-xs space-y-4">
+    <Card className="p-3.5 sm:p-6 shadow-xs space-y-4">
       {/* Section Header: Title & Filter Tabs */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-border">
         {/* Left Side: Title & Filter Tabs */}

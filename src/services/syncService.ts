@@ -305,7 +305,9 @@ export const syncService = {
 
         const mappedSetoran = (cloudSetoran || []).map((row) => {
           const s = mapRowToSetoran(row);
-          const foundSantri = mappedSantri.find((item) => item.id === s.santriId);
+          const foundSantri = mappedSantri.find(
+            (item) => item.id === s.santriId || ensureUUID(item.id) === ensureUUID(s.santriId)
+          );
           if (foundSantri) {
             s.santriName = foundSantri.name;
             s.nis = foundSantri.nis;

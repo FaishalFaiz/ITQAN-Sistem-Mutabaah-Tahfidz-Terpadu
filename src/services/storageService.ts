@@ -4,6 +4,8 @@ import {
   DEFAULT_HALAQAH_SETTINGS,
   DEFAULT_HALAQAH_LIST,
   INITIAL_MOCK_SANTRI,
+  INITIAL_MOCK_SETORAN,
+  INITIAL_MOCK_EXAMS,
 } from '../components/dashboard/mockData';
 import { formatJuz } from '../lib/utils';
 import { syncService, ensureUUID } from './syncService';
@@ -119,6 +121,12 @@ export const storageService = {
         }
       } catch {
         /* ignore */
+      }
+
+      // Bersihkan santri mock format lama jika masih tersimpan (s-ab-1, s-um-1, dll)
+      const hasLegacyMock = list.some((s) => s.id.startsWith('s-ab-') || s.id.startsWith('s-um-') || s.id.startsWith('s-ut-') || s.id.startsWith('s-al-'));
+      if (hasLegacyMock) {
+        list = list.filter((s) => !s.id.startsWith('s-ab-') && !s.id.startsWith('s-um-') && !s.id.startsWith('s-ut-') && !s.id.startsWith('s-al-'));
       }
 
       // Pastikan mock santri selalu ada untuk setiap halaqoh jika belum pernah dihapus secara sengaja
@@ -268,18 +276,22 @@ export const storageService = {
           localStorage.setItem(key, fallback);
         }
       }
-      if (!data) {
-        localStorage.setItem(key, JSON.stringify([]));
-        return [];
+      if (!data || data === '[]') {
+        localStorage.setItem(key, JSON.stringify(INITIAL_MOCK_SETORAN));
+        return INITIAL_MOCK_SETORAN;
       }
       const records: SetoranRecord[] = JSON.parse(data);
+      if (!records || records.length === 0) {
+        localStorage.setItem(key, JSON.stringify(INITIAL_MOCK_SETORAN));
+        return INITIAL_MOCK_SETORAN;
+      }
       return records.map((r) => ({
         ...r,
         id: ensureUUID(r.id),
         santriId: ensureUUID(r.santriId),
       }));
     } catch {
-      return [];
+      return INITIAL_MOCK_SETORAN;
     }
   },
 
@@ -589,10 +601,18 @@ export const storageService = {
     try {
       const key = this.getScopedKey(BASE_KEYS.EXAMS);
       const data = localStorage.getItem(key);
-      if (!data) return [];
-      return JSON.parse(data);
+      if (!data || data === '[]') {
+        localStorage.setItem(key, JSON.stringify(INITIAL_MOCK_EXAMS));
+        return INITIAL_MOCK_EXAMS;
+      }
+      const list = JSON.parse(data);
+      if (!list || list.length === 0) {
+        localStorage.setItem(key, JSON.stringify(INITIAL_MOCK_EXAMS));
+        return INITIAL_MOCK_EXAMS;
+      }
+      return list;
     } catch {
-      return [];
+      return INITIAL_MOCK_EXAMS;
     }
   },
 
