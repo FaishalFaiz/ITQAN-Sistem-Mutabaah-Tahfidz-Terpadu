@@ -49,12 +49,15 @@ export interface WATemplateConfig {
 
 export interface HalaqahGroup {
   id: string;
+  code: string; // Unique Join Code (e.g. 'HLQ-ABU-01', 'HLQ-8K2N9P')
   name: string;
   description?: string;
   room?: string;
   targetDailyLines?: number;
   musyrifName?: string;
-  sessionTime?: string;
+  creatorId?: string; // ID / scope musyrif pembuat room halaqoh
+  memberIds?: string[]; // Daftar ID / scope musyrif yang bergabung
+  createdAt?: string;
 }
 
 export interface HalaqahSettings {
@@ -68,5 +71,6 @@ export type NavItemKey =
   | 'beranda' 
   | 'laporan' 
   | 'santri' 
+  | 'halaqah'
   | 'pengaturan';
 

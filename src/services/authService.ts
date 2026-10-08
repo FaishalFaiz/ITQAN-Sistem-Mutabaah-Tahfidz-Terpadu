@@ -90,7 +90,7 @@ export const authService = {
   },
 
   // Registrasi Musyrif baru via Supabase Auth
-  async signUp(fullName: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  async signUp(fullName: string, email: string, password: string): Promise<{ success: boolean; hasSession?: boolean; error?: string }> {
     if (!isSupabaseConfigured) {
       return {
         success: false,
@@ -118,7 +118,16 @@ export const authService = {
       }
 
       if (data.user) {
-        return { success: true };
+        if (data.session) {
+          const user: MusyrifUser = {
+            id: data.user.id,
+            email: data.user.email || email,
+            fullName: data.user.user_metadata?.full_name || fullName.trim(),
+          };
+          localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(user));
+          emitChange('user_logged_in');
+        }
+        return { success: true, hasSession: Boolean(data.session) };
       }
 
       return { success: false, error: 'Pendaftaran gagal dilakukan.' };

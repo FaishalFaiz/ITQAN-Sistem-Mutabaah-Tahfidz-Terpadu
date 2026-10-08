@@ -76,10 +76,17 @@ export const SignupPage: React.FC = () => {
     setIsLoading(false);
 
     if (res.success) {
-      setSuccessMsg('Pendaftaran akun muhaffizh berhasil! Mengalihkan ke halaman masuk...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 1500);
+      if (res.hasSession) {
+        setSuccessMsg('Pendaftaran akun berhasil! Mengalihkan ke pemilihan halaqoh...');
+        setTimeout(() => {
+          navigate('/pilih-halaqoh');
+        }, 1000);
+      } else {
+        setSuccessMsg('Pendaftaran akun muhaffizh berhasil! Silakan masuk untuk memulai halaqoh.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
+      }
     } else {
       setErrorMsg(res.error || 'Gagal mendaftar akun. Silakan coba kembali.');
     }

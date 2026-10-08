@@ -4,6 +4,7 @@ import { Eye, EyeOff, Lock, Mail, ShieldAlert, CheckCircle2 } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { authService } from '@/services/authService';
 import { syncService } from '@/services/syncService';
+import { storageService } from '@/services/storageService';
 import { emailValidationService, type EmailValidationResult } from '@/services/emailValidationService';
 
 export const LoginPage: React.FC = () => {
@@ -51,7 +52,13 @@ export const LoginPage: React.FC = () => {
       // Sinkronisasi data cloud Supabase ke lokal sebelum redirect
       await syncService.syncAll();
       setIsLoading(false);
-      navigate('/beranda');
+      
+      const userRooms = storageService.getUserHalaqahList();
+      if (userRooms.length === 0) {
+        navigate('/pilih-halaqoh');
+      } else {
+        navigate('/beranda');
+      }
     } else {
       setIsLoading(false);
       setErrorMessage(res.error || 'Gagal masuk. Periksa kembali email dan kata sandi Anda.');

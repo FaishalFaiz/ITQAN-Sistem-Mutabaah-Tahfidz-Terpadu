@@ -16,7 +16,19 @@ const BASE_KEYS = {
   WA_TEMPLATES: 'itqan_wa_template_config',
   SETTINGS: 'itqan_halaqah_settings',
   HALAQAH_LIST: 'itqan_halaqah_list',
+  ALL_ROOMS: 'itqan_all_halaqah_rooms',
+  USER_ROOMS: 'itqan_user_room_ids',
 };
+
+// Generator kode join halaqoh unik (misal: HLQ-8K2N9P)
+export function generateHalaqahCode(prefix = 'HLQ'): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let rand = '';
+  for (let i = 0; i < 6; i++) {
+    rand += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `${prefix}-${rand}`;
+}
 
 // Event for cross-component reactive updates
 export const EVENT_DATA_CHANGED = 'itqan_store_changed';
@@ -532,51 +544,226 @@ export const storageService = {
     emitChange('halaqah_settings_updated');
   },
 
-  // ================= HALAQAH LIST & ACTIVE SELECTION =================
-  getHalaqahList(): HalaqahGroup[] {
+  // ================= ROOM HALAQAH SYSTEM & JOIN CODE =================
+
+  // Ambil semua room halaqoh yang terdaftar di sistem (global repository)
+  getAllHalaqahRooms(): HalaqahGroup[] {
     try {
-      const key = this.getScopedKey(BASE_KEYS.HALAQAH_LIST);
-      const data = localStorage.getItem(key);
+      const data = localStorage.getItem(BASE_KEYS.ALL_ROOMS);
       if (!data) {
-        localStorage.setItem(key, JSON.stringify(DEFAULT_HALAQAH_LIST));
+        localStorage.setItem(BASE_KEYS.ALL_ROOMS, JSON.stringify(DEFAULT_HALAQAH_LIST));
         return DEFAULT_HALAQAH_LIST;
       }
       const list: HalaqahGroup[] = JSON.parse(data);
-      // Lengkapi jika ada data halaqoh lama yang belum memiliki target/pembimbing
-      return list.map((item) => {
+      let needsSave = false;
+
+      // Pastikan setiap room memiliki kode join unik dan member array
+      const normalized = list.map((item, idx) => {
         const defaultMatch = DEFAULT_HALAQAH_LIST.find(
           (d) => d.id === item.id || d.name.toLowerCase() === item.name.toLowerCase()
         );
+        let code = item.code || defaultMatch?.code;
+        if (!code) {
+          code = generateHalaqahCode(`HLQ-${String(idx + 1).padStart(2, '0')}`);
+          needsSave = true;
+        }
         return {
           ...item,
+          code,
           targetDailyLines: item.targetDailyLines || defaultMatch?.targetDailyLines || 15,
           musyrifName: item.musyrifName || defaultMatch?.musyrifName || 'Pembimbing Halaqoh',
-          sessionTime: item.sessionTime || defaultMatch?.sessionTime || '-',
+          creatorId: item.creatorId || defaultMatch?.creatorId || 'system',
+          memberIds: item.memberIds || defaultMatch?.memberIds || ['u_default'],
+          createdAt: item.createdAt || defaultMatch?.createdAt || '2026-01-01T00:00:00Z',
         };
       });
+
+      if (needsSave) {
+        localStorage.setItem(BASE_KEYS.ALL_ROOMS, JSON.stringify(normalized));
+      }
+
+      return normalized;
     } catch {
       return DEFAULT_HALAQAH_LIST;
     }
   },
 
+  saveAllHalaqahRooms(rooms: HalaqahGroup[]): void {
+    localStorage.setItem(BASE_KEYS.ALL_ROOMS, JSON.stringify(rooms));
+    emitChange('all_halaqah_rooms_updated');
+  },
+
+  // Ambil ID halaqoh yang diikuti / dimiliki oleh akun musyrif yang aktif saat ini
+  getUserHalaqahIds(): string[] {
+    const scope = this.getActiveUserScope();
+    const key = this.getScopedKey(BASE_KEYS.USER_ROOMS);
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+      // Akun guest/demo default memiliki akses ke 4 halaqoh bawaan
+      if (scope === 'u_default' || scope === 'guest') {
+        const defaultIds = DEFAULT_HALAQAH_LIST.map((h) => h.id);
+        localStorage.setItem(key, JSON.stringify(defaultIds));
+        return defaultIds;
+      }
+      // Akun musyrif baru yang belum bergabung ke room apapun
+      return [];
+    } catch {
+      return scope === 'u_default' ? DEFAULT_HALAQAH_LIST.map((h) => h.id) : [];
+    }
+  },
+
+  saveUserHalaqahIds(ids: string[]): void {
+    const key = this.getScopedKey(BASE_KEYS.USER_ROOMS);
+    localStorage.setItem(key, JSON.stringify(ids));
+    emitChange('user_rooms_updated');
+  },
+
+  // Daftar room halaqoh yang HANYA bisa diakses oleh akun aktif saat ini
+  getUserHalaqahList(): HalaqahGroup[] {
+    const allRooms = this.getAllHalaqahRooms();
+    const userIds = new Set(this.getUserHalaqahIds());
+    const scope = this.getActiveUserScope();
+
+    const filtered = allRooms.filter((r) => 
+      userIds.has(r.id) || 
+      r.creatorId === scope || 
+      (r.memberIds && r.memberIds.includes(scope))
+    );
+
+    return filtered;
+  },
+
+  // Kompatibilitas mundur: getHalaqahList mengembalikan room yang dapat diakses user
+  getHalaqahList(): HalaqahGroup[] {
+    return this.getUserHalaqahList();
+  },
+
   saveHalaqahList(list: HalaqahGroup[]): void {
-    const key = this.getScopedKey(BASE_KEYS.HALAQAH_LIST);
-    localStorage.setItem(key, JSON.stringify(list));
+    // Sinkronkan ke daftar global
+    const all = this.getAllHalaqahRooms();
+    const updatedAll = all.map((item) => {
+      const match = list.find((l) => l.id === item.id);
+      return match ? { ...item, ...match } : item;
+    });
+    this.saveAllHalaqahRooms(updatedAll);
     emitChange('halaqah_list_updated');
   },
 
-  addHalaqah(group: Omit<HalaqahGroup, 'id'>): HalaqahGroup {
-    const list = this.getHalaqahList();
-    const newGroup: HalaqahGroup = {
+  // Buat Room Halaqoh baru (menghasilkan kode join otomatis)
+  createHalaqahRoom(group: Omit<HalaqahGroup, 'id' | 'code'> & { code?: string }): HalaqahGroup {
+    const scope = this.getActiveUserScope();
+    const rawUser = typeof window !== 'undefined' ? localStorage.getItem('itqan_current_musyrif') : null;
+    let authorName = 'Pembimbing Halaqoh';
+    if (rawUser) {
+      try {
+        const u = JSON.parse(rawUser);
+        if (u?.fullName) authorName = u.fullName;
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const newCode = group.code ? group.code.trim().toUpperCase() : generateHalaqahCode();
+    const newId = `hlq-${Date.now()}`;
+    const newRoom: HalaqahGroup = {
       ...group,
-      id: `halaqah-${Date.now()}`,
+      id: newId,
+      code: newCode,
       targetDailyLines: group.targetDailyLines || 15,
-      musyrifName: group.musyrifName || 'Pembimbing Halaqoh',
-      sessionTime: group.sessionTime || '-',
+      musyrifName: group.musyrifName || authorName,
+      creatorId: scope,
+      memberIds: [scope],
+      createdAt: new Date().toISOString(),
     };
-    const updated = [...list, newGroup];
-    this.saveHalaqahList(updated);
-    return newGroup;
+
+    // 1. Simpan ke repositori room global
+    const all = this.getAllHalaqahRooms();
+    this.saveAllHalaqahRooms([...all, newRoom]);
+
+    // 2. Tambahkan ke daftar room milik user ini
+    const userIds = this.getUserHalaqahIds();
+    if (!userIds.includes(newId)) {
+      this.saveUserHalaqahIds([...userIds, newId]);
+    }
+
+    // 3. Setel room baru ini sebagai halaqoh aktif
+    this.setActiveHalaqah(newId);
+
+    emitChange('halaqah_created');
+    return newRoom;
+  },
+
+  // Alias untuk kompatibilitas
+  addHalaqah(group: Omit<HalaqahGroup, 'id' | 'code'>): HalaqahGroup {
+    return this.createHalaqahRoom(group);
+  },
+
+  // Masuk / Bergabung ke Room Halaqoh Lain menggunakan Kode Join
+  joinHalaqahByCode(code: string): { success: boolean; halaqah?: HalaqahGroup; error?: string } {
+    const cleanCode = code.trim().toUpperCase();
+    if (!cleanCode) {
+      return { success: false, error: 'Silakan masukkan kode halaqoh.' };
+    }
+
+    const allRooms = this.getAllHalaqahRooms();
+    const foundRoom = allRooms.find((r) => r.code?.toUpperCase() === cleanCode);
+
+    if (!foundRoom) {
+      return { 
+        success: false, 
+        error: `Kode halaqoh "${cleanCode}" tidak ditemukan. Pastikan huruf dan angka sesuai.` 
+      };
+    }
+
+    const scope = this.getActiveUserScope();
+    const userIds = this.getUserHalaqahIds();
+
+    // Tambahkan ke ID room user jika belum ada
+    if (!userIds.includes(foundRoom.id)) {
+      this.saveUserHalaqahIds([...userIds, foundRoom.id]);
+    }
+
+    // Tambahkan user scope ke memberIds room
+    if (!foundRoom.memberIds?.includes(scope)) {
+      foundRoom.memberIds = [...(foundRoom.memberIds || []), scope];
+      this.saveAllHalaqahRooms(allRooms);
+    }
+
+    // Setel sebagai halaqoh aktif
+    this.setActiveHalaqah(foundRoom.id);
+
+    emitChange('halaqah_joined');
+    return { success: true, halaqah: foundRoom };
+  },
+
+  // Keluar dari Room Halaqoh
+  leaveHalaqahRoom(halaqahId: string): { success: boolean; error?: string } {
+    const scope = this.getActiveUserScope();
+    const userIds = this.getUserHalaqahIds().filter((id) => id !== halaqahId);
+    this.saveUserHalaqahIds(userIds);
+
+    const allRooms = this.getAllHalaqahRooms();
+    const room = allRooms.find((r) => r.id === halaqahId);
+    if (room && room.memberIds) {
+      room.memberIds = room.memberIds.filter((m) => m !== scope);
+      this.saveAllHalaqahRooms(allRooms);
+    }
+
+    // Alihkan active halaqah ke room lain jika room ini sedang aktif
+    const userRooms = this.getUserHalaqahList();
+    if (userRooms.length > 0) {
+      this.setActiveHalaqah(userRooms[0].id);
+    } else {
+      const settings = this.getHalaqahSettings();
+      settings.activeHalaqahId = undefined;
+      this.saveHalaqahSettings(settings);
+    }
+
+    emitChange('halaqah_left');
+    return { success: true };
   },
 
   updateHalaqah(
@@ -584,23 +771,24 @@ export const storageService = {
     updates: Partial<HalaqahGroup>,
     syncSantriTarget: boolean = false
   ): HalaqahGroup | null {
-    const list = this.getHalaqahList();
-    const index = list.findIndex((h) => h.id === id);
+    const all = this.getAllHalaqahRooms();
+    const index = all.findIndex((h) => h.id === id);
     if (index === -1) return null;
 
-    const oldHalaqah = list[index];
+    const oldHalaqah = all[index];
     const updatedHalaqah: HalaqahGroup = {
       ...oldHalaqah,
       ...updates,
       id: oldHalaqah.id,
+      code: oldHalaqah.code, // Kode room permanen
     };
 
-    list[index] = updatedHalaqah;
-    this.saveHalaqahList(list);
+    all[index] = updatedHalaqah;
+    this.saveAllHalaqahRooms(all);
 
     // Jika halaqoh yang diedit adalah halaqoh aktif saat ini, perbarui juga HalaqahSettings
     const active = this.getActiveHalaqah();
-    if (active.id === id) {
+    if (active && active.id === id) {
       const currentSettings = this.getHalaqahSettings();
       this.saveHalaqahSettings({
         ...currentSettings,
@@ -643,24 +831,26 @@ export const storageService = {
     return updatedHalaqah;
   },
 
-  getActiveHalaqah(): HalaqahGroup {
-    const list = this.getHalaqahList();
+  getActiveHalaqah(): HalaqahGroup | null {
+    const userRooms = this.getUserHalaqahList();
+    if (userRooms.length === 0) return null;
+
     const settings = this.getHalaqahSettings();
     if (settings.activeHalaqahId) {
-      const found = list.find((h) => h.id === settings.activeHalaqahId);
+      const found = userRooms.find((h) => h.id === settings.activeHalaqahId);
       if (found) return found;
     }
     // Cocokkan berdasarkan nama halaqoh jika ada
     if (settings.halaqahName) {
-      const foundByName = list.find((h) => h.name.toLowerCase() === settings.halaqahName.toLowerCase());
+      const foundByName = userRooms.find((h) => h.name.toLowerCase() === settings.halaqahName.toLowerCase());
       if (foundByName) return foundByName;
     }
-    return list[0] || DEFAULT_HALAQAH_LIST[0];
+    return userRooms[0] || null;
   },
 
   setActiveHalaqah(halaqahId: string): void {
-    const list = this.getHalaqahList();
-    const found = list.find((h) => h.id === halaqahId);
+    const all = this.getAllHalaqahRooms();
+    const found = all.find((h) => h.id === halaqahId);
     if (!found) return;
 
     const current = this.getHalaqahSettings();

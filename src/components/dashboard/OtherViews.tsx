@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import gsap from 'gsap';
 import { 
   UserPlus, 
   Search, 
@@ -21,6 +22,7 @@ import { waGatewayService } from '../../services/waGatewayService';
 import { storageService } from '../../services/storageService';
 import { formatJuz } from '@/lib/utils';
 import type { NavItemKey, Santri } from './types';
+import { HalaqahManagementPage } from './HalaqahManagementPage';
 
 interface OtherViewProps {
   currentView: NavItemKey;
@@ -44,9 +46,44 @@ export const OtherView: React.FC<OtherViewProps> = ({
   const [editingTargetSantri, setEditingTargetSantri] = useState<Santri | null>(null);
   const [santriSubTab, setSantriSubTab] = useState<'kontak' | 'target'>('kontak');
 
+  // Smooth Tab Transition Animation
+  const tabContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (tabContentRef.current) {
+      gsap.fromTo(
+        tabContentRef.current,
+        { opacity: 0, scale: 0.975, y: 10 },
+        {
+          opacity: 1,
+          scale: 1,
+          y: 0,
+          duration: 0.35,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity',
+        }
+      );
+    }
+  }, [santriSubTab]);
+
+  // Ambil daftar halaqoh yang boleh diakses akun musyrif ini
+  const myHalaqahs = storageService.getUserHalaqahList();
+  const myHalaqahNames = new Set(myHalaqahs.map((h) => h.name.toLowerCase()));
+  const myHalaqahIds = new Set(myHalaqahs.map((h) => h.id));
+
+  // Filter santri: HANYA santri di halaqoh yang diikuti oleh musyrif ini
+  const accessibleSantri = santriList.filter((s) => {
+    if (s.halaqahId && myHalaqahIds.has(s.halaqahId)) return true;
+    if (s.halaqahName && myHalaqahNames.has(s.halaqahName.toLowerCase())) return true;
+    return false;
+  });
+
   const halaqahSantri = halaqahFilter === 'all'
-    ? santriList
-    : santriList.filter((s) => (s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq').toLowerCase() === halaqahFilter.toLowerCase());
+    ? accessibleSantri
+    : accessibleSantri.filter((s) => {
+        const sH = (s.halaqahName || '').toLowerCase();
+        return sH === halaqahFilter.toLowerCase() || s.halaqahId === halaqahFilter;
+      });
 
   const countTercapai = halaqahSantri.filter((s) => s.status === 'tercapai').length;
   const countTidak = halaqahSantri.filter((s) => s.status === 'tidak_tercapai').length;
@@ -65,9 +102,13 @@ export const OtherView: React.FC<OtherViewProps> = ({
 
   return (
     <div className="space-y-4">
+      {currentView === 'halaqah' && (
+        <HalaqahManagementPage />
+      )}
+
       {currentView === 'laporan' && (
         <LaporanPage
-          santriList={santriList}
+          santriList={accessibleSantri}
           onSetor={onSetor}
           onDetail={onDetail}
         />
@@ -138,8 +179,10 @@ export const OtherView: React.FC<OtherViewProps> = ({
             </div>
           </div>
 
-          {/* TAB 1: INFORMASI & KONTAK WALI */}
-          {santriSubTab === 'kontak' && (
+          {/* Sub-tab Content with Smooth Extend & Shrink Animation */}
+          <div ref={tabContentRef} className="space-y-4">
+            {/* TAB 1: INFORMASI & KONTAK WALI */}
+            {santriSubTab === 'kontak' && (
             <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-xs space-y-4">
               {/* Status & Halaqoh Filter Chips */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
@@ -694,6 +737,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
               )}
             </div>
           )}
+          </div>
         </div>
       )}
 

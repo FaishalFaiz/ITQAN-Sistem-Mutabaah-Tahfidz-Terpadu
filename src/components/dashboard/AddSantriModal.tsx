@@ -42,8 +42,8 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
       const groups = storageService.getHalaqahList();
       const active = storageService.getActiveHalaqah();
       setHalaqahList(groups);
-      setSelectedHalaqahName(active.name);
-      setDailyTargetLines(active.targetDailyLines || 15);
+      setSelectedHalaqahName(active?.name || (groups[0]?.name ?? 'Halaqoh Utama'));
+      setDailyTargetLines(active?.targetDailyLines || 15);
     }
   }, [isOpen]);
 

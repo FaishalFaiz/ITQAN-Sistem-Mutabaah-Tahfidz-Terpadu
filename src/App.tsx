@@ -35,6 +35,9 @@ const SignupPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
 );
+const OnboardingHalaqahPage = lazy(() =>
+  import('./pages/halaqah/OnboardingHalaqahPage').then((m) => ({ default: m.OnboardingHalaqahPage }))
+);
 
 function PageLoadingFallback() {
   return (
@@ -188,8 +191,9 @@ function App() {
       return s ? s.name : 'Detail Santri';
     }
     if (p.startsWith('/santri')) return 'Daftar Santri';
-    if (p.startsWith('/laporan')) return 'Laporan';
-    if (p.startsWith('/pengaturan')) return 'Pengaturan';
+    if (p.startsWith('/laporan')) return 'Laporan Capaian';
+    if (p.startsWith('/halaqah')) return 'Manajemen Halaqoh';
+    if (p.startsWith('/pengaturan')) return 'Pengaturan Akun';
     return 'ITQAN';
   };
 
@@ -209,14 +213,15 @@ function App() {
   useEffect(() => {
     if (mainContentRef.current) {
       const ctx = gsap.context(() => {
-        // 1. Animasi transisi container utama
+        // 1. Animasi transisi container utama: extend & mengecil secara smooth
         gsap.fromTo(
           mainContentRef.current,
-          { opacity: 0, y: 14 },
+          { opacity: 0, scale: 0.965, y: 12, transformOrigin: 'top center' },
           {
             opacity: 1,
+            scale: 1,
             y: 0,
-            duration: 0.35,
+            duration: 0.38,
             ease: 'power3.out',
             clearProps: 'transform,opacity',
           }
@@ -226,12 +231,13 @@ function App() {
         const contentBlocks = mainContentRef.current?.querySelectorAll(':scope > div > *, :scope > *');
         if (contentBlocks && contentBlocks.length > 0) {
           gsap.fromTo(
-            Array.from(contentBlocks).slice(0, 4),
-            { opacity: 0, y: 12 },
+            Array.from(contentBlocks).slice(0, 5),
+            { opacity: 0, y: 14, scale: 0.98 },
             {
               opacity: 1,
               y: 0,
-              duration: 0.4,
+              scale: 1,
+              duration: 0.42,
               stagger: 0.05,
               ease: 'power3.out',
               clearProps: 'transform,opacity',
@@ -260,8 +266,12 @@ function App() {
       title = 'Manajemen Santri | ITQAN';
     } else if (p.startsWith('/laporan')) {
       title = 'Laporan Capaian | ITQAN';
+    } else if (p.startsWith('/halaqah')) {
+      title = 'Manajemen Halaqoh | ITQAN';
     } else if (p.startsWith('/pengaturan')) {
-      title = 'Pengaturan Halaqoh | ITQAN';
+      title = 'Pengaturan Akun | ITQAN';
+    } else if (p === '/pilih-halaqoh') {
+      title = 'Pilih atau Buat Halaqoh | ITQAN';
     } else if (p === '/login') {
       title = 'Masuk Portal Muhaffizh | ITQAN';
     } else if (p === '/signup') {
@@ -273,11 +283,24 @@ function App() {
   // Auth routes (render standalone full page)
   if (location.pathname === '/login' || location.pathname === '/signup') {
     if (isAuthenticated === true || Boolean(authService.getStoredUser())) {
+      const userRooms = storageService.getUserHalaqahList();
+      if (userRooms.length === 0) {
+        return <Navigate to="/pilih-halaqoh" replace />;
+      }
       return <Navigate to="/beranda" replace />;
     }
     return (
       <Suspense fallback={<PageLoadingFallback />}>
         {location.pathname === '/login' ? <LoginPage /> : <SignupPage />}
+      </Suspense>
+    );
+  }
+
+  // Onboarding route: pemilihan halaqoh saat akun baru belum memiliki ruangan
+  if (location.pathname === '/pilih-halaqoh') {
+    return (
+      <Suspense fallback={<PageLoadingFallback />}>
+        <OnboardingHalaqahPage />
       </Suspense>
     );
   }
@@ -300,6 +323,12 @@ function App() {
   // Jika belum login dan tidak ada sesi tersimpan di localStorage, alihkan ke /login
   if (isAuthenticated === false && !authService.getStoredUser()) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Jika akun musyrif belum bergabung atau membuat ruang halaqoh apapun, alihkan ke onboarding
+  const userRooms = storageService.getUserHalaqahList();
+  if (userRooms.length === 0) {
+    return <Navigate to="/pilih-halaqoh" replace />;
   }
 
   return (
@@ -477,6 +506,19 @@ function App() {
                 element={
                   <OtherView
                     currentView="laporan"
+                    santriList={santriList}
+                    onSetor={handleOpenSetor}
+                    onDetail={handleOpenDetail}
+                    onOpenAddModal={() => setIsAddModalOpen(true)}
+                  />
+                }
+              />
+
+              <Route
+                path="/halaqah"
+                element={
+                  <OtherView
+                    currentView="halaqah"
                     santriList={santriList}
                     onSetor={handleOpenSetor}
                     onDetail={handleOpenDetail}

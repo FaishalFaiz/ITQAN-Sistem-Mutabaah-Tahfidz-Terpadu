@@ -56,39 +56,51 @@ _ITQAN - Tahfidz Terpadu_`,
 export const DEFAULT_HALAQAH_LIST: HalaqahGroup[] = [
   { 
     id: 'halaqah-abu-bakar', 
+    code: 'HLQ-ABU-01',
     name: 'Halaqoh Abu Bakar Ash-Shiddiq', 
     description: 'Talaqqi Ziyadah & Murojaah Lanjutan', 
     room: 'Masjid Utama',
     targetDailyLines: 15,
     musyrifName: 'Ust. Ahmad Fauzi, Al-Hafizh',
-    sessionTime: "Ba'da Subuh (05:30 - 06:45 WIB)"
+    creatorId: 'system',
+    memberIds: ['u_default'],
+    createdAt: '2026-01-01T00:00:00Z',
   },
   { 
     id: 'halaqah-umar', 
+    code: 'HLQ-UMR-02',
     name: 'Halaqoh Umar bin Khattab', 
     description: 'Halaqoh Tahfidz Reguler Juz 1-5', 
     room: 'Ruang A-101',
     targetDailyLines: 12,
     musyrifName: 'Ust. Rahmat Hidayat, Lc.',
-    sessionTime: "Ba'da Ashar (16:00 - 17:15 WIB)"
+    creatorId: 'system',
+    memberIds: ['u_default'],
+    createdAt: '2026-01-01T00:00:00Z',
   },
   { 
     id: 'halaqah-utsman', 
+    code: 'HLQ-UTS-03',
     name: 'Halaqoh Utsman bin Affan', 
     description: 'Halaqoh Mutqin 10 Juz', 
     room: 'Ruang A-102',
     targetDailyLines: 20,
     musyrifName: 'Ust. Salman Al-Farisi, S.Pd.I',
-    sessionTime: "Ba'da Maghrib & Isya (18:30 - 20:00 WIB)"
+    creatorId: 'system',
+    memberIds: ['u_default'],
+    createdAt: '2026-01-01T00:00:00Z',
   },
   { 
     id: 'halaqah-ali', 
+    code: 'HLQ-ALI-04',
     name: 'Halaqoh Ali bin Abi Thalib', 
     description: 'Talaqqi I\'dad & Tahsin Dasar', 
     room: 'Ruang B-201',
     targetDailyLines: 10,
     musyrifName: 'Ust. Abdullah Mubarok',
-    sessionTime: "Ba'da Subuh (05:30 - 06:45 WIB)"
+    creatorId: 'system',
+    memberIds: ['u_default'],
+    createdAt: '2026-01-01T00:00:00Z',
   },
 ];
 

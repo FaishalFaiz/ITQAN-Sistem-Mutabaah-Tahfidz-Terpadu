@@ -4,6 +4,7 @@ import {
   Home, 
   FileText, 
   Users, 
+  Layers,
   Settings, 
   X
 } from 'lucide-react';
@@ -27,8 +28,9 @@ interface NavItemDef {
 
 const NAV_ITEMS: NavItemDef[] = [
   { key: 'beranda', label: 'Beranda', icon: Home, path: '/beranda' },
-  { key: 'laporan', label: 'Laporan', icon: FileText, path: '/laporan' },
   { key: 'santri', label: 'Santri', icon: Users, path: '/santri' },
+  { key: 'laporan', label: 'Laporan', icon: FileText, path: '/laporan' },
+  { key: 'halaqah', label: 'Halaqoh', icon: Layers, path: '/halaqah' },
   { key: 'pengaturan', label: 'Pengaturan', icon: Settings, path: '/pengaturan' },
 ];
 
@@ -46,8 +48,9 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
   const getActiveKey = (): NavItemKey => {
     const path = location.pathname;
     if (path === '/' || path === '/beranda') return 'beranda';
-    if (path.startsWith('/laporan')) return 'laporan';
     if (path.startsWith('/santri')) return 'santri';
+    if (path.startsWith('/laporan')) return 'laporan';
+    if (path.startsWith('/halaqah')) return 'halaqah';
     if (path.startsWith('/pengaturan')) return 'pengaturan';
     return 'beranda';
   };
