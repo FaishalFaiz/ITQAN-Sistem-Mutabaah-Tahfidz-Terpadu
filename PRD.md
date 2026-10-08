@@ -10,9 +10,8 @@
 - **Tujuan Utama**: Menggantikan buku catatan mutaba'ah manual berbahan kertas dengan platform web modern berbasis *offline-first*. Sistem memfasilitasi:
   - Pencatatan setoran halaqoh cepat oleh muhaffizh (< 15 detik).
   - Pacing target harian adaptif menuju target 30 juz dalam 3 tahun.
-  - Pencatatan simulasi ujian tasmi' berbasis ketukan/koreksi (digital tap counter).
   - Dasbor analitik capaian hafalan santri di halaqoh.
-  - Pengiriman notifikasi progres mutaba'ah langsung ke WhatsApp wali santri (WA Gateway & Direct WA).
+  - Pengiriman notifikasi progres mutaba'ah langsung ke WhatsApp wali santri (Direct WA wa.me).
 - **Prinsip Desain**: Enterprise-Minimalist UI bergaya clean institusi (merujuk portal SIAP IDN), tipografi Inter, palet solid Putih & Biru (`#0070BA`, tanpa gradien), serta alur pengisian cepat satu tangan (*one-hand mobile workflow*).
 
 ---
@@ -25,7 +24,7 @@
 - **Backend & Database**: Supabase (PostgreSQL + Supabase Auth)
 - **Penyimpanan Klien (Offline-First)**: LocalStorage terisolasi per akun muhaffizh
 - **Ekspor Dokumen**: Cetak Rapor Mutaba'ah Resmi & Ekspor CSV
-- **Integrasi WhatsApp**: WhatsApp Gateway Service dengan mode ramah muhaffizh (otomatis & fallback wa.me)
+- **Integrasi WhatsApp**: WhatsApp Service dengan notifikasi direct wa.me ramah wali santri
 
 ---
 
@@ -196,7 +195,7 @@ itqan-app/
 │   ├── services/
 │   │   ├── authService.ts    # Otentikasi Supabase Auth muhaffizh
 │   │   ├── storageService.ts # LocalStorage terisolasi per muhaffizh aktif
-│   │   └── waGatewayService.ts # Integrasi WhatsApp otomatis & Direct WA
+│   │   └── whatsappService.ts # Integrasi WhatsApp Direct wa.me & pesan mutaba'ah
 │   ├── App.tsx
 │   ├── index.css
 │   └── main.tsx

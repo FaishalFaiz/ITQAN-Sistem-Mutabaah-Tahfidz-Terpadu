@@ -40,7 +40,7 @@ Ketika lembaga mencoba mendigitalkan mutaba'ah melalui software SIMP umum, muncu
 
 ### 3.2. Misi
 1. **Mengeliminasi Beban Administratif Guru:** Memangkas waktu pencatatan setoran dari rata-rata 2–3 menit per santri menjadi kurang dari 15 detik.
-2. **Menjaga Standar Mutqin (Kualitas Hafalan):** Mengintegrasikan simulasi ujian tasmi' digital berbasis ketukan objektif (*tawaqquf* & *fath*).
+2. **Menjaga Standar Mutqin (Kualitas Hafalan):** Mengintegrasikan evaluasi kelancaran talaqqi terukur (Mumtaz, Jayyid, I'adah) pada setiap sesi setoran.
 3. **Mewujudkan Pacing Target yang Realistis:** Menghindarkan santri dari kejenuhan atau keterlambatan target 30 juz melalui kalkulasi laju baris adaptif.
 4. **Membangun Ekosistem Empati Wali Santri:** Menyajikan laporan WhatsApp yang ringkas, menenangkan, informatif, dan bebas spam.
 
@@ -77,7 +77,7 @@ Ketika lembaga mencoba mendigitalkan mutaba'ah melalui software SIMP umum, muncu
 - **Kebutuhan:**
   - Ketersediaan arsip digital riwayat hafalan santri yang rapi.
   - Format cetak rapor resmi mutaba'ah yang representatif dan siap dibagikan pada akhir periode pendidikan.
-  - Standarisasi parameter penilaian ujian tasmi' yang seragam antar-halaqoh.
+  - Standarisasi evaluasi kelancaran mutaba'ah yang seragam antar-halaqoh.
 
 ---
 
@@ -103,11 +103,12 @@ Kurikulum tahfidz standar menargetkan santri menyelesaikan 30 juz dalam tempo 3 
   $$\text{Target Harian Adaptif} = \frac{\text{Total Baris Target (9.060)} - \text{Total Baris Telah Dimutqinkan}}{\text{Sisa Hari Kalender Hingga Kelulusan}}$$
 - Jika seorang santri sempat sakit atau izin selama 2 pekan, sistem tidak memberikan vonis gagal, melainkan secara halus menyesuaikan target harian berikutnya dari 15 baris menjadi 17–18 baris agar target khatam tetap tercapai tepat waktu.
 
-### 5.4. Standarisasi Ujian Tasmi' Digital
-Untuk mengukur kemutqinan hafalan sebelum dinyatakan lulus satu juz, santri menjalani ujian sekali duduk (*Tasmi' Sekali Majelis*). ITQAN menyediakan instrumen digital penghitung kesalahan:
-- **Tawaqquf (Berhenti / Ragu):** Santri terhenti lebih dari 5 detik atau perlu diingatkan dengan ketukan halus (penalti ringan).
-- **Fath / Lahn Jali (Koreksi Fatal):** Muhaffizh terpaksa membacakan lafadz yang benar karena santri salah harakat atau tertukar ayat mutasyabihat (penalti berat).
-- Instrumen ini mengubah evaluasi subjektif *"kayaknya hafalannya lumayan"* menjadi skor kelayakan transparan dengan persentase kelulusan yang dapat dipertanggungjawabkan.
+### 5.4. Standarisasi Evaluasi Kelancaran Talaqqi
+Untuk mengukur kemutqinan hafalan pada setiap sesi, ITQAN menerapkan tiga predikat mutu objektif:
+- **Mumtaz (Lancar Sekali):** Santri menyetor dengan tartil sempurna tanpa keraguan atau salah harakat.
+- **Jayyid (Cukup Lancar):** Santri lancar dengan 1–2 kali jeda mengingat mandiri tanpa perlu dibacakan ayat lanjutan.
+- **I'adah (Perlu Diulang):** Santri memerlukan bantuan muhaffizh atau salah waqaf/harakat berulang, sehingga ditandai untuk pengulangan muroja'ah ba'da maghrib.
+Pendekatan ini menyajikan status hafalan yang transparan dan dapat dipertanggungjawabkan bagi santri maupun wali.
 
 ---
 
@@ -143,11 +144,10 @@ Desain ITQAN berpegang teguh pada manifesto **Balanced Clean & Clear UI**:
 
 | Parameter | Buku Catatan Fisik | SIMP Pesantren Umum | ITQAN |
 | :--- | :--- | :--- | :--- |
-| **Kecepatan Input** | 1 - 2 Menit (Tulis tangan) | 2 - 4 Menit (Banyak klik & form) | **< 15 Detik (Searchable & 1 Tap)** |
+| **Kecepatan Input** | 1 - 2 Menit (Tulis tangan) | 2 - 4 Menit (Banyak klik & form) | **< 15 Detik (Searchable & 1 Klik)** |
 | **Penyimpanan Data** | Rentan hilang / basah | Di cloud server tertutup | **Lokal Terisolasi + Supabase Cloud Sync** |
 | **Metrik Ketepatan** | Lembar / Halaman | Halaman / Nilai Angka | **Line Granularity (9.060 Baris Riil)** |
 | **Laporan Wali** | Semesteran (Buku Rapor) | Harus download aplikasi orang tua | **Direct WhatsApp Otomatis (Tanpa install app)** |
-| **Simulasi Ujian** | Kertas coret-coret | Form input nilai akhir saja | **Digital Tap Counter (Tawaqquf & Fath)** |
 | **Kurva Belajar** | Rendah | Sangat Tinggi (Perlu training khusus) | **Nol (Intuitif sejak menit pertama)** |
 | **Ketergantungan Internet** | Nol | Mutlak (Offline = Rusak) | **Offline-First (Data aman di browser lokal)** |
 
@@ -179,7 +179,7 @@ Desain ITQAN berpegang teguh pada manifesto **Balanced Clean & Clear UI**:
 - ✅ Portal Mandiri Muhaffizh (Supabase Auth).
 - ✅ Fast Setoran Form (< 15 detik, searchable combobox 114 surah, quick line buttons).
 - ✅ Pacing Engine 30 Juz 3 Tahun berbasis baris.
-- ✅ Digital Tap Counter Ujian Tasmi'.
+- ✅ Evaluasi Kelancaran Talaqqi (Mumtaz, Jayyid, I'adah).
 - ✅ Notifikasi WhatsApp Harian cerdas & ramah pengguna.
 - ✅ Cetak Rapor Resmi & Ekspor CSV.
 

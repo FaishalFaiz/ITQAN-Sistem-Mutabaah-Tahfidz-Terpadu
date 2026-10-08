@@ -18,7 +18,7 @@ import { LaporanPage } from './LaporanPage';
 import { PengaturanView } from './PengaturanView';
 import { EditWaliModal } from './EditWaliModal';
 import { EditTargetModal } from './EditTargetModal';
-import { waGatewayService } from '../../services/waGatewayService';
+import { whatsappService } from '../../services/whatsappService';
 import { storageService } from '../../services/storageService';
 import { formatJuz } from '@/lib/utils';
 import type { NavItemKey, Santri } from './types';
@@ -461,7 +461,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
                               <div className="inline-flex items-center gap-1.5">
                                 {santri.parentPhone ? (
                                   <a
-                                    href={waGatewayService.getDirectWALink(
+                                    href={whatsappService.getDirectWALink(
                                       santri.parentPhone,
                                       `Assalamu'alaikum Bpk/Ibu ${santri.parentName || ''}`
                                     )}

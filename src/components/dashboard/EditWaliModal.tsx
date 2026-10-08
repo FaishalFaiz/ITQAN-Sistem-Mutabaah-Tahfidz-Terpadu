@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserCheck, Phone, Check } from 'lucide-react';
 import type { Santri } from './types';
 import { storageService } from '../../services/storageService';
-import { waGatewayService } from '../../services/waGatewayService';
+import { whatsappService } from '../../services/whatsappService';
 import {
   Dialog,
   DialogContent,
@@ -53,7 +53,7 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
       return;
     }
 
-    const cleanPhone = parentPhone.trim() ? waGatewayService.normalizePhoneNumber(parentPhone.trim()) : '';
+    const cleanPhone = parentPhone.trim() ? whatsappService.normalizePhoneNumber(parentPhone.trim()) : '';
 
     const updatedSantri: Santri = {
       ...santri,

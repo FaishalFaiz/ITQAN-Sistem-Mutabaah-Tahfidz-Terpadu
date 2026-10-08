@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from '../../services/storageService';
 import { resolveHalaqahUUID } from '../../services/syncService';
-import { waGatewayService } from '../../services/waGatewayService';
+import { whatsappService } from '../../services/whatsappService';
 import { EditWaliModal } from './EditWaliModal';
 import { EditTargetModal } from './EditTargetModal';
 import { RaporPrintModal } from './RaporPrintModal';
@@ -164,7 +164,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
   // WhatsApp Digest Generator
   const waDigestMessage = useMemo(() => {
-    return waGatewayService.buildDailyProgressMessage(currentSantri);
+    return whatsappService.buildDailyProgressMessage(currentSantri);
   }, [currentSantri]);
 
   const handleCopyWADigest = () => {
@@ -178,16 +178,16 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     storageService.markDailyReportSent(currentSantri.id);
     const updated = storageService.getSantriById(currentSantri.id);
     if (updated) setCurrentSantri(updated);
-    waGatewayService.openDirectWA(currentSantri.parentPhone, waDigestMessage);
+    whatsappService.openDirectWA(currentSantri.parentPhone, waDigestMessage);
   };
 
   // Kirim record setoran tunggal via WhatsApp (wa.me)
   const handleSendRecordWA = (record: SetoranRecord) => {
     if (!currentSantri.parentPhone) return;
-    const messageText = waGatewayService.buildSetoranMessage(record, currentSantri);
+    const messageText = whatsappService.buildSetoranMessage(record, currentSantri);
     storageService.updateSetoranWAStatus(record.id, 'sent');
     loadRecords();
-    waGatewayService.openDirectWA(currentSantri.parentPhone, messageText);
+    whatsappService.openDirectWA(currentSantri.parentPhone, messageText);
   };
 
   const handleConfirmDelete = () => {
@@ -644,7 +644,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 <div className="grid grid-cols-2 gap-2 pt-0.5">
                   {currentSantri.parentPhone ? (
                     <a
-                      href={waGatewayService.getDirectWALink(currentSantri.parentPhone, `Assalamu'alaikum Bpk/Ibu ${currentSantri.parentName || ''}`)}
+                      href={whatsappService.getDirectWALink(currentSantri.parentPhone, `Assalamu'alaikum Bpk/Ibu ${currentSantri.parentName || ''}`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-semibold text-xs transition-colors cursor-pointer"

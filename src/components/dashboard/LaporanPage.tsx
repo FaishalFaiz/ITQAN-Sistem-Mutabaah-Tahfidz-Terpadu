@@ -17,7 +17,7 @@ import {
 import type { Santri, SetoranRecord } from './types';
 import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
 import { syncService, ensureUUID } from '../../services/syncService';
-import { waGatewayService } from '../../services/waGatewayService';
+import { whatsappService } from '../../services/whatsappService';
 import {
   generateSantriReports,
   getJuzDistribution,
@@ -370,7 +370,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
   const handleOpenWABroadcast = () => {
     if (!broadcastTarget.trim()) return;
-    waGatewayService.openDirectWA(broadcastTarget, waDigestMessage);
+    whatsappService.openDirectWA(broadcastTarget, waDigestMessage);
   };
 
   return (

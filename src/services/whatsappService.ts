@@ -2,7 +2,7 @@ import type { Santri, SetoranRecord } from '../components/dashboard/types';
 import { storageService } from './storageService';
 import { formatJuz } from '../lib/utils';
 
-export const waGatewayService = {
+export const whatsappService = {
   /**
    * Normalisasi nomor telepon ke format internasional Indonesia (62xxx)
    */

@@ -160,7 +160,6 @@ Perataan font dan *anti-aliasing* diatur secara langsung pada file CSS utama (`s
 ### 4.2. Tombol Aksi (Solid Buttons)
 - **Primary Button**: Latar biru solid `#0070BA`, teks putih, `rounded-lg`, tinggi mantap (`py-2.5`), tulisan tegas `font-semibold`. Hover menjadi solid `#005C9E`.
 - **Secondary / Outline Button**: Latar transparan/putih, garis tepi solid `#CBD5E1`, teks warna Slate-900, hover ke `#F1F5F9`.
-- **Tap Counter Button (Ujian Tasmi')**: Tombol kotak besar minimal tinggi 72px, angka terlihat jelas di tengah, memberikan respons visual klik langsung (`active:scale-95`).
 
 ```html
 <!-- Format Tombol Utama -->

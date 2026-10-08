@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 
 import type { Santri } from '../dashboard/types';
 import { storageService } from '../../services/storageService';
-import { waGatewayService } from '../../services/waGatewayService';
+import { whatsappService } from '../../services/whatsappService';
 import { toast } from '@/components/ui/sonner';
 import { QURAN_SURAHS, JUZ_TO_START_SURAH, type SurahItem } from '../../data/quranData';
 
@@ -166,8 +166,8 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
 
     // 2. Jika opsi kirim WA dicentang dan santri memiliki no WA, siapkan link wa.me dan opsi salin
     if (sendWA && activeSantri.parentPhone) {
-      const messageText = waGatewayService.buildSetoranMessage(result.record, result.updatedSantri);
-      const waLink = waGatewayService.getDirectWALink(activeSantri.parentPhone, messageText);
+      const messageText = whatsappService.buildSetoranMessage(result.record, result.updatedSantri);
+      const waLink = whatsappService.getDirectWALink(activeSantri.parentPhone, messageText);
       storageService.updateSetoranWAStatus(result.record.id, 'sent');
 
       setWaFeedback({

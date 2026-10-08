@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UserPlus } from 'lucide-react';
 import type { Santri, HalaqahGroup } from './types';
 import { storageService } from '../../services/storageService';
-import { waGatewayService } from '../../services/waGatewayService';
+import { whatsappService } from '../../services/whatsappService';
 import {
   Dialog,
   DialogContent,
@@ -58,7 +58,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
         ? `${words[0][0]}${words[1][0]}`.toUpperCase()
         : name.slice(0, 2).toUpperCase();
 
-    const cleanPhone = parentPhone.trim() ? waGatewayService.normalizePhoneNumber(parentPhone.trim()) : '';
+    const cleanPhone = parentPhone.trim() ? whatsappService.normalizePhoneNumber(parentPhone.trim()) : '';
 
     const generatedId = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()

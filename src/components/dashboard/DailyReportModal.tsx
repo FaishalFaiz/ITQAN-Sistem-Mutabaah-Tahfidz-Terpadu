@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import type { Santri } from './types';
 import { storageService, getTodayDateKey } from '../../services/storageService';
-import { waGatewayService } from '../../services/waGatewayService';
+import { whatsappService } from '../../services/whatsappService';
 import { EditWaliModal } from './EditWaliModal';
 import {
   Dialog,
@@ -73,18 +73,18 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
 
   const handleOpenDirectWA = (santri: Santri) => {
     if (!santri.parentPhone) return;
-    const msg = waGatewayService.buildDailyProgressMessage(santri);
+    const msg = whatsappService.buildDailyProgressMessage(santri);
     storageService.markDailyReportSent(santri.id);
     setStatusMessage({
       type: 'success',
       text: `Membuka WhatsApp untuk wali ${santri.name} dan status ditandai terkirim.`,
     });
     onDataRefresh?.();
-    waGatewayService.openDirectWA(santri.parentPhone, msg);
+    whatsappService.openDirectWA(santri.parentPhone, msg);
   };
 
   const handleCopySingle = (santri: Santri) => {
-    const msg = waGatewayService.buildDailyProgressMessage(santri);
+    const msg = whatsappService.buildDailyProgressMessage(santri);
     navigator.clipboard.writeText(msg);
     setStatusMessage({
       type: 'success',
@@ -388,7 +388,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
               </div>
             </div>
             <pre className="p-3 bg-white border border-slate-200 rounded-lg text-xs font-mono text-slate-800 whitespace-pre-wrap leading-relaxed">
-              {waGatewayService.buildDailyProgressMessage(selectedPreviewSantri)}
+              {whatsappService.buildDailyProgressMessage(selectedPreviewSantri)}
             </pre>
           </div>
         )}

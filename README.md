@@ -146,7 +146,7 @@ ITQAN/
 │   │   ├── emailValidationService.ts # Layanan validasi email mendalam (syntax, MX DNS, disposable, SMTP test)
 │   │   ├── storageService.ts   # Penyimpanan data lokal terisolasi per akun
 │   │   ├── syncService.ts      # Sinkronisasi cloud dua arah (local-first)
-│   │   └── waGatewayService.ts # Layanan pengiriman notifikasi WhatsApp
+│   │   └── whatsappService.ts  # Layanan pengiriman notifikasi WhatsApp Direct (wa.me)
 │   ├── lib/
 │   │   ├── supabase.ts         # Konfigurasi klien Supabase
 │   │   └── utils.ts            # Helper utility Tailwind & class merger

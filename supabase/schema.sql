@@ -33,25 +33,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE wa_provider_type AS ENUM ('fonnte', 'waha', 'wablas', 'custom');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
     CREATE TYPE wa_message_status_type AS ENUM ('not_sent', 'sent', 'failed');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE wa_log_status_type AS ENUM ('success', 'failed', 'fallback_opened');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
-
-DO $$ BEGIN
-    CREATE TYPE wa_log_message_type AS ENUM ('setoran', 'broadcast', 'test', 'daily_report');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -134,8 +116,6 @@ CREATE INDEX IF NOT EXISTS idx_santri_halaqah_id ON santri(halaqah_id);
 CREATE INDEX IF NOT EXISTS idx_santri_name ON santri(name);
 CREATE INDEX IF NOT EXISTS idx_setoran_santri_date ON setoran(santri_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_setoran_created_at ON setoran(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_wa_logs_created_at ON wa_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_wa_logs_santri_id ON wa_logs(santri_id);
 
 -- ==============================================================================
 -- 5. BUSINESS LOGIC: AUTOMATED TRIGGERS & FUNCTIONS
@@ -165,10 +145,6 @@ CREATE TRIGGER trg_santri_updated_at
 BEFORE UPDATE ON santri
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS trg_wa_config_updated_at ON wa_gateway_config;
-CREATE TRIGGER trg_wa_config_updated_at
-BEFORE UPDATE ON wa_gateway_config
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- 5.2 Auto Create Musyrif Profile saat Sign Up di Supabase Auth
 CREATE OR REPLACE FUNCTION handle_new_musyrif_signup()
@@ -254,54 +230,7 @@ CREATE TRIGGER trg_after_setoran_insert
 AFTER INSERT ON setoran
 FOR EACH ROW EXECUTE FUNCTION handle_new_setoran();
 
--- 5.4 Stored Procedure: Catat Pengiriman Laporan Harian WA
-CREATE OR REPLACE FUNCTION record_daily_report_sent(
-    p_santri_id UUID,
-    p_recipient_name TEXT,
-    p_recipient_phone TEXT,
-    p_snippet TEXT,
-    p_status wa_log_status_type DEFAULT 'success'
-)
-RETURNS JSONB AS $$
-DECLARE
-    v_today DATE := CURRENT_DATE;
-    v_time_str VARCHAR(50);
-BEGIN
-    v_time_str := to_char(now() AT TIME ZONE 'Asia/Jakarta', 'HH24:MI') || ' WIB';
 
-    UPDATE santri
-    SET
-        last_daily_report_sent_date = v_today,
-        last_daily_report_sent_time = v_time_str,
-        updated_at = now()
-    WHERE id = p_santri_id;
-
-    INSERT INTO wa_logs (
-        santri_id,
-        recipient_name,
-        recipient_phone,
-        message_type,
-        status,
-        status_text,
-        message_snippet
-    ) VALUES (
-        p_santri_id,
-        p_recipient_name,
-        p_recipient_phone,
-        'daily_report',
-        p_status,
-        'Laporan mutabaah harian terkirim ke wali',
-        p_snippet
-    );
-
-    RETURN jsonb_build_object(
-        'success', true,
-        'santri_id', p_santri_id,
-        'date', v_today,
-        'time', v_time_str
-    );
-END;
-$$ LANGUAGE plpgsql;
 
 -- ==============================================================================
 -- 6. VIEWS FOR DASHBOARD & REPORTING
@@ -370,8 +299,6 @@ ALTER TABLE musyrif_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE halaqah ENABLE ROW LEVEL SECURITY;
 ALTER TABLE santri ENABLE ROW LEVEL SECURITY;
 ALTER TABLE setoran ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wa_gateway_config ENABLE ROW LEVEL SECURITY;
-ALTER TABLE wa_logs ENABLE ROW LEVEL SECURITY;
 
 -- Policy musyrif_profiles: Pengguna dapat membaca & memperbarui profilnya sendiri
 CREATE POLICY "Musyrif can read and update profile" ON musyrif_profiles
@@ -383,8 +310,6 @@ WITH CHECK (auth.uid() = id);
 CREATE POLICY "Authenticated musyrif access halaqah" ON halaqah FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated musyrif access santri" ON santri FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated musyrif access setoran" ON setoran FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Authenticated musyrif access wa_gateway_config" ON wa_gateway_config FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Authenticated musyrif access wa_logs" ON wa_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Akses fallback anon (agar aplikasi tetap responsif saat pengujian awal)
 CREATE POLICY "Anon read access halaqah" ON halaqah FOR SELECT TO anon USING (true);
