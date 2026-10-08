@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Mail, ShieldAlert } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authService } from '@/services/authService';
 import { syncService } from '@/services/syncService';
 import { emailValidationService, type EmailValidationResult } from '@/services/emailValidationService';
-import { EmailValidationIndicator } from '@/components/auth/EmailValidationIndicator';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -103,16 +102,17 @@ export const LoginPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="muhaffizh@itqan.sch.id"
-                  className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
+                  className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-10 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
                 />
+                {/* Status Centang Hijau / Spinner di Samping Kanan Input */}
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  {isValidatingEmail ? (
+                    <div className="w-4 h-4 border-2 border-slate-300 border-t-[#0070BA] rounded-full animate-spin" />
+                  ) : emailValidation?.verdict === 'valid' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  ) : null}
+                </div>
               </div>
-
-              {/* Indikator Validasi Email Realtime */}
-              <EmailValidationIndicator
-                result={emailValidation}
-                isValidating={isValidatingEmail}
-                onApplySuggestion={(suggested) => setEmail(suggested)}
-              />
             </div>
 
             {/* Input Password */}
