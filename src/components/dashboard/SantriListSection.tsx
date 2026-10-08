@@ -155,7 +155,7 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
       {/* Grid Kartu Santri */}
       {santriList.length === 0 ? (
         <div className="py-10 px-5 text-center text-xs bg-slate-50/60 rounded-xl border border-dashed border-slate-200 space-y-4">
-          <div className="w-13 h-13 rounded-2xl bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center mx-auto shadow-2xs border border-[#D6EAF8]">
+          <div className="w-12 h-12 rounded-2xl bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center mx-auto shrink-0 shadow-2xs border border-[#D6EAF8]">
             <UserPlus className="w-6 h-6" />
           </div>
           <div className="space-y-1">

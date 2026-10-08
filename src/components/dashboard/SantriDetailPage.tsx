@@ -366,7 +366,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* Info Utama Santri */}
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-lg sm:text-xl shrink-0 shadow-2xs">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-lg sm:text-xl shrink-0 shadow-2xs">
               {currentSantri.avatarInitials}
             </div>
 
