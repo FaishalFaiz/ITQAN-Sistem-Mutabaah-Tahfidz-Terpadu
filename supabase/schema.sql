@@ -126,37 +126,6 @@ CREATE TABLE IF NOT EXISTS setoran (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 3.5 Tabel Konfigurasi WhatsApp Gateway
-CREATE TABLE IF NOT EXISTS wa_gateway_config (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    halaqah_id UUID REFERENCES halaqah(id) ON DELETE CASCADE,
-    provider wa_provider_type NOT NULL DEFAULT 'fonnte',
-    endpoint_url TEXT NOT NULL DEFAULT 'https://api.fonnte.com/send',
-    api_key TEXT DEFAULT '',
-    sender_number VARCHAR(50) DEFAULT '',
-    auto_send_on_setoran BOOLEAN NOT NULL DEFAULT false,
-    limit_one_message_per_day BOOLEAN NOT NULL DEFAULT true,
-    template_daily_progress TEXT NOT NULL DEFAULT '',
-    template_ziyadah TEXT NOT NULL DEFAULT '',
-    template_murojaah TEXT NOT NULL DEFAULT '',
-    template_halaqah_digest TEXT NOT NULL DEFAULT '',
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- 3.7 Tabel Log Pengiriman Pesan WhatsApp (Audit Trail)
-CREATE TABLE IF NOT EXISTS wa_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    santri_id UUID REFERENCES santri(id) ON DELETE SET NULL,
-    recipient_name VARCHAR(255) NOT NULL,
-    recipient_phone VARCHAR(50) NOT NULL,
-    message_type wa_log_message_type NOT NULL DEFAULT 'daily_report',
-    status wa_log_status_type NOT NULL DEFAULT 'success',
-    status_text TEXT,
-    message_snippet TEXT,
-    payload_sent JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
 -- ==============================================================================
 -- 4. PERFORMANCE INDEXES
 -- ==============================================================================
@@ -263,9 +232,9 @@ BEGIN
 
     -- Update state tabel santri
     UPDATE santri
-    SET 
+    SET
         lines_completed_today = v_total_today,
-        status = CASE 
+        status = CASE
             WHEN v_total_today >= v_target THEN 'tercapai'::santri_status_type
             WHEN v_total_today > 0 THEN 'tidak_tercapai'::santri_status_type
             ELSE 'belum_setor'::santri_status_type
@@ -301,7 +270,7 @@ BEGIN
     v_time_str := to_char(now() AT TIME ZONE 'Asia/Jakarta', 'HH24:MI') || ' WIB';
 
     UPDATE santri
-    SET 
+    SET
         last_daily_report_sent_date = v_today,
         last_daily_report_sent_time = v_time_str,
         updated_at = now()
@@ -339,7 +308,7 @@ $$ LANGUAGE plpgsql;
 -- ==============================================================================
 
 CREATE OR REPLACE VIEW v_santri_dashboard AS
-SELECT 
+SELECT
     s.id,
     s.name,
     s.nis,
@@ -357,9 +326,9 @@ SELECT
     h.musyrif_name,
     s.last_daily_report_sent_date,
     s.last_daily_report_sent_time,
-    CASE 
-        WHEN s.last_daily_report_sent_date = CURRENT_DATE THEN true 
-        ELSE false 
+    CASE
+        WHEN s.last_daily_report_sent_date = CURRENT_DATE THEN true
+        ELSE false
     END AS is_report_sent_today,
     s.is_active,
     s.created_at
@@ -368,7 +337,7 @@ LEFT JOIN halaqah h ON s.halaqah_id = h.id
 ORDER BY s.nis ASC;
 
 CREATE OR REPLACE VIEW v_setoran_hari_ini AS
-SELECT 
+SELECT
     st.id,
     st.santri_id,
     s.name AS santri_name,
