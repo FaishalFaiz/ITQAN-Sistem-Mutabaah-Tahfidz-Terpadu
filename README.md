@@ -40,9 +40,10 @@
 - **Fast-Logging Setoran Halaqoh (< 15 Detik):** Form pencatatan cepat hafalan baru (*Ziyadah*) dan pengulangan (*Muroja'ah*) berbasis input nama/nomor surah (searchable combobox 114 surah), dropdown Juz 1–30, rentang ayat awal/akhir, dan input manual jumlah baris setoran (IDN style).
 - **Otomatisasi Target Santri (Auto-Lock Modal):** Saat menekan tombol setor pada santri tertentu, popup modal otomatis mengunci identitas santri tanpa perlu memilih nama ulang secara manual.
 - **Pacing Engine Kurikulum 3 Tahun (30 Juz):** Kalkulator otomatis yang menghitung sisa hari, akumulasi baris hafalan, dan rekomendasi target harian ideal agar santri khatam sesuai kurikulum 36 bulan.
-- **Digital Tap Counter Ujian Tasmi':** Modul simulasi ujian sekali duduk dengan penghitung digital untuk ketukan tajwid (*Tawaqquf*) dan koreksi fatal lafadz (*Fath*).
-- **Executive Santri Detail Page:** Halaman rapor santri yang bersih dan bebas duplikasi metrik, dilengkapi riwayat setoran komprehensif dan pintasan kontak wali santri.
-- **Integrasi Notifikasi WhatsApp Ramah Guru:** Pengiriman otomatis laporan harian per santri ke nomor WhatsApp wali, pembatasan 1 pesan per hari untuk mencegah spam, serta opsi *Direct WA* (`wa.me`).
+- **Kustomisasi Target Halaqoh & Santri:** Pengaturan target hafalan fleksibel per halaqoh dan per santri, filter tampilan komprehensif, serta manajemen kurikulum.
+- **Executive Santri Detail Page:** Halaman rapor santri yang bersih dan bebas duplikasi metrik, rute URL unik per santri (`/santri/:id`), riwayat setoran komprehensif, dan pintasan kontak wali santri.
+- **Validasi Email Mendalam (Multi-Tier):** Pemeriksaan sintaksis RFC, deteksi disposable/burner, lookup DNS MX publik (DoH Cloudflare/Google), simulasi SMTP handshake, dan deteksi penyedia email institusi.
+- **Integrasi Notifikasi WhatsApp Ramah Guru:** Pengiriman ringkasan setoran harian per santri ke nomor WhatsApp wali, template kustom halaqoh, serta opsi *Direct WA* (`wa.me`).
 - **Otentikasi Terfokus Muhaffizh:** Akses portal khusus muhaffizh halaqoh tanpa kerumitan multi-role/atasan sehingga penggunaan lebih cepat dan intuitif.
 
 ---
@@ -130,8 +131,7 @@ ITQAN/
 │   │   │   ├── TrendChart.tsx        # Visualisasi grafik tren ziyadah & muroja'ah
 │   │   │   └── types.ts              # Interface santri, status, & navigasi
 │   │   ├── halaqah/
-│   │   │   ├── FastSetoranForm.tsx   # Form input cepat setoran (surah search, ayat, baris manual)
-│   │   │   └── TapCounterExam.tsx    # Simulator digital tap counter ujian tasmi'
+│   │   │   └── FastSetoranForm.tsx   # Form input cepat setoran (surah search, ayat, baris manual)
 │   │   ├── ui/                 # Komponen dasar (Button, Card, Badge, Input, Dialog, Sonner)
 │   │   └── visualization/
 │   │       └── PacingCard.tsx        # Kartu visualisasi pacing engine 3 tahun
@@ -143,7 +143,9 @@ ITQAN/
 │   │       └── SignupPage.tsx        # Halaman pendaftaran akun muhaffizh
 │   ├── services/
 │   │   ├── authService.ts      # Layanan otentikasi muhaffizh (Supabase Auth)
+│   │   ├── emailValidationService.ts # Layanan validasi email mendalam (syntax, MX DNS, disposable, SMTP test)
 │   │   ├── storageService.ts   # Penyimpanan data lokal terisolasi per akun
+│   │   ├── syncService.ts      # Sinkronisasi cloud dua arah (local-first)
 │   │   └── waGatewayService.ts # Layanan pengiriman notifikasi WhatsApp
 │   ├── lib/
 │   │   ├── supabase.ts         # Konfigurasi klien Supabase
@@ -183,9 +185,10 @@ Seluruh rute dan fitur utama dapat diakses langsung pada mode dev:
 | Halaman / Fitur | Rute URL | Keterangan |
 | :--- | :--- | :--- |
 | **Beranda Halaqoh** | `/beranda` atau `/` | Ringkasan absensi, stat cards, dan daftar santri |
-| **Detail Santri** | `/santri/1` | Rapor komprehensif santri |
-| **Ujian Tasmi' Digital** | `/ujian-tasmi` | Tap counter simulasi penilaian ujian |
-| **Pacing Engine** | `/pacing` | Dasbor target khatam 30 Juz 3 tahun |
+| **Detail Santri** | `/santri/:id` | Rapor komprehensif santri & riwayat mutaba'ah per id |
+| **Pacing Engine & Target** | Tab Target & Pacing | Dasbor target khatam 30 Juz 3 tahun & filter halaqoh |
+| **Laporan & Rapor** | Tab Laporan | Rekap mutaba'ah, cetak rapor resmi, & unduh CSV |
+| **Pengaturan Halaqoh** | Tab Pengaturan | Manajemen halaqoh, format template WhatsApp, & diagnostik email |
 | **Login Muhaffizh** | `/login` | Masuk ke portal halaqoh muhaffizh |
 | **Registrasi Muhaffizh** | `/signup` | Pendaftaran akun muhaffizh baru |
 

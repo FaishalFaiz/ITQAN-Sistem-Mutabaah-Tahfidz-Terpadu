@@ -69,19 +69,24 @@ Aplikasi didesain khusus untuk digunakan oleh **Muhaffizh / Muhaffizhah / Guru T
   - **Defisit / Tidak Tercapai** (Merah): Santri menyetor kurang dari target hariannya.
   - **Belum Setor** (Kuning/Amber): Santri belum menyetor pada hari aktif.
 
-### 4.3. Digital Tap Counter Ujian Tasmi'
-- Tombol tap responsif untuk mencatat ketukan tajwid (*Tawaqquf*) dan koreksi lafadz (*Fath*).
-- Penghitungan skor otomatis sekali duduk untuk ujian kelayakan hafalan.
+### 4.3. Manajemen Halaqoh & Kustomisasi Target
+- Konfigurasi nama halaqoh, muhaffizh pembimbing, ruangan, dan target baris default per halaqoh.
+- Penyesuaian target baris harian spesifik per santri (fleksibel sesuai kemampuan individu).
+- Filter halaqoh terpadu pada tab Pacing & Target Hafalan serta Laporan.
 
-### 4.4. Integrasi WhatsApp Sederhana (Fokus Muhaffizh)
+### 4.4. Validasi Email Terpadu (Multi-Tier Diagnostic)
+- Validasi sintaksis standar RFC 5322.
+- Deteksi domain disposable / temporary burner email.
+- Pemeriksaan DNS MX record riil via DoH (Cloudflare / Google Public DNS).
+- Simulasi SMTP handshake & identifikasi provider institusi.
+- Panel diagnostik pengujian interaktif pada menu Pengaturan.
+
+### 4.5. Integrasi WhatsApp Sederhana (Fokus Muhaffizh)
 - **Desain Ramah Pengguna**:
-  - Menghilangkan template custom dan tabel log teknis yang membingungkan pengguna non-teknis.
-  - Menyediakan 2 kontrol utama:
-    1. **Batasi 1 Pesan / Hari Per Wali**: Mengkonsolidasikan seluruh setoran dalam 1 laporan harian agar tidak membebani wali santri.
-    2. **Auto-Send Saat Input Setoran**: Mengirim pesan notifikasi instan langsung begitu setoran disimpan muhaffizh.
-  - Fitur **Uji Coba Kirim Pesan** dengan nomor tujuan tes dan fallback **Direct WA** (`wa.me`).
+  - Format pesan template halaqoh kustom yang tersimpan rapi.
+  - Opsi *Direct WA* (`wa.me`) untuk mengirimkan ringkasan setoran harian dan rapor santri ke nomor wali tanpa server pihak ketiga.
 
-### 4.5. Dokumen Rapor & Laporan Mutaba'ah
+### 4.6. Dokumen Rapor & Laporan Mutaba'ah
 - **Cetak Rapor Santri**:
   - Format standar cetak/PDF bersih tanpa elemen tidak perlu.
   - Tanda tangan resmi tunggal oleh Muhaffizh Halaqoh.
@@ -96,7 +101,6 @@ create extension if not exists "uuid-ossp";
 
 -- 1. ENUMS
 create type setoran_type as enum ('ziyadah', 'murojaah');
-create type exam_status as enum ('pending', 'completed');
 
 -- 2. TABEL PROFIL MUSYRIF
 create table public.musyrif_profiles (
@@ -144,25 +148,10 @@ create table public.setoran_records (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
--- 5. TABEL UJIAN & TASMI'
-create table public.exams (
-  id uuid default uuid_generate_v4() primary key,
-  santri_id uuid references public.santri(id) on delete cascade not null,
-  musyrif_id uuid references public.musyrif_profiles(id) on delete set null,
-  juz_target int not null check (juz_target between 1 and 30),
-  ketukan_count int default 0,
-  dibetulkan_count int default 0,
-  final_score numeric(5,2),
-  passed boolean default false,
-  notes text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
 -- PENGAKTIFAN ROW LEVEL SECURITY (RLS)
 alter table public.musyrif_profiles enable row level security;
 alter table public.santri enable row level security;
 alter table public.setoran_records enable row level security;
-alter table public.exams enable row level security;
 
 -- ATURAN KEAMANAN (RLS POLICIES)
 create policy "Musyrif owns their profile" on public.musyrif_profiles
@@ -192,7 +181,7 @@ itqan-app/
 │   ├── components/
 │   │   ├── ui/               # Button, Input, Card, Badge, Modal, Sonner
 │   │   ├── dashboard/        # SantriCard, SantriDetailPage, LaporanPage, PengaturanView, RaporPrintModal
-│   │   ├── halaqah/          # FastSetoranForm, TapCounter
+│   │   ├── halaqah/          # FastSetoranForm
 │   │   ├── visualization/    # PacingCard, TrendChart, StatCards
 │   │   └── shared/           # NavbarSidebar
 │   ├── data/
