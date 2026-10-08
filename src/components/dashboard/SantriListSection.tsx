@@ -15,6 +15,7 @@ interface SantriListSectionProps {
   onFilterChange: (filter: SetoranFilterType) => void;
   onSetor: (santri: Santri) => void;
   onDetail: (santri: Santri) => void;
+  onEditTarget?: (santri: Santri) => void;
   onOpenAddModal: () => void;
 }
 
@@ -24,6 +25,7 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
   onFilterChange,
   onSetor,
   onDetail,
+  onEditTarget,
   onOpenAddModal,
 }) => {
   const [search, setSearch] = useState('');
@@ -202,6 +204,7 @@ export const SantriListSection: React.FC<SantriListSectionProps> = ({
               santri={santri}
               onSetor={onSetor}
               onDetail={onDetail}
+              onEditTarget={onEditTarget}
             />
           ))}
         </div>

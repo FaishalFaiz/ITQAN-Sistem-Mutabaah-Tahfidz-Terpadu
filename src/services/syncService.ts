@@ -31,6 +31,7 @@ export interface SantriRow {
   parent_name: string | null;
   parent_phone: string | null;
   halaqah_id?: string | null;
+  halaqah_name?: string | null;
   juz_achieved: number | null;
   lines_completed_today: number | null;
   daily_target_lines: number | null;
@@ -109,7 +110,7 @@ export interface SetoranRow {
 
 // Mapper: Supabase row -> Santri client model
 export function mapRowToSantri(row: SantriRow): Santri {
-  const rawHalaqah = (row as any).halaqah_name || row.halaqah_id;
+  const rawHalaqah = row.halaqah_name || row.halaqah_id;
   const halaqahName = resolveHalaqahName(rawHalaqah);
   const halaqahId = row.halaqah_id || resolveHalaqahUUID(halaqahName);
   return {

@@ -5,12 +5,10 @@ import {
   FileText, 
   Users, 
   Settings, 
-  LogOut,
   X
 } from 'lucide-react';
 import gsap from 'gsap';
 import type { NavItemKey } from './types';
-import { authService, type MusyrifUser } from '../../services/authService';
 
 interface NavbarSidebarProps {
   isOpen: boolean;
@@ -44,14 +42,6 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const hasInitialized = useRef(false);
-  const [currentUser, setCurrentUser] = React.useState<MusyrifUser | null>(null);
-
-  useEffect(() => {
-    authService.getCurrentUser().then((user) => {
-      if (user) setCurrentUser(user);
-    });
-  }, []);
-
   // Map route pathname to NavItemKey
   const getActiveKey = (): NavItemKey => {
     const path = location.pathname;
@@ -195,47 +185,6 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
             );
           })}
         </nav>
-
-        {/* Sidebar Footer User Info (Khusus Muhaffizh) */}
-        <div className="p-3.5 border-t border-slate-200 shrink-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] flex items-center justify-center font-bold text-xs shrink-0">
-                {currentUser?.fullName
-                  ? currentUser.fullName
-                      .split(' ')
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .map((n) => n[0].toUpperCase())
-                      .join('')
-                  : 'MH'}
-              </div>
-              <div className="min-w-0">
-                <span className="font-bold text-xs text-slate-900 block truncate" title={currentUser?.fullName || 'Muhaffizh'}>
-                  {currentUser?.fullName || 'Muhaffizh'}
-                </span>
-                <span className="text-[10px] text-slate-500 block truncate">
-                  Pembimbing Halaqoh
-                </span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={async () => {
-                await authService.signOut();
-                navigate('/login');
-                if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-                  onClose();
-                }
-              }}
-              title="Keluar dari Portal Muhaffizh"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0 cursor-pointer"
-              aria-label="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       </aside>
     </>
   );

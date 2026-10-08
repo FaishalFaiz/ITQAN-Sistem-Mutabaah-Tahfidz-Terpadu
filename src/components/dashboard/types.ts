@@ -52,6 +52,9 @@ export interface HalaqahGroup {
   name: string;
   description?: string;
   room?: string;
+  targetDailyLines?: number;
+  musyrifName?: string;
+  sessionTime?: string;
 }
 
 export interface HalaqahSettings {
@@ -59,24 +62,6 @@ export interface HalaqahSettings {
   musyrifName: string;
   standardDailyTargetLines: number;
   activeHalaqahId?: string;
-}
-
-export interface ExamRecord {
-  id: string;
-  santriId: string;
-  santriName: string;
-  nis: string;
-  juz: number;
-  ketukan: number;
-  dibetulkan: number;
-  tajwidScore: number;
-  fashahahScore: number;
-  penalty: number;
-  finalScore: number;
-  isPassed: boolean;
-  date: string;
-  musyrif: string;
-  notes?: string;
 }
 
 export type NavItemKey = 

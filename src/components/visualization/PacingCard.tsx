@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 interface PacingCardProps {
   santriName: string;
   nis: string;
+  halaqahName?: string;
   totalLinesMemorized: number; // Max 9060
   totalLinesTarget?: number;
   programDurationYears?: number;
@@ -18,6 +19,7 @@ interface PacingCardProps {
 export const PacingCard: React.FC<PacingCardProps> = ({
   santriName,
   nis,
+  halaqahName,
   totalLinesMemorized = 1420,
   totalLinesTarget = 9060,
   daysRemaining = 650,
@@ -40,7 +42,9 @@ export const PacingCard: React.FC<PacingCardProps> = ({
               <h3 className="font-semibold text-slate-900 text-base">{santriName}</h3>
               <span className="text-xs text-slate-500 font-mono">({nis})</span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">Target Kurikulum 30 Juz</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {halaqahName ? halaqahName : 'Target Kurikulum 30 Juz'}
+            </p>
           </div>
           <Badge variant={status === 'on_track' ? 'mumtaz' : 'iadah'}>
             {status === 'on_track' ? 'Sesuai Target (On Track)' : 'Tertinggal (Behind)'}

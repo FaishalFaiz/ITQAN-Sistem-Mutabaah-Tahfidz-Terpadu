@@ -1,11 +1,10 @@
-import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings, ExamRecord, HalaqahGroup } from '../components/dashboard/types';
+import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings, HalaqahGroup } from '../components/dashboard/types';
 import { 
   DEFAULT_WA_TEMPLATE_CONFIG, 
   DEFAULT_HALAQAH_SETTINGS,
   DEFAULT_HALAQAH_LIST,
   INITIAL_MOCK_SANTRI,
   INITIAL_MOCK_SETORAN,
-  INITIAL_MOCK_EXAMS,
 } from '../components/dashboard/mockData';
 import { formatJuz } from '../lib/utils';
 import { syncService, ensureUUID } from './syncService';
@@ -17,7 +16,6 @@ const BASE_KEYS = {
   WA_TEMPLATES: 'itqan_wa_template_config',
   SETTINGS: 'itqan_halaqah_settings',
   HALAQAH_LIST: 'itqan_halaqah_list',
-  EXAMS: 'itqan_exam_records',
 };
 
 // Event for cross-component reactive updates
@@ -543,7 +541,19 @@ export const storageService = {
         localStorage.setItem(key, JSON.stringify(DEFAULT_HALAQAH_LIST));
         return DEFAULT_HALAQAH_LIST;
       }
-      return JSON.parse(data);
+      const list: HalaqahGroup[] = JSON.parse(data);
+      // Lengkapi jika ada data halaqoh lama yang belum memiliki target/pembimbing
+      return list.map((item) => {
+        const defaultMatch = DEFAULT_HALAQAH_LIST.find(
+          (d) => d.id === item.id || d.name.toLowerCase() === item.name.toLowerCase()
+        );
+        return {
+          ...item,
+          targetDailyLines: item.targetDailyLines || defaultMatch?.targetDailyLines || 15,
+          musyrifName: item.musyrifName || defaultMatch?.musyrifName || 'Pembimbing Halaqoh',
+          sessionTime: item.sessionTime || defaultMatch?.sessionTime || '-',
+        };
+      });
     } catch {
       return DEFAULT_HALAQAH_LIST;
     }
@@ -560,10 +570,77 @@ export const storageService = {
     const newGroup: HalaqahGroup = {
       ...group,
       id: `halaqah-${Date.now()}`,
+      targetDailyLines: group.targetDailyLines || 15,
+      musyrifName: group.musyrifName || 'Pembimbing Halaqoh',
+      sessionTime: group.sessionTime || '-',
     };
     const updated = [...list, newGroup];
     this.saveHalaqahList(updated);
     return newGroup;
+  },
+
+  updateHalaqah(
+    id: string,
+    updates: Partial<HalaqahGroup>,
+    syncSantriTarget: boolean = false
+  ): HalaqahGroup | null {
+    const list = this.getHalaqahList();
+    const index = list.findIndex((h) => h.id === id);
+    if (index === -1) return null;
+
+    const oldHalaqah = list[index];
+    const updatedHalaqah: HalaqahGroup = {
+      ...oldHalaqah,
+      ...updates,
+      id: oldHalaqah.id,
+    };
+
+    list[index] = updatedHalaqah;
+    this.saveHalaqahList(list);
+
+    // Jika halaqoh yang diedit adalah halaqoh aktif saat ini, perbarui juga HalaqahSettings
+    const active = this.getActiveHalaqah();
+    if (active.id === id) {
+      const currentSettings = this.getHalaqahSettings();
+      this.saveHalaqahSettings({
+        ...currentSettings,
+        halaqahName: updatedHalaqah.name,
+        musyrifName: updatedHalaqah.musyrifName || currentSettings.musyrifName,
+        standardDailyTargetLines:
+          updatedHalaqah.targetDailyLines || currentSettings.standardDailyTargetLines,
+      });
+    }
+
+    // Jika nama berubah atau opsi syncSantriTarget dicentang, update data santri di halaqoh ini
+    const nameChanged = oldHalaqah.name !== updatedHalaqah.name;
+    if (nameChanged || syncSantriTarget) {
+      const santriList = this.getSantriList();
+      let hasChanges = false;
+      const updatedSantriList = santriList.map((s) => {
+        const isInHalaqah =
+          s.halaqahId === id ||
+          (s.halaqahName && s.halaqahName.toLowerCase() === oldHalaqah.name.toLowerCase());
+        if (!isInHalaqah) return s;
+
+        hasChanges = true;
+        return {
+          ...s,
+          halaqahName: updatedHalaqah.name,
+          halaqahId: id,
+          dailyTargetLines:
+            syncSantriTarget && updatedHalaqah.targetDailyLines
+              ? updatedHalaqah.targetDailyLines
+              : s.dailyTargetLines,
+        };
+      });
+
+      if (hasChanges) {
+        this.saveSantriList(updatedSantriList);
+      }
+    }
+
+    emitChange('halaqah_updated');
+    return updatedHalaqah;
   },
 
   getActiveHalaqah(): HalaqahGroup {
@@ -591,65 +668,20 @@ export const storageService = {
       ...current,
       activeHalaqahId: found.id,
       halaqahName: found.name,
+      musyrifName: found.musyrifName || current.musyrifName,
+      standardDailyTargetLines: found.targetDailyLines || current.standardDailyTargetLines,
     };
     this.saveHalaqahSettings(updated);
     emitChange('active_halaqah_switched');
-  },
-
-  // ================= UJIAN TASMI' =================
-  getExamRecords(): ExamRecord[] {
-    try {
-      const key = this.getScopedKey(BASE_KEYS.EXAMS);
-      const data = localStorage.getItem(key);
-      if (!data || data === '[]') {
-        localStorage.setItem(key, JSON.stringify(INITIAL_MOCK_EXAMS));
-        return INITIAL_MOCK_EXAMS;
-      }
-      const list = JSON.parse(data);
-      if (!list || list.length === 0) {
-        localStorage.setItem(key, JSON.stringify(INITIAL_MOCK_EXAMS));
-        return INITIAL_MOCK_EXAMS;
-      }
-      return list;
-    } catch {
-      return INITIAL_MOCK_EXAMS;
-    }
-  },
-
-  getExamsBySantriId(santriId: string): ExamRecord[] {
-    const list = this.getExamRecords();
-    return list.filter((e) => e.santriId === santriId);
-  },
-
-  addExamRecord(input: Omit<ExamRecord, 'id' | 'date'>): ExamRecord {
-    const record: ExamRecord = {
-      ...input,
-      id: `exam-${Date.now()}`,
-      date: new Intl.DateTimeFormat('id-ID', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(new Date()) + ' WIB',
-    };
-    const key = this.getScopedKey(BASE_KEYS.EXAMS);
-    const list = this.getExamRecords();
-    const updated = [record, ...list];
-    localStorage.setItem(key, JSON.stringify(updated));
-    emitChange('exam_record_added');
-    return record;
   },
 
   // ================= RESET / BERSIHKAN DATA AKUN INI =================
   resetDatabase(): void {
     const santriKey = this.getScopedKey(BASE_KEYS.SANTRI);
     const setoranKey = this.getScopedKey(BASE_KEYS.SETORAN);
-    const examsKey = this.getScopedKey(BASE_KEYS.EXAMS);
 
     localStorage.setItem(santriKey, JSON.stringify([]));
     localStorage.setItem(setoranKey, JSON.stringify([]));
-    localStorage.setItem(examsKey, JSON.stringify([]));
     emitChange('database_reset');
   },
 };

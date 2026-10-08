@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authService } from '@/services/authService';
 import { syncService } from '@/services/syncService';
+import { emailValidationService, type EmailValidationResult } from '@/services/emailValidationService';
+import { EmailValidationIndicator } from '@/components/auth/EmailValidationIndicator';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +15,31 @@ export const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Email Validation State
+  const [emailValidation, setEmailValidation] = useState<EmailValidationResult | null>(null);
+  const [isValidatingEmail, setIsValidatingEmail] = useState(false);
+
+  useEffect(() => {
+    const trimmed = email.trim();
+    if (!trimmed || !trimmed.includes('@') || trimmed.length < 5) {
+      setEmailValidation(null);
+      setIsValidatingEmail(false);
+      return;
+    }
+
+    setIsValidatingEmail(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await emailValidationService.validateEmail(trimmed);
+        setEmailValidation(res);
+      } finally {
+        setIsValidatingEmail(false);
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +106,13 @@ export const LoginPage: React.FC = () => {
                   className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
                 />
               </div>
+
+              {/* Indikator Validasi Email Realtime */}
+              <EmailValidationIndicator
+                result={emailValidation}
+                isValidating={isValidatingEmail}
+                onApplySuggestion={(suggested) => setEmail(suggested)}
+              />
             </div>
 
             {/* Input Password */}

@@ -1,4 +1,4 @@
-import type { Santri, SetoranRecord, ExamRecord } from './types';
+import type { Santri, SetoranRecord } from './types';
 import { ensureUUID } from '../../services/syncService';
 
 export interface SantriReportItem {
@@ -27,14 +27,6 @@ export interface SantriReportItem {
   totalSessionsScheduled: number;
   pacingStatus: 'on_track' | 'behind' | 'accelerated';
   pacingDeficitLines: number; // 0 jika on track / accelerated
-  lastExam: {
-    juz: number;
-    date: string;
-    score: number;
-    grade: 'Mumtaz' | 'Jayyid Jiddan' | 'Jayyid' | 'I\'adah';
-    passed: boolean;
-    examiner: string;
-  } | null;
   iadahWeakPoints: string[];
   daysSinceLastMurojaah: number;
 }
@@ -134,8 +126,7 @@ export function filterRecordsByPeriod(
  */
 export const generateSantriReports = (
   santriList: Santri[],
-  setoranRecords: SetoranRecord[] = [],
-  examRecords: ExamRecord[] = []
+  setoranRecords: SetoranRecord[] = []
 ): SantriReportItem[] => {
   const now = new Date();
 
@@ -228,32 +219,6 @@ export const generateSantriReports = (
         ? Math.min(100, Math.round((totalSessionsAttended / totalSessionsScheduled) * 100))
         : 100;
 
-    // Resolusi ujian tasmi' terakhir santri ini
-    let lastExam: SantriReportItem['lastExam'] = null;
-    const santriExams = examRecords.filter(
-      (e) => e.santriId === s.id || ensureUUID(e.santriId) === ensureUUID(s.id)
-    );
-    if (santriExams.length > 0) {
-      const latest = santriExams[0];
-      const grade: 'Mumtaz' | 'Jayyid Jiddan' | 'Jayyid' | "I'adah" =
-        latest.finalScore >= 95
-          ? 'Mumtaz'
-          : latest.finalScore >= 85
-          ? 'Jayyid Jiddan'
-          : latest.finalScore >= 75
-          ? 'Jayyid'
-          : "I'adah";
-
-      lastExam = {
-        juz: latest.juz,
-        date: latest.date,
-        score: latest.finalScore,
-        grade,
-        passed: latest.isPassed,
-        examiner: latest.musyrif || 'Penguji',
-      };
-    }
-
     return {
       id: s.id,
       name: s.name,
@@ -279,7 +244,6 @@ export const generateSantriReports = (
       totalSessionsScheduled,
       pacingStatus,
       pacingDeficitLines,
-      lastExam,
       iadahWeakPoints,
       daysSinceLastMurojaah,
     };

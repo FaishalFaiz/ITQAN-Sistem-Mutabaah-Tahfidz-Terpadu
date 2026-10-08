@@ -1,4 +1,5 @@
 import React from 'react';
+import { Edit2 } from 'lucide-react';
 import type { Santri } from './types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,14 @@ interface SantriCardProps {
   santri: Santri;
   onSetor: (santri: Santri) => void;
   onDetail: (santri: Santri) => void;
+  onEditTarget?: (santri: Santri) => void;
 }
 
 export const SantriCard: React.FC<SantriCardProps> = ({
   santri,
   onSetor,
   onDetail,
+  onEditTarget,
 }) => {
   const getStatusDot = () => {
     switch (santri.status) {
@@ -61,7 +64,22 @@ export const SantriCard: React.FC<SantriCardProps> = ({
         {/* Informative Progress Bar for Daily Setoran */}
         <div className="mb-4">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5">
-            <span>Hari ini</span>
+            <span className="inline-flex items-center gap-1">
+              <span>Hari ini</span>
+              {onEditTarget && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditTarget(santri);
+                  }}
+                  className="p-0.5 rounded text-slate-400 hover:text-[#0070BA] hover:bg-slate-100 transition-colors cursor-pointer"
+                  title="Atur Target Hafalan Santri"
+                >
+                  <Edit2 className="w-3 h-3" />
+                </button>
+              )}
+            </span>
             <span className="font-medium text-foreground">
               {santri.linesCompletedToday} / {santri.dailyTargetLines} Baris
             </span>

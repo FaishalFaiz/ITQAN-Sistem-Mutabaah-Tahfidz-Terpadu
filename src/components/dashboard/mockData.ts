@@ -1,4 +1,4 @@
-import type { WATemplateConfig, HalaqahSettings, HalaqahGroup, Santri, SetoranRecord, ExamRecord } from './types';
+import type { WATemplateConfig, HalaqahSettings, HalaqahGroup, Santri, SetoranRecord } from './types';
 
 export const DEFAULT_WA_TEMPLATE_CONFIG: WATemplateConfig = {
   templateDailyProgress: `*LAPORAN TAHFIDZ HARIAN - ITQAN*
@@ -54,10 +54,42 @@ _ITQAN - Tahfidz Terpadu_`,
 };
 
 export const DEFAULT_HALAQAH_LIST: HalaqahGroup[] = [
-  { id: 'halaqah-abu-bakar', name: 'Halaqoh Abu Bakar Ash-Shiddiq', description: 'Talaqqi Ziyadah & Murojaah Lanjutan', room: 'Masjid Utama' },
-  { id: 'halaqah-umar', name: 'Halaqoh Umar bin Khattab', description: 'Halaqoh Tahfidz Reguler Juz 1-5', room: 'Ruang A-101' },
-  { id: 'halaqah-utsman', name: 'Halaqoh Utsman bin Affan', description: 'Halaqoh Mutqin 10 Juz', room: 'Ruang A-102' },
-  { id: 'halaqah-ali', name: 'Halaqoh Ali bin Abi Thalib', description: 'Talaqqi I\'dad & Tahsin Dasar', room: 'Ruang B-201' },
+  { 
+    id: 'halaqah-abu-bakar', 
+    name: 'Halaqoh Abu Bakar Ash-Shiddiq', 
+    description: 'Talaqqi Ziyadah & Murojaah Lanjutan', 
+    room: 'Masjid Utama',
+    targetDailyLines: 15,
+    musyrifName: 'Ust. Ahmad Fauzi, Al-Hafizh',
+    sessionTime: "Ba'da Subuh (05:30 - 06:45 WIB)"
+  },
+  { 
+    id: 'halaqah-umar', 
+    name: 'Halaqoh Umar bin Khattab', 
+    description: 'Halaqoh Tahfidz Reguler Juz 1-5', 
+    room: 'Ruang A-101',
+    targetDailyLines: 12,
+    musyrifName: 'Ust. Rahmat Hidayat, Lc.',
+    sessionTime: "Ba'da Ashar (16:00 - 17:15 WIB)"
+  },
+  { 
+    id: 'halaqah-utsman', 
+    name: 'Halaqoh Utsman bin Affan', 
+    description: 'Halaqoh Mutqin 10 Juz', 
+    room: 'Ruang A-102',
+    targetDailyLines: 20,
+    musyrifName: 'Ust. Salman Al-Farisi, S.Pd.I',
+    sessionTime: "Ba'da Maghrib & Isya (18:30 - 20:00 WIB)"
+  },
+  { 
+    id: 'halaqah-ali', 
+    name: 'Halaqoh Ali bin Abi Thalib', 
+    description: 'Talaqqi I\'dad & Tahsin Dasar', 
+    room: 'Ruang B-201',
+    targetDailyLines: 10,
+    musyrifName: 'Ust. Abdullah Mubarok',
+    sessionTime: "Ba'da Subuh (05:30 - 06:45 WIB)"
+  },
 ];
 
 export const DEFAULT_HALAQAH_SETTINGS: HalaqahSettings = {
@@ -3289,74 +3321,3 @@ export const INITIAL_MOCK_SETORAN: SetoranRecord[] = [
   })()
 ];
 
-// DATA UJIAN TASMI' RESMI
-export const INITIAL_MOCK_EXAMS: ExamRecord[] = [
-  {
-    id: 'd0000000-0000-4000-8000-000000000001',
-    santriId: 'b0000000-0000-4000-8000-000000000101',
-    santriName: 'Muhammad Fatih Robbani',
-    nis: '20250101',
-    juz: 4,
-    ketukan: 1,
-    dibetulkan: 0,
-    tajwidScore: 96,
-    fashahahScore: 95,
-    penalty: 0.5,
-    finalScore: 95.0,
-    isPassed: true,
-    date: new Date(Date.now() - 12 * 86400000).toISOString().slice(0, 10),
-    musyrif: 'Ust. Ahmad Fauzi, Al-Hafizh',
-    notes: 'Tasmi 1 Juz Bil Ghoib Sekali Duduk. Predikat Mumtaz.',
-  },
-  {
-    id: 'd0000000-0000-4000-8000-000000000002',
-    santriId: 'b0000000-0000-4000-8000-000000000201',
-    santriName: 'Salman Al-Farisi',
-    nis: '20250201',
-    juz: 1,
-    ketukan: 2,
-    dibetulkan: 0,
-    tajwidScore: 92,
-    fashahahScore: 91,
-    penalty: 1.0,
-    finalScore: 90.5,
-    isPassed: true,
-    date: new Date(Date.now() - 15 * 86400000).toISOString().slice(0, 10),
-    musyrif: 'Ust. Ridwan Hakim, Al-Hafizh',
-    notes: 'Tasmi Juz 1 Mutqin. Memenuhi syarat naik ke Juz 2.',
-  },
-  {
-    id: 'd0000000-0000-4000-8000-000000000003',
-    santriId: 'b0000000-0000-4000-8000-000000000301',
-    santriName: 'Thariq bin Ziyad',
-    nis: '20250301',
-    juz: 8,
-    ketukan: 0,
-    dibetulkan: 0,
-    tajwidScore: 98,
-    fashahahScore: 97,
-    penalty: 0,
-    finalScore: 97.5,
-    isPassed: true,
-    date: new Date(Date.now() - 18 * 86400000).toISOString().slice(0, 10),
-    musyrif: 'Ust. Mansyur Hidayat, Al-Hafizh',
-    notes: 'Tasmi Juz 8 Tanpa Salah (Mumtaz Murtaji). Sangat Istimewa.',
-  },
-  {
-    id: 'd0000000-0000-4000-8000-000000000004',
-    santriId: 'b0000000-0000-4000-8000-000000000401',
-    santriName: 'Hamzah bin Abdul Muthalib',
-    nis: '20250401',
-    juz: 30,
-    ketukan: 1,
-    dibetulkan: 0,
-    tajwidScore: 95,
-    fashahahScore: 96,
-    penalty: 0.5,
-    finalScore: 95.0,
-    isPassed: true,
-    date: new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10),
-    musyrif: 'Ust. Rustam Effendi, Al-Hafizh',
-    notes: 'Khatam Tasmi Juz \'Amma Sekali Duduk. Berhak lanjut ke Juz 29.',
-  },
-];

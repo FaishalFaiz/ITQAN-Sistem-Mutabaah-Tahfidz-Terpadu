@@ -14,7 +14,7 @@ import {
   Check,
   ExternalLink,
 } from 'lucide-react';
-import type { Santri, SetoranRecord, ExamRecord } from './types';
+import type { Santri, SetoranRecord } from './types';
 import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
 import { syncService, ensureUUID } from '../../services/syncService';
 import { waGatewayService } from '../../services/waGatewayService';
@@ -74,9 +74,6 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   const [allSetoranRecords, setAllSetoranRecords] = useState<SetoranRecord[]>(() =>
     storageService.getSetoranRecords()
   );
-  const [allExams, setAllExams] = useState<ExamRecord[]>(() =>
-    storageService.getExamRecords()
-  );
 
   // Helper pencocokan santri ke halaqoh
   const matchesSantriHalaqah = useCallback((s: Santri, targetHalaqahIdOrName: string) => {
@@ -114,7 +111,6 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   useEffect(() => {
     const handleStoreChange = () => {
       setAllSetoranRecords(storageService.getSetoranRecords());
-      setAllExams(storageService.getExamRecords());
       const activeH = storageService.getActiveHalaqah();
       if (activeH?.id) {
         setSelectedHalaqoh(activeH.id);
@@ -126,7 +122,6 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
     syncService.syncAll().then((res) => {
       if (res.success) {
         setAllSetoranRecords(storageService.getSetoranRecords());
-        setAllExams(storageService.getExamRecords());
       }
     });
 
@@ -207,8 +202,8 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
   // Generate enriched santri reports khusus santri halaqoh ini
   const santriReports = useMemo(
-    () => generateSantriReports(halaqahSantriList, halaqahPeriodRecords, allExams),
-    [halaqahSantriList, halaqahPeriodRecords, allExams]
+    () => generateSantriReports(halaqahSantriList, halaqahPeriodRecords),
+    [halaqahSantriList, halaqahPeriodRecords]
   );
 
   // Aggregate stats calculations khusus santri halaqoh ini
@@ -927,7 +922,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
 
           {/* Santri Data Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
+            <table className="w-full text-left text-xs text-slate-700 min-w-[850px]">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
                 <tr>
                   <th className="py-2.5 px-3">Santri</th>

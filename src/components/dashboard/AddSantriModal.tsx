@@ -43,6 +43,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
       const active = storageService.getActiveHalaqah();
       setHalaqahList(groups);
       setSelectedHalaqahName(active.name);
+      setDailyTargetLines(active.targetDailyLines || 15);
     }
   }, [isOpen]);
 
@@ -99,20 +100,18 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full rounded-xl sm:rounded-2xl p-4 sm:p-6">
-        <DialogHeader>
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-lg bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center">
+        <DialogHeader className="text-left pb-1">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#EBF5FB] text-[#0070BA] flex items-center justify-center shrink-0">
               <UserPlus className="w-4 h-4" />
             </div>
-            <div>
-              <DialogTitle className="text-base font-bold text-slate-900">
-                Tambah Santri Baru
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500">
-                Masukkan santri ke daftar rombel halaqoh aktif beserta kontak wali untuk notifikasi WhatsApp
-              </DialogDescription>
-            </div>
+            <DialogTitle className="text-base font-bold text-slate-900 leading-snug">
+              Tambah Santri Baru
+            </DialogTitle>
           </div>
+          <DialogDescription className="text-xs text-slate-500 mt-1">
+            Daftarkan santri ke halaqoh aktif beserta target hafalan dan kontak wali.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Form */}
@@ -180,13 +179,18 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
-                Target Baris / Hari
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-800">
+                  Target Baris / Hari
+                </label>
+                <span className="text-[10px] font-semibold text-[#0070BA]">
+                  {(dailyTargetLines / 15).toFixed(1)} Hal/hari
+                </span>
+              </div>
               <Input
                 type="number"
                 min={1}
-                max={30}
+                max={300}
                 value={dailyTargetLines}
                 onChange={(e) => setDailyTargetLines(Number(e.target.value))}
                 placeholder="15"

@@ -127,10 +127,10 @@ export const HalaqahSwitcher: React.FC<HalaqahSwitcherProps> = ({
 
         {/* Dropdown Menu */}
         {isOpen && (
-          <div className="absolute left-0 mt-1.5 w-72 sm:w-80 rounded-xl bg-white border border-slate-200 shadow-xl z-50 py-1.5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
+          <div className="absolute left-0 mt-1.5 w-[340px] sm:w-[390px] max-w-[calc(100vw-24px)] rounded-xl bg-white border border-slate-200 shadow-xl z-50 py-1.5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-3.5 py-2.5 border-b border-slate-100 flex items-center justify-between gap-2">
               <div>
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
                   Pilih Halaqoh Diampu
                 </span>
                 <span className="text-[11px] text-slate-400">
@@ -143,15 +143,15 @@ export const HalaqahSwitcher: React.FC<HalaqahSwitcherProps> = ({
                   setIsOpen(false);
                   setIsAddModalOpen(true);
                 }}
-                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0070BA] hover:text-[#005C9E] bg-[#EBF5FB] hover:bg-[#D6EAF8] px-2 py-1 rounded-md transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0070BA] hover:text-[#005C9E] bg-[#EBF5FB] hover:bg-[#D6EAF8] px-2.5 py-1 rounded-md transition-colors cursor-pointer shrink-0"
                 title="Tambah kelompok halaqoh baru"
               >
-                <Plus className="w-3 h-3" />
+                <Plus className="w-3.5 h-3.5" />
                 <span>Buat Baru</span>
               </button>
             </div>
 
-            <div className="max-h-64 overflow-y-auto py-1 divide-y divide-slate-50">
+            <div className="max-h-72 overflow-y-auto py-1 divide-y divide-slate-50">
               {halaqahList.map((item) => {
                 const isSelected = item.id === activeHalaqah?.id;
                 return (
@@ -159,12 +159,12 @@ export const HalaqahSwitcher: React.FC<HalaqahSwitcherProps> = ({
                     key={item.id}
                     type="button"
                     onClick={() => handleSelectHalaqah(item)}
-                    className={`w-full px-3 py-2.5 text-left flex items-start gap-2.5 transition-colors cursor-pointer hover:bg-slate-50 ${
+                    className={`w-full px-3.5 py-2.5 text-left flex items-start gap-3 transition-colors cursor-pointer hover:bg-slate-50 ${
                       isSelected ? 'bg-[#EBF5FB]/60' : ''
                     }`}
                   >
                     <div
-                      className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                         isSelected
                           ? 'bg-[#0070BA] text-white shadow-xs'
                           : 'bg-slate-100 text-slate-500'
@@ -173,7 +173,7 @@ export const HalaqahSwitcher: React.FC<HalaqahSwitcherProps> = ({
                       <Layers className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center justify-between gap-1.5">
                         <span
                           className={`text-xs font-bold truncate block ${
                             isSelected ? 'text-[#0070BA]' : 'text-slate-900'
@@ -187,13 +187,18 @@ export const HalaqahSwitcher: React.FC<HalaqahSwitcherProps> = ({
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 min-w-0">
                         {item.room && (
-                          <span className="font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">
+                          <span className="font-semibold text-slate-700 bg-slate-100/90 border border-slate-200/70 px-1.5 py-0.5 rounded text-[10px] shrink-0 whitespace-nowrap leading-tight">
                             {item.room}
                           </span>
                         )}
-                        <span className="truncate">
+                        {item.targetDailyLines ? (
+                          <span className="font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-1.5 py-0.5 rounded text-[10px] shrink-0 whitespace-nowrap leading-tight">
+                            Target {item.targetDailyLines} Baris
+                          </span>
+                        ) : null}
+                        <span className="truncate min-w-0 flex-1 text-slate-400">
                           {item.description || 'Kelompok Halaqoh Tahfidz'}
                         </span>
                       </div>

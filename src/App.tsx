@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { Menu, Calendar, Send } from 'lucide-react';
 import gsap from 'gsap';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
-import { syncService, ensureUUID } from './services/syncService';
+import { syncService } from './services/syncService';
+import { getSantriSlug, findSantriByParam } from './lib/utils';
 import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
 import { SantriListSection, type SetoranFilterType } from './components/dashboard/SantriListSection';
@@ -12,7 +13,9 @@ import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
 import { HalaqahSwitcher } from './components/dashboard/HalaqahSwitcher';
 import { SantriModal } from './components/dashboard/SantriModal';
 import { AddSantriModal } from './components/dashboard/AddSantriModal';
+import { EditTargetModal } from './components/dashboard/EditTargetModal';
 import { DailyReportModal } from './components/dashboard/DailyReportModal';
+import { TeacherProfileMenu } from './components/dashboard/TeacherProfileMenu';
 import { authService } from './services/authService';
 import { Toaster } from './components/ui/sonner';
 
@@ -42,7 +45,7 @@ function PageLoadingFallback() {
   );
 }
 
-// Helper component for /santri/:id route
+// Helper component for /santri/:id route (mendukung slug nama, NIS, dan backward compatibility UUID)
 function SantriDetailRoute({
   santriList,
   onSetor,
@@ -52,16 +55,26 @@ function SantriDetailRoute({
 }) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const santri = santriList.find((s) => s.id === id || ensureUUID(s.id) === ensureUUID(id || ''));
+  const santri = useMemo(() => findSantriByParam(santriList, id), [santriList, id]);
+
+  // Jika URL saat ini masih berupa UUID lama, secara mulus perbarui ke route slug yang rapi
+  useEffect(() => {
+    if (santri && id) {
+      const cleanSlug = getSantriSlug(santri, santriList);
+      if (id !== cleanSlug && (id === santri.id || id.replace(/-/g, '') === santri.id.replace(/-/g, ''))) {
+        navigate(`/santri/${cleanSlug}`, { replace: true });
+      }
+    }
+  }, [santri, id, santriList, navigate]);
 
   if (!santri) {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-8 text-center space-y-3">
         <h3 className="font-bold text-base text-slate-800">Santri Tidak Ditemukan</h3>
-        <p className="text-xs text-slate-500">Data santri dengan ID {id} tidak ada dalam daftar.</p>
+        <p className="text-xs text-slate-500">Data santri dengan rute "{id}" tidak ditemukan dalam sistem.</p>
         <button
           onClick={() => navigate('/beranda')}
-          className="px-4 py-2 bg-[#0070BA] text-white rounded-lg text-xs font-semibold"
+          className="px-4 py-2 bg-[#0070BA] text-white rounded-lg text-xs font-semibold cursor-pointer"
         >
           Kembali ke Beranda
         </button>
@@ -92,6 +105,9 @@ function App() {
 
   // Modal state for Daily Report to Parents via WhatsApp
   const [isDailyReportModalOpen, setIsDailyReportModalOpen] = useState(false);
+
+  // Modal state for Editing Santri Target
+  const [editingTargetSantri, setEditingTargetSantri] = useState<Santri | null>(null);
 
   // Filter state for Santri cards
   const [activeFilter, setActiveFilter] = useState<SetoranFilterType>('all');
@@ -135,7 +151,8 @@ function App() {
   };
 
   const handleOpenDetail = (santri: Santri) => {
-    navigate(`/santri/${santri.id}`);
+    const slug = getSantriSlug(santri, santriList);
+    navigate(`/santri/${slug}`);
   };
 
   const handleCloseModal = () => {
@@ -166,8 +183,8 @@ function App() {
     const p = location.pathname;
     if (p === '/' || p === '/beranda') return halaqahName;
     if (p.startsWith('/santri/')) {
-      const id = p.split('/')[2];
-      const s = santriList.find((item) => item.id === id);
+      const param = p.split('/')[2];
+      const s = findSantriByParam(santriList, param);
       return s ? s.name : 'Detail Santri';
     }
     if (p.startsWith('/santri')) return 'Daftar Santri';
@@ -236,8 +253,8 @@ function App() {
     if (p === '/' || p === '/beranda') {
       title = `Beranda • ${halaqahName} | ITQAN`;
     } else if (p.startsWith('/santri/')) {
-      const id = p.split('/')[2];
-      const s = santriList.find((item) => item.id === id);
+      const param = p.split('/')[2];
+      const s = findSantriByParam(santriList, param);
       title = `${s ? s.name : 'Detail Santri'} | ITQAN`;
     } else if (p.startsWith('/santri')) {
       title = 'Manajemen Santri | ITQAN';
@@ -355,6 +372,9 @@ function App() {
                     }).format(new Date())}
                   </span>
                 </div>
+
+                {/* Profil Guru Halaqoh di Kanan Atas */}
+                <TeacherProfileMenu />
               </div>
             </div>
           </div>
@@ -389,6 +409,7 @@ function App() {
                       onFilterChange={setActiveFilter}
                       onSetor={handleOpenSetor}
                       onDetail={handleOpenDetail}
+                      onEditTarget={setEditingTargetSantri}
                       onOpenAddModal={() => setIsAddModalOpen(true)}
                     />
                   </div>
@@ -419,6 +440,7 @@ function App() {
                       onFilterChange={setActiveFilter}
                       onSetor={handleOpenSetor}
                       onDetail={handleOpenDetail}
+                      onEditTarget={setEditingTargetSantri}
                       onOpenAddModal={() => setIsAddModalOpen(true)}
                     />
                   </div>
@@ -442,7 +464,6 @@ function App() {
                 element={
                   <OtherView
                     currentView="santri"
-                    onBackToBeranda={() => navigate('/beranda')}
                     santriList={santriList}
                     onSetor={handleOpenSetor}
                     onDetail={handleOpenDetail}
@@ -456,7 +477,6 @@ function App() {
                 element={
                   <OtherView
                     currentView="laporan"
-                    onBackToBeranda={() => navigate('/beranda')}
                     santriList={santriList}
                     onSetor={handleOpenSetor}
                     onDetail={handleOpenDetail}
@@ -470,18 +490,12 @@ function App() {
                 element={
                   <OtherView
                     currentView="pengaturan"
-                    onBackToBeranda={() => navigate('/beranda')}
                     santriList={santriList}
                     onSetor={handleOpenSetor}
                     onDetail={handleOpenDetail}
                     onOpenAddModal={() => setIsAddModalOpen(true)}
                   />
                 }
-              />
-
-              <Route
-                path="/ujian-tasmi"
-                element={<Navigate to="/santri" replace />}
               />
 
               {/* 404 Wildcard Page */}
@@ -512,6 +526,14 @@ function App() {
         onClose={() => setIsDailyReportModalOpen(false)}
         santriList={santriList}
         onDataRefresh={() => setSantriList(storageService.getSantriList())}
+      />
+
+      {/* Edit Target Santri Modal */}
+      <EditTargetModal
+        isOpen={Boolean(editingTargetSantri)}
+        onClose={() => setEditingTargetSantri(null)}
+        santri={editingTargetSantri}
+        onSaved={() => setSantriList(storageService.getSantriList())}
       />
 
       {/* Global Toast Notification System */}

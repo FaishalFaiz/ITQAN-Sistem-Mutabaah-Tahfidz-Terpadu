@@ -126,27 +126,7 @@ CREATE TABLE IF NOT EXISTS setoran (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 3.5 Tabel Ujian Tasmi' / Kenaikan Juz
-CREATE TABLE IF NOT EXISTS ujian_tasmi (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    santri_id UUID NOT NULL REFERENCES santri(id) ON DELETE CASCADE,
-    santri_name VARCHAR(255),
-    nis VARCHAR(50),
-    juz INT NOT NULL CHECK (juz BETWEEN 1 AND 30),
-    penguji_name VARCHAR(255) NOT NULL,
-    ketukan_ringan INT NOT NULL DEFAULT 0, -- Tawaqquf / Salah Ringan (-0.5 poin)
-    salah_fatal INT NOT NULL DEFAULT 0,    -- Fath / Dibetulkan (-2.0 poin)
-    tajwid_score NUMERIC(5,2) NOT NULL DEFAULT 85.00,
-    fashahah_score NUMERIC(5,2) NOT NULL DEFAULT 85.00,
-    penalty_score NUMERIC(5,2) GENERATED ALWAYS AS (ketukan_ringan * 0.5 + salah_fatal * 2.0) STORED,
-    final_score NUMERIC(5,2) NOT NULL,
-    is_passed BOOLEAN NOT NULL DEFAULT false,
-    notes TEXT,
-    exam_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- 3.6 Tabel Konfigurasi WhatsApp Gateway
+-- 3.5 Tabel Konfigurasi WhatsApp Gateway
 CREATE TABLE IF NOT EXISTS wa_gateway_config (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     halaqah_id UUID REFERENCES halaqah(id) ON DELETE CASCADE,
@@ -185,7 +165,6 @@ CREATE INDEX IF NOT EXISTS idx_santri_halaqah_id ON santri(halaqah_id);
 CREATE INDEX IF NOT EXISTS idx_santri_name ON santri(name);
 CREATE INDEX IF NOT EXISTS idx_setoran_santri_date ON setoran(santri_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_setoran_created_at ON setoran(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_ujian_santri_id ON ujian_tasmi(santri_id);
 CREATE INDEX IF NOT EXISTS idx_wa_logs_created_at ON wa_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_wa_logs_santri_id ON wa_logs(santri_id);
 
@@ -422,7 +401,6 @@ ALTER TABLE musyrif_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE halaqah ENABLE ROW LEVEL SECURITY;
 ALTER TABLE santri ENABLE ROW LEVEL SECURITY;
 ALTER TABLE setoran ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ujian_tasmi ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wa_gateway_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wa_logs ENABLE ROW LEVEL SECURITY;
 
@@ -436,7 +414,6 @@ WITH CHECK (auth.uid() = id);
 CREATE POLICY "Authenticated musyrif access halaqah" ON halaqah FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated musyrif access santri" ON santri FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated musyrif access setoran" ON setoran FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Authenticated musyrif access ujian_tasmi" ON ujian_tasmi FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated musyrif access wa_gateway_config" ON wa_gateway_config FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Authenticated musyrif access wa_logs" ON wa_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
 

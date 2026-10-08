@@ -18,7 +18,8 @@ import {
   Trash2,
   Calendar,
   ArrowRightLeft,
-  UserX
+  UserX,
+  Target
 } from 'lucide-react';
 import gsap from 'gsap';
 import type { Santri, SetoranRecord } from './types';
@@ -28,6 +29,7 @@ import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from '../../servi
 import { resolveHalaqahUUID } from '../../services/syncService';
 import { waGatewayService } from '../../services/waGatewayService';
 import { EditWaliModal } from './EditWaliModal';
+import { EditTargetModal } from './EditTargetModal';
 import { RaporPrintModal } from './RaporPrintModal';
 import { EditSetoranModal } from './EditSetoranModal';
 import {
@@ -74,6 +76,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   // Edit Wali Contact Modal State
   const [currentSantri, setCurrentSantri] = useState<Santri>(santri);
   const [isEditWaliModalOpen, setIsEditWaliModalOpen] = useState(false);
+  const [isEditTargetModalOpen, setIsEditTargetModalOpen] = useState(false);
   const [isRaporModalOpen, setIsRaporModalOpen] = useState(false);
 
   // Pindah Halaqoh & Hapus Santri Modal State
@@ -129,8 +132,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   }, [loadRecords, santri.id]);
 
   // Metrik kalkulasi
-  const totalLines = santri.totalLinesMemorized || 1500;
-  const totalTarget = 9060;
+  const totalLines = currentSantri.totalLinesMemorized || 0;
+  const totalTarget = currentSantri.totalLinesTarget || 9060;
   const pagesCompleted = (totalLines / 15).toFixed(1);
   const totalPagesTarget = (totalTarget / 15).toFixed(0);
   const percentage = Math.min(100, Math.round((totalLines / totalTarget) * 100));
@@ -295,6 +298,19 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             <span className="sm:hidden">Pindah</span>
           </Button>
 
+          {/* Atur Target */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsEditTargetModalOpen(true)}
+            className="inline-flex items-center justify-center gap-1 text-xs font-semibold h-8.5 sm:h-9 px-2 sm:px-2.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
+            title="Atur Target Hafalan Santri"
+          >
+            <Target className="w-3.5 h-3.5 text-[#0070BA] shrink-0" />
+            <span className="hidden sm:inline">Atur Target</span>
+            <span className="sm:hidden">Target</span>
+          </Button>
+
           {/* Cetak / Rapor PDF */}
           <Button
             type="button"
@@ -389,24 +405,24 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2 sm:p-2.5 text-center min-w-0">
               <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 block truncate">Hari Ini</span>
               <span className="text-xs sm:text-base font-bold text-slate-900 block mt-0.5 truncate">
-                {santri.linesCompletedToday}
-                <span className="text-[9px] sm:text-xs font-normal text-slate-400">/{santri.dailyTargetLines}</span>
+                {currentSantri.linesCompletedToday}
+                <span className="text-[9px] sm:text-xs font-normal text-slate-400">/{currentSantri.dailyTargetLines}</span>
               </span>
               <span className="text-[9px] sm:text-[10px] text-slate-400 block">baris</span>
             </div>
 
             <div className={`border rounded-lg p-2 sm:p-2.5 text-center min-w-0 ${
-              santri.status === 'tercapai'
+              currentSantri.status === 'tercapai'
                 ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
-                : santri.status === 'tidak_tercapai'
+                : currentSantri.status === 'tidak_tercapai'
                 ? 'bg-red-50/70 border-red-200 text-red-800'
                 : 'bg-amber-50/70 border-amber-200 text-amber-800'
             }`}>
               <span className="text-[10px] sm:text-[11px] font-medium opacity-80 block truncate">Mutaba'ah</span>
               <span className="text-[11px] sm:text-xs font-bold block mt-0.5 truncate">
-                {santri.status === 'tercapai' && '92% Mumtaz'}
-                {santri.status === 'tidak_tercapai' && 'Perlu I\'adah'}
-                {santri.status === 'belum_setor' && 'Belum Setor'}
+                {currentSantri.status === 'tercapai' && '92% Mumtaz'}
+                {currentSantri.status === 'tidak_tercapai' && 'Perlu I\'adah'}
+                {currentSantri.status === 'belum_setor' && 'Belum Setor'}
               </span>
               <span className="hidden sm:block text-[9px] sm:text-[10px] opacity-75 truncate">
                 {statusConfig.subText}
@@ -464,7 +480,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 </p>
               </div>
               <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${statusConfig.badgeClass}`}>
-                {santri.status === 'tercapai' ? 'On Track' : 'Dalam Bimbingan'}
+                {currentSantri.status === 'tercapai' ? 'On Track' : 'Dalam Bimbingan'}
               </span>
             </div>
 
@@ -489,9 +505,19 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 <span className="text-sm font-bold text-slate-900 mt-0.5 block">{remainingLines.toLocaleString()} Baris</span>
               </div>
 
-              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/80">
-                <span className="text-[11px] text-slate-500 block">Target Harian</span>
-                <span className="text-sm font-bold text-slate-900 mt-0.5 block">{santri.dailyTargetLines} Baris</span>
+              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/80 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] text-slate-500 block">Target Harian</span>
+                  <span className="text-sm font-bold text-slate-900 mt-0.5 block">{currentSantri.dailyTargetLines} Baris</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditTargetModalOpen(true)}
+                  className="p-1 rounded text-slate-400 hover:text-[#0070BA] hover:bg-slate-200/70 transition-colors cursor-pointer shrink-0"
+                  title="Ubah Target Harian Santri"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
               </div>
 
               <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-200/80">
@@ -527,18 +553,18 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                       Ziyadah
                     </span>
                     <h4 className="font-bold text-xs text-slate-900">
-                      {santri.status === 'tercapai' ? 'Lanjutkan Ayat Baru Besok Pagi' : 'Tuntaskan Target Sesi Sore'}
+                      {currentSantri.status === 'tercapai' ? 'Lanjutkan Ayat Baru Besok Pagi' : 'Tuntaskan Target Sesi Sore'}
                     </h4>
                     <p className="text-[11px] text-slate-600">
-                      {santri.status === 'tercapai'
-                        ? `Kunci hafalan ${santri.lastSurah} dengan tasmi' mandiri 2x.`
-                        : `Defisit ${Math.max(0, santri.dailyTargetLines - santri.linesCompletedToday)} baris. Berikan slot sesi khusus.`}
+                      {currentSantri.status === 'tercapai'
+                        ? `Kunci hafalan ${currentSantri.lastSurah} dengan tasmi' mandiri 2x.`
+                        : `Defisit ${Math.max(0, currentSantri.dailyTargetLines - currentSantri.linesCompletedToday)} baris. Berikan slot sesi khusus.`}
                     </p>
                   </div>
                   <Button
                     type="button"
                     size="sm"
-                    onClick={() => onSetor(santri)}
+                    onClick={() => onSetor(currentSantri)}
                     className="w-full sm:w-auto text-xs font-semibold bg-[#0070BA] hover:bg-[#005C9E] text-white shrink-0 h-8 px-3 rounded-lg cursor-pointer"
                   >
                     Setor
@@ -804,7 +830,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             <>
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-700">
+                <table className="w-full text-left text-xs text-slate-700 min-w-[750px]">
                   <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
                     <tr>
                       <th className="py-2.5 px-3">Waktu Sesi</th>
@@ -1269,6 +1295,16 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 14. MODAL: Atur Target & Capaian Santri */}
+      <EditTargetModal
+        isOpen={isEditTargetModalOpen}
+        onClose={() => setIsEditTargetModalOpen(false)}
+        santri={currentSantri}
+        onSaved={(updated) => {
+          setCurrentSantri(updated);
+        }}
+      />
 
     </div>
   );

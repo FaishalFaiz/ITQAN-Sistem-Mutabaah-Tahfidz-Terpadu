@@ -2744,7 +2744,7 @@ INSERT INTO ujian_tasmi (
         96.00,
         95.00,
         true,
-        'Khatam Tasmi Juz 'Amma Sekali Duduk. Berhak lanjut ke Juz 29.',
+        'Khatam Tasmi Juz ''Amma Sekali Duduk. Berhak lanjut ke Juz 29.',
         CURRENT_DATE - INTERVAL '10 days'
     )
 ON CONFLICT (id) DO UPDATE SET
