@@ -10,7 +10,6 @@ import {
   DoorOpen, 
   Users, 
   User, 
-  CheckCircle2, 
   LogOut,
   AlertCircle
 } from 'lucide-react';
@@ -59,8 +58,6 @@ export const HalaqahManagementPage: React.FC = () => {
   const [editDesc, setEditDesc] = useState('');
   const [syncSantri, setSyncSantri] = useState(true);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
-
-  const currentUserScope = storageService.getActiveUserScope();
 
   // Sync state on events
   useEffect(() => {
@@ -253,10 +250,6 @@ export const HalaqahManagementPage: React.FC = () => {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             {/* Info Halaqoh Aktif */}
             <div className="space-y-1.5 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#EBF5FB] text-[#0070BA] border border-blue-200">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Halaqoh Aktif Sedang Diampu</span>
-              </div>
               <h3 className="text-xl font-black text-slate-900 tracking-tight">
                 {activeRoom.name}
               </h3>
@@ -350,7 +343,6 @@ export const HalaqahManagementPage: React.FC = () => {
           {myRooms.map((room) => {
             const isActive = activeRoom?.id === room.id;
             const santriCount = getSantriCount(room.id, room.name);
-            const isOwner = room.creatorId === currentUserScope || room.creatorId === 'system';
 
             return (
               <div
@@ -366,16 +358,6 @@ export const HalaqahManagementPage: React.FC = () => {
                     <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-[#0070BA]">
                       {room.code}
                     </span>
-                    <div className="flex items-center gap-1.5">
-                      {isActive && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Aktif
-                        </span>
-                      )}
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                        {isOwner ? 'Pembuat' : 'Anggota'}
-                      </span>
-                    </div>
                   </div>
 
                   <div>
