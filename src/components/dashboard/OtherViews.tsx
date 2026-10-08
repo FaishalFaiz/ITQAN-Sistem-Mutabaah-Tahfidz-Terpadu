@@ -3,7 +3,6 @@ import {
   UserPlus, 
   Search, 
   MessageSquare, 
-  ExternalLink, 
   Edit2,
   CheckCircle2,
   AlertCircle,
@@ -369,27 +368,27 @@ export const OtherView: React.FC<OtherViewProps> = ({
 
                   {/* TAMPILAN DESKTOP: Tabel Lengkap Rapi & Terstruktur */}
                   <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-2xs">
-                    <table className="w-full text-left text-xs text-slate-700 min-w-[1080px] border-collapse">
+                    <table className="w-full text-left text-xs text-slate-700 border-collapse">
                       <thead className="bg-slate-50/90 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px] tracking-wider">
                         <tr>
-                          <th className="py-3 px-4 whitespace-nowrap">Nama Santri</th>
-                          <th className="py-3 px-4 whitespace-nowrap">Halaqoh</th>
-                          <th className="py-3 px-4 whitespace-nowrap">NIS</th>
-                          <th className="py-3 px-4 whitespace-nowrap">Kontak Wali (WA)</th>
-                          <th className="py-3 px-4 whitespace-nowrap text-center">Capaian Juz</th>
-                          <th className="py-3 px-4 whitespace-nowrap text-center">Target Hari Ini</th>
-                          <th className="py-3 px-4 whitespace-nowrap">Terakhir Setor</th>
-                          <th className="py-3 px-4 whitespace-nowrap text-center">Status</th>
-                          <th className="py-3 px-4 whitespace-nowrap text-right">Aksi</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap">Nama Santri</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap">Halaqoh</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap">NIS</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap">Kontak Wali</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap text-center">Capaian</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap text-center">Target Hari Ini</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap">Terakhir</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap text-center">Status</th>
+                          <th className="py-2.5 px-3 whitespace-nowrap text-right">Aksi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {filteredSantri.map((santri) => (
                           <tr key={santri.id} className="hover:bg-slate-50/80 transition-colors">
                             {/* Nama Santri */}
-                            <td className="py-3 px-4 whitespace-nowrap">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] font-bold text-[11px] flex items-center justify-center shrink-0 select-none shadow-2xs">
+                            <td className="py-2.5 px-3 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-[#EBF5FB] border border-[#D6EAF8] text-[#0070BA] font-bold text-[10px] flex items-center justify-center shrink-0 select-none shadow-2xs">
                                   {santri.avatarInitials}
                                 </div>
                                 <button
@@ -403,20 +402,20 @@ export const OtherView: React.FC<OtherViewProps> = ({
                             </td>
 
                             {/* Halaqoh (Anti-Wrap Pill) */}
-                            <td className="py-3 px-4 whitespace-nowrap">
-                              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-700 bg-slate-100 border border-slate-200/80 whitespace-nowrap">
+                            <td className="py-2.5 px-3 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-slate-700 bg-slate-100 border border-slate-200/80 whitespace-nowrap">
                                 {santri.halaqahName?.replace('Halaqoh ', '') || 'Abu Bakar'}
                               </span>
                             </td>
 
                             {/* NIS */}
-                            <td className="py-3 px-4 font-mono text-xs font-medium text-slate-600 whitespace-nowrap">
+                            <td className="py-2.5 px-3 font-mono text-xs font-medium text-slate-600 whitespace-nowrap">
                               {santri.nis}
                             </td>
 
                             {/* Kontak Wali (WA) */}
-                            <td className="py-3 px-4 whitespace-nowrap">
-                              <div className="inline-flex items-center gap-2">
+                            <td className="py-2.5 px-3 whitespace-nowrap">
+                              <div className="inline-flex items-center gap-1.5">
                                 {santri.parentPhone ? (
                                   <a
                                     href={waGatewayService.getDirectWALink(
@@ -425,15 +424,11 @@ export const OtherView: React.FC<OtherViewProps> = ({
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-semibold group hover:underline"
-                                    title="Kirim Pesan WhatsApp ke Wali Santri"
+                                    className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-800 font-semibold group hover:underline max-w-[140px] truncate"
+                                    title={`Kirim WA ke ${santri.parentName || 'Wali'} (${santri.parentPhone})`}
                                   >
                                     <MessageSquare className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                    <span>{santri.parentName || 'Wali Santri'}</span>
-                                    <span className="text-slate-400 font-mono text-[10px] font-normal">
-                                      ({santri.parentPhone})
-                                    </span>
-                                    <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-600 shrink-0" />
+                                    <span className="truncate">{santri.parentName || 'Wali'}</span>
                                   </a>
                                 ) : (
                                   <span className="text-slate-400 italic text-xs">Belum diisi</span>
@@ -444,57 +439,57 @@ export const OtherView: React.FC<OtherViewProps> = ({
                                   className="p-1 rounded text-slate-400 hover:text-[#0070BA] hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
                                   title="Ubah Kontak Wali"
                                 >
-                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <Edit2 className="w-3 h-3" />
                                 </button>
                               </div>
                             </td>
 
                             {/* Capaian Juz */}
-                            <td className="py-3 px-4 font-bold text-xs text-[#0070BA] whitespace-nowrap text-center font-mono">
+                            <td className="py-2.5 px-3 font-bold text-xs text-[#0070BA] whitespace-nowrap text-center font-mono">
                               {formatJuz(santri.juzAchieved)}
                             </td>
 
                             {/* Target Hari Ini */}
-                            <td className="py-3 px-4 whitespace-nowrap text-center">
-                              <div className="inline-flex items-center justify-center gap-1.5">
+                            <td className="py-2.5 px-3 whitespace-nowrap text-center">
+                              <div className="inline-flex items-center justify-center gap-1">
                                 <div>
                                   <span className="font-bold text-xs text-slate-900 font-mono">
                                     {santri.linesCompletedToday} / {santri.dailyTargetLines}
                                   </span>
-                                  <span className="text-[10px] text-slate-500 font-medium ml-1">Baris</span>
+                                  <span className="text-[10px] text-slate-500 font-medium ml-0.5">Baris</span>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => setEditingTargetSantri(santri)}
-                                  className="p-1 rounded text-slate-400 hover:text-[#0070BA] hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+                                  className="p-0.5 rounded text-slate-400 hover:text-[#0070BA] hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
                                   title="Ubah Target Hafalan Santri"
                                 >
-                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <Edit2 className="w-3 h-3" />
                                 </button>
                               </div>
                             </td>
 
                             {/* Terakhir Setor */}
-                            <td className="py-3 px-4 text-xs text-slate-700 font-medium whitespace-nowrap">
+                            <td className="py-2.5 px-3 text-xs text-slate-700 font-medium whitespace-nowrap max-w-[140px] truncate" title={santri.lastSurah || '-'}>
                               {santri.lastSurah || '-'}
                             </td>
 
                             {/* Status */}
-                            <td className="py-3 px-4 whitespace-nowrap text-center">
+                            <td className="py-2.5 px-3 whitespace-nowrap text-center">
                               {santri.status === 'tercapai' && (
-                                <span className="inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                                <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
                                   <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                                   <span>Tercapai</span>
                                 </span>
                               )}
                               {santri.status === 'tidak_tercapai' && (
-                                <span className="inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 whitespace-nowrap">
+                                <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-700 border border-red-200 whitespace-nowrap">
                                   <AlertCircle className="w-3 h-3 text-red-600" />
                                   <span>Defisit</span>
                                 </span>
                               )}
                               {santri.status === 'belum_setor' && (
-                                <span className="inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
                                   <Clock className="w-3 h-3 text-amber-600" />
                                   <span>Belum Setor</span>
                                 </span>
@@ -502,7 +497,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
                             </td>
 
                             {/* Aksi */}
-                            <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <td className="py-2.5 px-3 text-right whitespace-nowrap">
                               <div className="inline-flex items-center justify-end gap-1.5">
                                 <button
                                   type="button"
