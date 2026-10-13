@@ -265,8 +265,8 @@ function App() {
     document.title = title;
   }, [location.pathname, halaqahName, santriList]);
 
-  // Landing Page Route
-  if (location.pathname === '/landing') {
+  // Landing Page Route: Root '/' dan '/landing' selalu menampilkan Landing Page publik
+  if (location.pathname === '/' || location.pathname === '/landing') {
     return (
       <Suspense fallback={<PageLoadingFallback />}>
         <LandingPage />
@@ -314,15 +314,8 @@ function App() {
     );
   }
 
-  // Jika belum login dan tidak ada sesi tersimpan di localStorage
+  // Jika belum login dan tidak ada sesi tersimpan di localStorage, alihkan ke login
   if (isAuthenticated === false && !authService.getStoredUser()) {
-    if (location.pathname === '/') {
-      return (
-        <Suspense fallback={<PageLoadingFallback />}>
-          <LandingPage />
-        </Suspense>
-      );
-    }
     return <Navigate to="/login" replace />;
   }
 
@@ -422,37 +415,8 @@ function App() {
                 className="flex-1 flex flex-col space-y-4"
               >
                 <Routes location={location}>
-              {/* Beranda Dashboard */}
-              <Route
-                path="/"
-                element={
-                  <div className="space-y-4">
-                    <StatCards
-                      tercapaiCount={tercapaiCount}
-                      tidakTercapaiCount={tidakTercapaiCount}
-                      belumSetorCount={belumSetorCount}
-                      activeFilter={activeFilter}
-                      onFilterChange={setActiveFilter}
-                    />
-
-                    <TodayProgressCard
-                      santriList={currentHalaqahSantriList}
-                      activeFilter={activeFilter}
-                      onFilterChange={setActiveFilter}
-                    />
-
-                    <SantriListSection
-                      santriList={currentHalaqahSantriList}
-                      activeFilter={activeFilter}
-                      onFilterChange={setActiveFilter}
-                      onSetor={handleOpenSetor}
-                      onDetail={handleOpenDetail}
-                      onEditTarget={setEditingTargetSantri}
-                      onOpenAddModal={() => setIsAddModalOpen(true)}
-                    />
-                  </div>
-                }
-              />
+              {/* Redirect root ke /beranda jika berada dalam sesi dashboard */}
+              <Route path="/" element={<Navigate to="/beranda" replace />} />
 
               <Route
                 path="/beranda"

@@ -120,22 +120,28 @@ export const LandingPage: React.FC = () => {
           <div className="flex items-center justify-between h-16 sm:h-20">
             {/* Brand Logo & Name */}
             <div 
-              className="flex items-center gap-3 cursor-pointer group"
+              className="flex items-center gap-2 sm:gap-3 cursor-pointer group shrink-0"
               onClick={() => navigate('/')}
             >
               <img
                 src="/favicon.svg"
                 alt="Logo ITQAN"
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl shadow-2xs group-hover:scale-105 transition-transform object-contain"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl shadow-2xs group-hover:scale-105 transition-transform object-contain shrink-0"
               />
               <div className="flex flex-col">
-                <span className="font-black text-lg sm:text-xl tracking-tight text-slate-900 leading-none">
+                <span className="font-black text-base sm:text-xl tracking-tight text-slate-900 leading-none">
                   ITQAN
                 </span>
-                <span className="text-[10px] font-bold text-[#0070BA] uppercase tracking-wider mt-0.5">
+                <span className="text-[9px] sm:text-[10px] font-bold text-[#0070BA] uppercase tracking-wider mt-0.5">
                   Tahfidz Terpadu
                 </span>
               </div>
+              <div className="h-5 sm:h-7 w-px bg-slate-300 mx-0.5 sm:mx-1 shrink-0" />
+              <img
+                src="/harisantri2026logo.webp"
+                alt="Logo Hari Santri 2026"
+                className="h-6 sm:h-8 w-auto object-contain shrink-0"
+              />
             </div>
 
             {/* Desktop Navigation Links */}

@@ -81,16 +81,22 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
       >
         {/* Sidebar Header: ITQAN Logo & Close Button (Close button hanya mobile) */}
         <div className="h-16 px-5 border-b border-slate-200 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <img
               src="/favicon.svg"
               alt="Logo ITQAN"
               className="w-8 h-8 rounded-lg shadow-2xs shrink-0 object-contain"
             />
-            <div>
+            <div className="shrink-0">
               <span className="font-extrabold text-base text-slate-900 leading-tight block">ITQAN</span>
               <span className="text-[10px] text-slate-500 font-medium block">Tahfidz Terpadu</span>
             </div>
+            <div className="h-6 w-px bg-slate-200 mx-0.5 shrink-0" />
+            <img
+              src="/harisantri2026logo.webp"
+              alt="Hari Santri 2026"
+              className="h-6 w-auto object-contain shrink-0"
+            />
           </div>
 
           <button
