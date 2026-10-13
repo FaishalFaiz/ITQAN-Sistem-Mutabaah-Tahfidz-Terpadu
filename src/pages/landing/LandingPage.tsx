@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import gsap from 'gsap';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   BookOpen,
   Send,
@@ -88,294 +88,8 @@ export const LandingPage: React.FC = () => {
   const [activeRoomIndex, setActiveRoomIndex] = useState<number>(0);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  // Section Refs for GSAP Scroll Reveal Animations
-  const heroContainerRef = useRef<HTMLDivElement>(null);
-  const statsSectionRef = useRef<HTMLElement>(null);
-  const featuresSectionRef = useRef<HTMLElement>(null);
-  const waSectionRef = useRef<HTMLElement>(null);
-  const halaqahSectionRef = useRef<HTMLElement>(null);
-  const workflowSectionRef = useRef<HTMLElement>(null);
-  const faqSectionRef = useRef<HTMLElement>(null);
-  const ctaSectionRef = useRef<HTMLElement>(null);
-  const waPreviewRef = useRef<HTMLDivElement>(null);
-  const halaqahPreviewRef = useRef<HTMLDivElement>(null);
-
   const storedUser = authService.getStoredUser();
   const isLoggedIn = Boolean(storedUser);
-
-  // GSAP Hero Entry Animation
-  useEffect(() => {
-    if (heroContainerRef.current) {
-      const ctx = gsap.context(() => {
-        // 1. Staggered reveal for Hero text items
-        gsap.fromTo(
-          '.hero-animate-item',
-          { opacity: 0, y: 24, scale: 0.98 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.65,
-            stagger: 0.08,
-            ease: 'power3.out',
-            clearProps: 'transform,opacity',
-          }
-        );
-
-        // 2. Hero Visual Mockup entrance
-        gsap.fromTo(
-          '.hero-visual-box',
-          { opacity: 0, y: 32, scale: 0.96 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.8,
-            delay: 0.15,
-            ease: 'power3.out',
-            clearProps: 'transform,opacity',
-          }
-        );
-
-        // 3. Progress bar fill animation
-        gsap.fromTo(
-          '.hero-progress-fill',
-          { width: '0%' },
-          { width: '100%', duration: 1.4, delay: 0.4, ease: 'power2.out' }
-        );
-      }, heroContainerRef);
-
-      return () => ctx.revert();
-    }
-  }, []);
-
-  // GSAP Scroll Reveal Animation for all sections below Hero
-  useEffect(() => {
-    const scrollCtx = gsap.context(() => {});
-
-    const sections = [
-      {
-        ref: statsSectionRef,
-        animate: (el: HTMLElement) => {
-          scrollCtx.add(() => {
-            gsap.fromTo(
-              el.querySelectorAll('.stat-item'),
-              { opacity: 0, y: 24, scale: 0.96 },
-              {
-                opacity: 1,
-                y: 0,
-                scale: 1,
-                duration: 0.55,
-                stagger: 0.08,
-                ease: 'power2.out',
-                clearProps: 'transform,opacity',
-              }
-            );
-          });
-        },
-      },
-      {
-        ref: featuresSectionRef,
-        animate: (el: HTMLElement) => {
-          scrollCtx.add(() => {
-            const header = el.querySelector('.feature-header');
-            if (header) {
-              gsap.fromTo(
-                header,
-                { opacity: 0, y: 20 },
-                { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', clearProps: 'transform,opacity' }
-              );
-            }
-            gsap.fromTo(
-              el.querySelectorAll('.feature-card'),
-              { opacity: 0, y: 30, scale: 0.97 },
-              {
-                opacity: 1,
-                y: 0,
-                scale: 1,
-                duration: 0.6,
-                delay: 0.08,
-                stagger: 0.09,
-                ease: 'power3.out',
-                clearProps: 'transform,opacity',
-              }
-            );
-          });
-        },
-      },
-      {
-        ref: waSectionRef,
-        animate: (el: HTMLElement) => {
-          scrollCtx.add(() => {
-            const left = el.querySelector('.wa-left-col');
-            const right = el.querySelector('.wa-right-col');
-            if (left) {
-              gsap.fromTo(
-                left,
-                { opacity: 0, x: -30 },
-                { opacity: 1, x: 0, duration: 0.65, ease: 'power3.out', clearProps: 'transform,opacity' }
-              );
-            }
-            if (right) {
-              gsap.fromTo(
-                right,
-                { opacity: 0, x: 30, scale: 0.98 },
-                { opacity: 1, x: 0, scale: 1, duration: 0.65, delay: 0.08, ease: 'power3.out', clearProps: 'transform,opacity' }
-              );
-            }
-          });
-        },
-      },
-      {
-        ref: halaqahSectionRef,
-        animate: (el: HTMLElement) => {
-          scrollCtx.add(() => {
-            const left = el.querySelector('.halaqah-left-col');
-            const right = el.querySelector('.halaqah-right-col');
-            if (left) {
-              gsap.fromTo(
-                left,
-                { opacity: 0, x: -30, scale: 0.98 },
-                { opacity: 1, x: 0, scale: 1, duration: 0.65, ease: 'power3.out', clearProps: 'transform,opacity' }
-              );
-            }
-            if (right) {
-              gsap.fromTo(
-                right,
-                { opacity: 0, x: 30 },
-                { opacity: 1, x: 0, duration: 0.65, delay: 0.08, ease: 'power3.out', clearProps: 'transform,opacity' }
-              );
-            }
-          });
-        },
-      },
-      {
-        ref: workflowSectionRef,
-        animate: (el: HTMLElement) => {
-          scrollCtx.add(() => {
-            const header = el.querySelector('.workflow-header');
-            if (header) {
-              gsap.fromTo(
-                header,
-                { opacity: 0, y: 20 },
-                { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', clearProps: 'transform,opacity' }
-              );
-            }
-            gsap.fromTo(
-              el.querySelectorAll('.workflow-card'),
-              { opacity: 0, y: 28, scale: 0.97 },
-              {
-                opacity: 1,
-                y: 0,
-                scale: 1,
-                duration: 0.55,
-                delay: 0.08,
-                stagger: 0.1,
-                ease: 'power3.out',
-                clearProps: 'transform,opacity',
-              }
-            );
-          });
-        },
-      },
-      {
-        ref: faqSectionRef,
-        animate: (el: HTMLElement) => {
-          scrollCtx.add(() => {
-            const header = el.querySelector('.faq-header');
-            if (header) {
-              gsap.fromTo(
-                header,
-                { opacity: 0, y: 20 },
-                { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', clearProps: 'transform,opacity' }
-              );
-            }
-            gsap.fromTo(
-              el.querySelectorAll('.faq-item'),
-              { opacity: 0, y: 18 },
-              {
-                opacity: 1,
-                y: 0,
-                duration: 0.45,
-                delay: 0.08,
-                stagger: 0.07,
-                ease: 'power2.out',
-                clearProps: 'transform,opacity',
-              }
-            );
-          });
-        },
-      },
-      {
-        ref: ctaSectionRef,
-        animate: (el: HTMLElement) => {
-          scrollCtx.add(() => {
-            const inner = el.querySelector('.cta-inner');
-            if (inner) {
-              gsap.fromTo(
-                inner,
-                { opacity: 0, y: 28, scale: 0.98 },
-                { opacity: 1, y: 0, scale: 1, duration: 0.65, ease: 'power3.out', clearProps: 'transform,opacity' }
-              );
-            }
-          });
-        },
-      },
-    ];
-
-    if (!('IntersectionObserver' in window)) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const targetEl = entry.target as HTMLElement;
-            const match = sections.find((s) => s.ref.current === targetEl);
-            if (match) {
-              match.animate(targetEl);
-              observer.unobserve(targetEl);
-            }
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
-    );
-
-    sections.forEach((s) => {
-      if (s.ref.current) {
-        observer.observe(s.ref.current);
-      }
-    });
-
-    return () => {
-      observer.disconnect();
-      scrollCtx.revert();
-    };
-  }, []);
-
-  // GSAP animation when WhatsApp tab changes (kill previous tweens to prevent memory leak)
-  useEffect(() => {
-    if (waPreviewRef.current) {
-      gsap.killTweensOf(waPreviewRef.current);
-      gsap.fromTo(
-        waPreviewRef.current,
-        { opacity: 0, y: 8, scale: 0.98 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.25, ease: 'power2.out', clearProps: 'transform,opacity' }
-      );
-    }
-  }, [waTab]);
-
-  // GSAP animation when Halaqah room changes (kill previous tweens to prevent memory leak)
-  useEffect(() => {
-    if (halaqahPreviewRef.current) {
-      gsap.killTweensOf(halaqahPreviewRef.current);
-      gsap.fromTo(
-        halaqahPreviewRef.current,
-        { opacity: 0, y: 8, scale: 0.98 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.25, ease: 'power2.out', clearProps: 'transform,opacity' }
-      );
-    }
-  }, [activeRoomIndex]);
 
   const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
@@ -584,7 +298,7 @@ export const LandingPage: React.FC = () => {
       </header>
 
       {/* 2. HERO SECTION (Layout Referensi Gambar 1 dengan Animasi Halus) */}
-      <section ref={heroContainerRef} className="relative overflow-hidden pt-8 pb-14 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24 border-b border-slate-200 bg-white">
+      <section className="relative overflow-hidden pt-8 pb-14 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24 border-b border-slate-200 bg-white">
         {/* Subtle Decorative Geometric Background Grid */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#F1F5F9_1px,transparent_1px),linear-gradient(to_bottom,#F1F5F9_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none opacity-60" />
 
@@ -754,7 +468,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 3. IMPACT & STATS BANNER */}
-      <section ref={statsSectionRef} className="py-6 sm:py-8 bg-slate-50 border-b border-slate-200">
+      <section className="py-6 sm:py-8 bg-slate-50 border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 text-center">
             <div className="stat-item bg-white border border-slate-200 rounded-xl p-3 sm:p-4 shadow-2xs hover:-translate-y-1 hover:shadow-xs transition-all duration-300 flex flex-col justify-center">
@@ -794,7 +508,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 4. FITUR UTAMA (Grid Cards - Layout Referensi Gambar 1 Bawah dengan Hover Interaktif) */}
-      <section ref={featuresSectionRef} id="fitur" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
+      <section id="fitur" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
           {/* Section Header */}
           <div className="feature-header text-center max-w-3xl mx-auto space-y-2.5 sm:space-y-3">
@@ -891,7 +605,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 5. DEEP DIVE FEATURE 1: LAPORAN WHATSAPP DENGAN SIMULATOR INTERAKTIF (Layout Referensi Gambar 2 Atas) */}
-      <section ref={waSectionRef} id="laporan-wa" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] cv-auto">
+      <section id="laporan-wa" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] cv-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Content */}
@@ -957,35 +671,56 @@ export const LandingPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setWaTab('ziyadah')}
-                      className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                      className={`relative px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                         waTab === 'ziyadah'
-                          ? 'bg-white text-emerald-800 shadow-2xs font-bold'
+                          ? 'text-emerald-800 font-bold'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Pesan Ziyadah
+                      {waTab === 'ziyadah' && (
+                        <motion.div
+                          layoutId="active-wa-preview-pill"
+                          className="absolute inset-0 bg-white rounded-md shadow-2xs"
+                          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                        />
+                      )}
+                      <span className="relative z-10">Pesan Ziyadah</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setWaTab('murojaah')}
-                      className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                      className={`relative px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                         waTab === 'murojaah'
-                          ? 'bg-white text-emerald-800 shadow-2xs font-bold'
+                          ? 'text-emerald-800 font-bold'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Pesan Muroja'ah
+                      {waTab === 'murojaah' && (
+                        <motion.div
+                          layoutId="active-wa-preview-pill"
+                          className="absolute inset-0 bg-white rounded-md shadow-2xs"
+                          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                        />
+                      )}
+                      <span className="relative z-10">Pesan Muroja'ah</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setWaTab('harian')}
-                      className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                      className={`relative px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                         waTab === 'harian'
-                          ? 'bg-white text-emerald-800 shadow-2xs font-bold'
+                          ? 'text-emerald-800 font-bold'
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Rekap Harian
+                      {waTab === 'harian' && (
+                        <motion.div
+                          layoutId="active-wa-preview-pill"
+                          className="absolute inset-0 bg-white rounded-md shadow-2xs"
+                          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                        />
+                      )}
+                      <span className="relative z-10">Rekap Harian</span>
                     </button>
                   </div>
 
@@ -1008,75 +743,81 @@ export const LandingPage: React.FC = () => {
                   </div>
 
                   {/* Animated WhatsApp Message Bubble */}
-                  <div
-                    ref={waPreviewRef}
-                    className="bg-white rounded-xl rounded-tl-none p-3.5 shadow-xs max-w-sm ml-1 space-y-2 border border-slate-200/80 font-sans text-xs text-slate-800 leading-relaxed"
-                  >
-                    {waTab === 'ziyadah' && (
-                      <>
-                        <div className="font-bold text-slate-900 border-b border-slate-100 pb-1 text-[11px] text-emerald-800">
-                          *SETORAN HAFALAN BARU (ZIYADAH)*
-                        </div>
-                        <p className="text-[11px]">
-                          Assalamu'alaikum Yth. Wali dari ananda <strong>*Muhammad Fatih*</strong>,
-                        </p>
-                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[11px] space-y-0.5">
-                          <p>• <strong>Surah:</strong> An-Naba' (Juz 30)</p>
-                          <p>• <strong>Halaman:</strong> Hal 582 (15 baris)</p>
-                          <p>• <strong>Nilai:</strong> <span className="font-bold text-emerald-700">*Mumtaz*</span></p>
-                          <p>• <strong>Catatan:</strong> Makhraj tajwid sangat jelas, lancar.</p>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
-                          <span>Ustadz Ahmad Fauzi</span>
-                          <span className="text-emerald-600 font-bold">07:15 WIB ✓✓</span>
-                        </div>
-                      </>
-                    )}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={waTab}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="bg-white rounded-xl rounded-tl-none p-3.5 shadow-xs max-w-sm ml-1 space-y-2 border border-slate-200/80 font-sans text-xs text-slate-800 leading-relaxed"
+                    >
+                      {waTab === 'ziyadah' && (
+                        <>
+                          <div className="font-bold text-slate-900 border-b border-slate-100 pb-1 text-[11px] text-emerald-800">
+                            *SETORAN HAFALAN BARU (ZIYADAH)*
+                          </div>
+                          <p className="text-[11px]">
+                            Assalamu'alaikum Yth. Wali dari ananda <strong>*Muhammad Fatih*</strong>,
+                          </p>
+                          <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[11px] space-y-0.5">
+                            <p>• <strong>Surah:</strong> An-Naba' (Juz 30)</p>
+                            <p>• <strong>Halaman:</strong> Hal 582 (15 baris)</p>
+                            <p>• <strong>Nilai:</strong> <span className="font-bold text-emerald-700">*Mumtaz*</span></p>
+                            <p>• <strong>Catatan:</strong> Makhraj tajwid sangat jelas, lancar.</p>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                            <span>Ustadz Ahmad Fauzi</span>
+                            <span className="text-emerald-600 font-bold">07:15 WIB ✓✓</span>
+                          </div>
+                        </>
+                      )}
 
-                    {waTab === 'murojaah' && (
-                      <>
-                        <div className="font-bold text-slate-900 border-b border-slate-100 pb-1 text-[11px] text-emerald-800">
-                          *SETORAN PENGULANGAN (MUROJA'AH)*
-                        </div>
-                        <p className="text-[11px]">
-                          Assalamu'alaikum Yth. Wali dari ananda <strong>*Muhammad Fatih*</strong>,
-                        </p>
-                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[11px] space-y-0.5">
-                          <p>• <strong>Muroja'ah:</strong> Juz 29 (Surah Al-Mulk s/d Al-Qalam)</p>
-                          <p>• <strong>Jumlah:</strong> 30 baris pengulangan</p>
-                          <p>• <strong>Nilai:</strong> <span className="font-bold text-emerald-700">*Mumtaz*</span></p>
-                          <p>• <strong>Status:</strong> Hafalan mutqin terjaga kuat.</p>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
-                          <span>Ustadz Ahmad Fauzi</span>
-                          <span className="text-emerald-600 font-bold">16:40 WIB ✓✓</span>
-                        </div>
-                      </>
-                    )}
+                      {waTab === 'murojaah' && (
+                        <>
+                          <div className="font-bold text-slate-900 border-b border-slate-100 pb-1 text-[11px] text-emerald-800">
+                            *SETORAN PENGULANGAN (MUROJA'AH)*
+                          </div>
+                          <p className="text-[11px]">
+                            Assalamu'alaikum Yth. Wali dari ananda <strong>*Muhammad Fatih*</strong>,
+                          </p>
+                          <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[11px] space-y-0.5">
+                            <p>• <strong>Muroja'ah:</strong> Juz 29 (Surah Al-Mulk s/d Al-Qalam)</p>
+                            <p>• <strong>Jumlah:</strong> 30 baris pengulangan</p>
+                            <p>• <strong>Nilai:</strong> <span className="font-bold text-emerald-700">*Mumtaz*</span></p>
+                            <p>• <strong>Status:</strong> Hafalan mutqin terjaga kuat.</p>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                            <span>Ustadz Ahmad Fauzi</span>
+                            <span className="text-emerald-600 font-bold">16:40 WIB ✓✓</span>
+                          </div>
+                        </>
+                      )}
 
-                    {waTab === 'harian' && (
-                      <>
-                        <div className="font-bold text-slate-900 border-b border-slate-100 pb-1 text-[11px] text-emerald-800">
-                          *REKAP MUTABA'AH HARIAN - ITQAN*
-                        </div>
-                        <p className="text-[11px]">
-                          Laporan capaian ananda <strong>*Muhammad Fatih*</strong> hari ini:
-                        </p>
-                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[11px] space-y-0.5">
-                          <p>• <strong>Capaian:</strong> 15 dari 15 Baris Harian</p>
-                          <p>• <strong>Status Harian:</strong> <span className="font-bold text-emerald-700">Tercapai (Mumtaz)</span></p>
-                          <p>• <strong>Total Riwayat:</strong> 3 Juz Mutqin</p>
-                        </div>
-                        <p className="text-[10px] text-slate-500 italic">
-                          "Terima kasih atas bimbingan dan doa di rumah."
-                        </p>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
-                          <span>ITQAN Tahfidz Terpadu</span>
-                          <span className="text-emerald-600 font-bold">17:00 WIB ✓✓</span>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                      {waTab === 'harian' && (
+                        <>
+                          <div className="font-bold text-slate-900 border-b border-slate-100 pb-1 text-[11px] text-emerald-800">
+                            *REKAP MUTABA'AH HARIAN - ITQAN*
+                          </div>
+                          <p className="text-[11px]">
+                            Laporan capaian ananda <strong>*Muhammad Fatih*</strong> hari ini:
+                          </p>
+                          <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[11px] space-y-0.5">
+                            <p>• <strong>Capaian:</strong> 15 dari 15 Baris Harian</p>
+                            <p>• <strong>Status Harian:</strong> <span className="font-bold text-emerald-700">Tercapai (Mumtaz)</span></p>
+                            <p>• <strong>Total Riwayat:</strong> 3 Juz Mutqin</p>
+                          </div>
+                          <p className="text-[10px] text-slate-500 italic">
+                            "Terima kasih atas bimbingan dan doa di rumah."
+                          </p>
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                            <span>ITQAN Tahfidz Terpadu</span>
+                            <span className="text-emerald-600 font-bold">17:00 WIB ✓✓</span>
+                          </div>
+                        </>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
                 <div className="text-center">
@@ -1091,7 +832,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 6. DEEP DIVE FEATURE 2: MANAJEMEN HALAQOH DENGAN SWITCHER INTERAKTIF (Layout Referensi Gambar 2 Tengah) */}
-      <section ref={halaqahSectionRef} id="halaqoh" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
+      <section id="halaqoh" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Interactive Room Switcher Placeholder */}
@@ -1105,13 +846,20 @@ export const LandingPage: React.FC = () => {
                         key={room.code}
                         type="button"
                         onClick={() => setActiveRoomIndex(idx)}
-                        className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                        className={`relative px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
                           activeRoomIndex === idx
-                            ? 'bg-[#0070BA] text-white shadow-2xs font-bold'
+                            ? 'text-white font-bold'
                             : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
                         }`}
                       >
-                        {room.name.split(' ')[1]}
+                        {activeRoomIndex === idx && (
+                          <motion.div
+                            layoutId="active-halaqah-tab-pill"
+                            className="absolute inset-0 bg-[#0070BA] rounded-md shadow-2xs"
+                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                          />
+                        )}
+                        <span className="relative z-10">{room.name.split(' ')[1]}</span>
                       </button>
                     ))}
                   </div>
@@ -1134,45 +882,54 @@ export const LandingPage: React.FC = () => {
                   </div>
 
                   {/* Room Card Preview Dinamis */}
-                  <div ref={halaqahPreviewRef} className="space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h4 className="font-bold text-sm text-slate-900">{currentRoom.name}</h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{currentRoom.focus}</p>
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentRoom.code}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-900">{currentRoom.name}</h4>
+                          <p className="text-[11px] text-slate-500 mt-0.5">{currentRoom.focus}</p>
+                        </div>
+
+                        {/* Join Code Box */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCode(currentRoom.code)}
+                          className="p-1.5 px-2.5 bg-blue-50 border border-blue-200 rounded-lg text-[#0070BA] font-mono text-xs font-bold flex items-center gap-1.5 hover:bg-blue-100 transition-colors cursor-pointer shrink-0"
+                          title="Klik untuk salin kode join"
+                        >
+                          <span>{currentRoom.code}</span>
+                          {copiedCode === currentRoom.code ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
                       </div>
 
-                      {/* Join Code Box */}
-                      <button
-                        type="button"
-                        onClick={() => handleCopyCode(currentRoom.code)}
-                        className="p-1.5 px-2.5 bg-blue-50 border border-blue-200 rounded-lg text-[#0070BA] font-mono text-xs font-bold flex items-center gap-1.5 hover:bg-blue-100 transition-colors cursor-pointer shrink-0"
-                        title="Klik untuk salin kode join"
-                      >
-                        <span>{currentRoom.code}</span>
-                        {copiedCode === currentRoom.code ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-
-                    {/* Room Metadata Grid */}
-                    <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                      <div>
-                        <span className="text-slate-400 block text-[10px]">Pembimbing Utama:</span>
-                        <span className="font-semibold text-slate-800">{currentRoom.musyrif}</span>
+                      {/* Room Metadata Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Pembimbing Utama:</span>
+                          <span className="font-semibold text-slate-800">{currentRoom.musyrif}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Guru Pendamping:</span>
+                          <span className="font-semibold text-slate-800">{currentRoom.pendamping}</span>
+                        </div>
+                        <div className="pt-1">
+                          <span className="text-slate-400 block text-[10px]">Lokasi Ruangan:</span>
+                          <span className="font-semibold text-slate-700">{currentRoom.room}</span>
+                        </div>
+                        <div className="pt-1">
+                          <span className="text-slate-400 block text-[10px]">Target Standar:</span>
+                          <span className="font-bold text-emerald-700">{currentRoom.target}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-slate-400 block text-[10px]">Guru Pendamping:</span>
-                        <span className="font-semibold text-slate-800">{currentRoom.pendamping}</span>
-                      </div>
-                      <div className="pt-1">
-                        <span className="text-slate-400 block text-[10px]">Lokasi Ruangan:</span>
-                        <span className="font-semibold text-slate-700">{currentRoom.room}</span>
-                      </div>
-                      <div className="pt-1">
-                        <span className="text-slate-400 block text-[10px]">Target Standar:</span>
-                        <span className="font-bold text-emerald-700">{currentRoom.target}</span>
-                      </div>
-                    </div>
-                  </div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
                 <div className="text-center">
@@ -1241,7 +998,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 7. ALUR KERJA / 3 LANGKAH MUDAH (Layout Referensi Gambar 2) */}
-      <section ref={workflowSectionRef} id="cara-kerja" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] cv-auto">
+      <section id="cara-kerja" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] cv-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
           {/* Section Header */}
           <div className="workflow-header text-center max-w-2xl mx-auto space-y-2.5 sm:space-y-3">
@@ -1301,7 +1058,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 8. FAQ DENGAN TRANSISI AKORDEON HALUS */}
-      <section ref={faqSectionRef} id="faq" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
+      <section id="faq" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
           <div className="faq-header text-center space-y-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#0070BA] bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
@@ -1337,17 +1094,25 @@ export const LandingPage: React.FC = () => {
                       }`}
                     />
                   </button>
-                  <div
-                    className={`grid transition-all duration-300 ease-in-out ${
-                      isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
-                        {faq.a}
-                      </div>
-                    </div>
-                  </div>
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0, y: -4 }}
+                        animate={{ opacity: 1, height: 'auto', y: 0 }}
+                        exit={{ opacity: 0, height: 0, y: -4 }}
+                        transition={{
+                          duration: 0.32,
+                          ease: [0.16, 1, 0.3, 1],
+                          opacity: { duration: 0.2 },
+                        }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
+                          {faq.a}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             })}
@@ -1356,7 +1121,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 9. BOTTOM CALL TO ACTION BANNER (Layout Referensi Gambar 2 Bawah) */}
-      <section ref={ctaSectionRef} className="py-10 sm:py-16 bg-[#0070BA] text-white relative overflow-hidden">
+      <section className="py-10 sm:py-16 bg-[#0070BA] text-white relative overflow-hidden">
         {/* Subtle background circle aesthetic */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />
         <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-white/5 pointer-events-none" />

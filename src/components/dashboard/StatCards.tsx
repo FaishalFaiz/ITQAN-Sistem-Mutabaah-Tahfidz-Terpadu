@@ -1,7 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { CheckCircle2, AlertCircle, Clock, ChevronRight } from 'lucide-react';
-import gsap from 'gsap';
-
+import { motion } from 'motion/react';
 import { type SetoranFilterType } from './SantriListSection';
 
 interface StatCardsProps {
@@ -19,39 +18,20 @@ export const StatCards: React.FC<StatCardsProps> = ({
   activeFilter = 'all',
   onFilterChange,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
   const formatNum = (num: number) => (num < 10 ? `0${num}` : `${num}`);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const boxes = containerRef.current.querySelectorAll('.stat-box');
-    if (!boxes || boxes.length === 0) return;
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        boxes,
-        { opacity: 0, y: 16, scale: 0.98 },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.55,
-          stagger: 0.08,
-          ease: 'power3.out',
-        }
-      );
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <div ref={containerRef} className="grid grid-cols-3 gap-2 sm:gap-4">
+    <div className="grid grid-cols-3 gap-2 sm:gap-4">
       {/* Box 1: Tercapai (Emerald) */}
-      <button
+      <motion.button
         type="button"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, delay: 0.02, ease: [0.16, 1, 0.3, 1] }}
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.98 }}
         onClick={() => onFilterChange && onFilterChange(activeFilter === 'tercapai' ? 'all' : 'tercapai')}
-        className={`stat-box text-center sm:text-left bg-emerald-50/40 border rounded-xl p-3 sm:p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between ${
+        className={`stat-box text-center sm:text-left bg-emerald-50/40 border rounded-xl p-3 sm:p-5 shadow-xs transition-colors flex flex-col justify-between cursor-pointer ${
           activeFilter === 'tercapai'
             ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/80'
             : 'border-emerald-200 hover:border-emerald-300'
@@ -78,13 +58,18 @@ export const StatCards: React.FC<StatCardsProps> = ({
             <ChevronRight className="w-3.5 h-3.5" />
           </span>
         </div>
-      </button>
+      </motion.button>
 
       {/* Box 2: Tidak Tercapai (Red) */}
-      <button
+      <motion.button
         type="button"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.98 }}
         onClick={() => onFilterChange && onFilterChange(activeFilter === 'tidak_tercapai' ? 'all' : 'tidak_tercapai')}
-        className={`stat-box text-center sm:text-left bg-red-50/40 border rounded-xl p-3 sm:p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between ${
+        className={`stat-box text-center sm:text-left bg-red-50/40 border rounded-xl p-3 sm:p-5 shadow-xs transition-colors flex flex-col justify-between cursor-pointer ${
           activeFilter === 'tidak_tercapai'
             ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/80'
             : 'border-red-200 hover:border-red-300'
@@ -111,13 +96,18 @@ export const StatCards: React.FC<StatCardsProps> = ({
             <ChevronRight className="w-3.5 h-3.5" />
           </span>
         </div>
-      </button>
+      </motion.button>
 
       {/* Box 3: Belum Setor (Amber) */}
-      <button
+      <motion.button
         type="button"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.98 }}
         onClick={() => onFilterChange && onFilterChange(activeFilter === 'belum_setor' ? 'all' : 'belum_setor')}
-        className={`stat-box text-center sm:text-left bg-amber-50/40 border rounded-xl p-3 sm:p-5 shadow-xs transition-all duration-200 hover:-translate-y-0.5 flex flex-col justify-between ${
+        className={`stat-box text-center sm:text-left bg-amber-50/40 border rounded-xl p-3 sm:p-5 shadow-xs transition-colors flex flex-col justify-between cursor-pointer ${
           activeFilter === 'belum_setor'
             ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/80'
             : 'border-amber-200 hover:border-amber-300'
@@ -144,7 +134,7 @@ export const StatCards: React.FC<StatCardsProps> = ({
             <ChevronRight className="w-3.5 h-3.5" />
           </span>
         </div>
-      </button>
+      </motion.button>
     </div>
   );
 };

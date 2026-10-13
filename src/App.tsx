@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { Menu, Calendar, Send } from 'lucide-react';
-import gsap from 'gsap';
+import { motion, AnimatePresence } from 'motion/react';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
 import { syncService } from './services/syncService';
 import { getSantriSlug, findSantriByParam } from './lib/utils';
@@ -230,49 +230,8 @@ function App() {
     ).length;
   }, [currentHalaqahSantriList, todayKey]);
 
-  // Animasi Halus & Dinamis Saat Perpindahan Page / Route
-  const mainContentRef = useRef<HTMLElement>(null);
-
+  // Scroll to top saat berpindah rute
   useEffect(() => {
-    if (mainContentRef.current) {
-      gsap.killTweensOf(mainContentRef.current);
-      const ctx = gsap.context(() => {
-        // 1. Animasi transisi container utama: extend & mengecil secara smooth
-        gsap.fromTo(
-          mainContentRef.current,
-          { opacity: 0, scale: 0.965, y: 12, transformOrigin: 'top center' },
-          {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            duration: 0.38,
-            ease: 'power3.out',
-            clearProps: 'transform,opacity',
-          }
-        );
-
-        // 2. Animasi bertingkat (stagger) pada blok konten utama halaman
-        const contentBlocks = mainContentRef.current?.querySelectorAll(':scope > div > *, :scope > *');
-        if (contentBlocks && contentBlocks.length > 0) {
-          gsap.fromTo(
-            Array.from(contentBlocks).slice(0, 5),
-            { opacity: 0, y: 14, scale: 0.98 },
-            {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              duration: 0.42,
-              stagger: 0.05,
-              ease: 'power3.out',
-              clearProps: 'transform,opacity',
-            }
-          );
-        }
-      }, mainContentRef);
-
-      window.scrollTo({ top: 0, behavior: 'instant' });
-      return () => ctx.revert();
-    }
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [location.pathname]);
 
@@ -451,9 +410,18 @@ function App() {
         </header>
 
         {/* Dynamic Route View dengan Animasi Halus & Lazy Suspense */}
-        <main ref={mainContentRef} className="flex-1 p-3 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto flex flex-col">
           <Suspense fallback={<PageLoadingFallback fullScreen={false} />}>
-            <Routes>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                className="flex-1 flex flex-col space-y-4"
+              >
+                <Routes location={location}>
               {/* Beranda Dashboard */}
               <Route
                 path="/"
@@ -584,6 +552,8 @@ function App() {
               {/* 404 Wildcard Page */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
+              </motion.div>
+            </AnimatePresence>
           </Suspense>
         </main>
       </div>

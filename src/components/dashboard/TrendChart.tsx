@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart3 } from 'lucide-react';
-import gsap from 'gsap';
+import { motion } from 'motion/react';
 import { storageService, EVENT_DATA_CHANGED } from '@/services/storageService';
 import type { SetoranRecord } from './types';
 
@@ -16,7 +16,6 @@ interface BarDataPoint {
 export const TrendChart: React.FC = () => {
   const [activeRange, setActiveRange] = useState<'pekan' | 'bulan'>('pekan');
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [records, setRecords] = useState<SetoranRecord[]>(() => storageService.getSetoranRecords());
   const [santriList, setSantriList] = useState(() => storageService.getSantriList());
 
@@ -145,26 +144,7 @@ export const TrendChart: React.FC = () => {
     setHoveredIdx(null);
   };
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const pillars = containerRef.current.querySelectorAll('.chart-bar-pillar');
-    if (!pillars || pillars.length === 0) return;
 
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        pillars,
-        { scaleY: 0, transformOrigin: 'bottom' },
-        {
-          scaleY: 1,
-          duration: 0.5,
-          stagger: 0.04,
-          ease: 'power2.out',
-        }
-      );
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, [activeRange]);
 
   const defaultIdx = currentData.length - 1;
   const safeIdx = hoveredIdx !== null && hoveredIdx >= 0 && hoveredIdx < currentData.length
@@ -177,7 +157,6 @@ export const TrendChart: React.FC = () => {
 
   return (
     <div
-      ref={containerRef}
       className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs"
     >
       {/* Header Diagram Balok */}
@@ -219,24 +198,38 @@ export const TrendChart: React.FC = () => {
             <button
               type="button"
               onClick={() => handleRangeChange('pekan')}
-              className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+              className={`relative px-3 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                 activeRange === 'pekan'
-                  ? 'bg-white text-[#0070BA] shadow-xs'
+                  ? 'text-[#0070BA]'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Pekan Ini
+              {activeRange === 'pekan' && (
+                <motion.div
+                  layoutId="active-chart-range-pill"
+                  className="absolute inset-0 bg-white rounded-md shadow-xs"
+                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                />
+              )}
+              <span className="relative z-10">Pekan Ini</span>
             </button>
             <button
               type="button"
               onClick={() => handleRangeChange('bulan')}
-              className={`px-3 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+              className={`relative px-3 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                 activeRange === 'bulan'
-                  ? 'bg-white text-[#0070BA] shadow-xs'
+                  ? 'text-[#0070BA]'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Bulan Ini
+              {activeRange === 'bulan' && (
+                <motion.div
+                  layoutId="active-chart-range-pill"
+                  className="absolute inset-0 bg-white rounded-md shadow-xs"
+                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                />
+              )}
+              <span className="relative z-10">Bulan Ini</span>
             </button>
           </div>
         </div>
@@ -303,17 +296,27 @@ export const TrendChart: React.FC = () => {
                     </div>
 
                     {/* Tiang Balok Bertumpuk (Stacked Bar) */}
-                    <div
+                    <motion.div
+                      initial={{ scaleY: 0 }}
+                      animate={{ scaleY: 1 }}
+                      transition={{
+                        duration: 0.45,
+                        delay: idx * 0.035,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
                       className={`chart-bar-pillar w-full ${
                         activeRange === 'pekan' ? 'max-w-[38px]' : 'max-w-[52px]'
-                      } rounded-t-md overflow-hidden flex flex-col-reverse transition-all duration-200 shadow-2xs ${
+                      } rounded-t-md overflow-hidden flex flex-col-reverse shadow-2xs ${
                         isSelected
                           ? 'ring-2 ring-[#0070BA] ring-offset-2 shadow-sm'
                           : isCurrent
                           ? 'ring-1 ring-[#0070BA]/50'
                           : 'hover:brightness-95'
                       }`}
-                      style={{ height: `${Math.max(total > 0 ? 4 : 0, totalHeightPercent)}%` }}
+                      style={{ 
+                        height: `${Math.max(total > 0 ? 4 : 0, totalHeightPercent)}%`,
+                        transformOrigin: 'bottom',
+                      }}
                     >
                       {/* Bagian Bawah: Ziyadah (Biru Solid ITQAN) */}
                       <div
@@ -328,7 +331,7 @@ export const TrendChart: React.FC = () => {
                         className="w-full bg-sky-400 transition-colors"
                         title={`Muroja'ah: ${item.murojaah} Baris`}
                       />
-                    </div>
+                    </motion.div>
 
                     {/* Label Hari/Pekan di Sumbu X */}
                     <div className="mt-2 text-center">

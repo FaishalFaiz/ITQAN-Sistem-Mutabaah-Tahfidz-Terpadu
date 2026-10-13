@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import gsap from 'gsap';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   UserPlus, 
   Search, 
@@ -46,25 +46,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
   const [editingTargetSantri, setEditingTargetSantri] = useState<Santri | null>(null);
   const [santriSubTab, setSantriSubTab] = useState<'kontak' | 'target'>('kontak');
 
-  // Smooth Tab Transition Animation
-  const tabContentRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (tabContentRef.current) {
-      gsap.fromTo(
-        tabContentRef.current,
-        { opacity: 0, scale: 0.975, y: 10 },
-        {
-          opacity: 1,
-          scale: 1,
-          y: 0,
-          duration: 0.35,
-          ease: 'power3.out',
-          clearProps: 'transform,opacity',
-        }
-      );
-    }
-  }, [santriSubTab]);
 
   // Ambil daftar halaqoh yang boleh diakses akun musyrif ini
   const myHalaqahs = storageService.getUserHalaqahList();
@@ -143,26 +125,44 @@ export const OtherView: React.FC<OtherViewProps> = ({
               <button
                 type="button"
                 onClick={() => setSantriSubTab('kontak')}
-                className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+                className={`relative flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg font-bold transition-colors cursor-pointer ${
                   santriSubTab === 'kontak'
-                    ? 'bg-white text-slate-900 shadow-xs'
+                    ? 'text-slate-900'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Users className="w-4 h-4 text-slate-500" />
-                <span>Informasi &amp; Kontak Santri</span>
+                {santriSubTab === 'kontak' && (
+                  <motion.div
+                    layoutId="active-santri-subtab-pill"
+                    className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                    transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-slate-500" />
+                  <span>Informasi &amp; Kontak Santri</span>
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => setSantriSubTab('target')}
-                className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
+                className={`relative flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg font-bold transition-colors cursor-pointer ${
                   santriSubTab === 'target'
-                    ? 'bg-white text-[#0070BA] shadow-xs'
+                    ? 'text-[#0070BA]'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Target className="w-4 h-4 text-[#0070BA]" />
-                <span>Target Hafalan &amp; Pacing ({halaqahSantri.length})</span>
+                {santriSubTab === 'target' && (
+                  <motion.div
+                    layoutId="active-santri-subtab-pill"
+                    className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                    transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-[#0070BA]" />
+                  <span>Target Hafalan &amp; Pacing ({halaqahSantri.length})</span>
+                </span>
               </button>
             </div>
 
@@ -179,8 +179,16 @@ export const OtherView: React.FC<OtherViewProps> = ({
             </div>
           </div>
 
-          {/* Sub-tab Content with Smooth Extend & Shrink Animation */}
-          <div ref={tabContentRef} className="space-y-4">
+          {/* Sub-tab Content with Motion AnimatePresence */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={santriSubTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-4"
+            >
             {/* TAB 1: INFORMASI & KONTAK WALI */}
             {santriSubTab === 'kontak' && (
             <div className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-6 shadow-xs space-y-4">
@@ -737,7 +745,8 @@ export const OtherView: React.FC<OtherViewProps> = ({
               )}
             </div>
           )}
-          </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       )}
 

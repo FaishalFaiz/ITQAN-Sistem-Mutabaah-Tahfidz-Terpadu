@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -21,7 +21,7 @@ import {
   UserX,
   Target
 } from 'lucide-react';
-import gsap from 'gsap';
+import { motion, AnimatePresence } from 'motion/react';
 import type { Santri, SetoranRecord } from './types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -143,23 +143,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   const remainingDays = 650;
   const requiredDailyLines = Math.ceil(remainingLines / remainingDays);
 
-  const detailContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!detailContainerRef.current) return;
-    const panes = detailContainerRef.current.querySelectorAll('.detail-tab-pane');
-    if (!panes || panes.length === 0) return;
-
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        panes,
-        { opacity: 0, y: 8 },
-        { opacity: 1, y: 0, duration: 0.3, ease: 'power2.out', clearProps: 'transform,opacity' }
-      );
-    }, detailContainerRef);
-
-    return () => ctx.revert();
-  }, [activeTab]);
 
   const today = getTodayDateKey();
   const isSentToday = currentSantri.lastDailyReportSentDate === today;
@@ -266,7 +250,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   const StatusIcon = statusConfig.icon;
 
   return (
-    <div ref={detailContainerRef} className="space-y-4">
+    <div className="space-y-4">
       {/* 1. Header Toolbar */}
       <div className="flex items-center justify-between gap-2 sm:gap-3 bg-white border border-slate-200 rounded-xl p-2.5 sm:px-4 sm:py-2.5 shadow-xs">
         {/* Tombol Kembali: Selalu Terlihat di Mobile & Desktop */}
@@ -440,12 +424,19 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
-            className={`py-3 px-1 sm:px-3.5 border-b-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+            className={`relative py-3 px-1 sm:px-3.5 transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center ${
               activeTab === 'overview'
-                ? 'border-[#0070BA] text-[#0070BA]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'text-[#0070BA]'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
+            {activeTab === 'overview' && (
+              <motion.div
+                layoutId="active-santri-detail-border"
+                className="absolute bottom-0 inset-x-0 h-0.5 bg-[#0070BA]"
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              />
+            )}
             <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span className="hidden sm:inline">Ringkasan &amp; Pacing</span>
             <span className="sm:hidden text-[11px] truncate">Ringkasan</span>
@@ -454,12 +445,19 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('riwayat')}
-            className={`py-3 px-1 sm:px-3.5 border-b-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer text-center ${
+            className={`relative py-3 px-1 sm:px-3.5 transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center ${
               activeTab === 'riwayat'
-                ? 'border-[#0070BA] text-[#0070BA]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'text-[#0070BA]'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
+            {activeTab === 'riwayat' && (
+              <motion.div
+                layoutId="active-santri-detail-border"
+                className="absolute bottom-0 inset-x-0 h-0.5 bg-[#0070BA]"
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              />
+            )}
             <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span className="hidden sm:inline">Riwayat Setoran ({records.length})</span>
             <span className="sm:hidden text-[11px] truncate">Riwayat ({records.length})</span>
@@ -467,7 +465,16 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
         </div>
       </div>
 
-      {/* 4. Tab 1: Ringkasan & Pacing */}
+      {/* 4. Tab Content with AnimatePresence */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-4"
+        >
       {activeTab === 'overview' && (
         <div className="detail-tab-pane space-y-4">
           {/* Card A: Progres Kurikulum 30 Juz */}
@@ -1043,6 +1050,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
           )}
         </div>
       )}
+        </motion.div>
+      </AnimatePresence>
 
 
 

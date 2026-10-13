@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
@@ -8,7 +8,7 @@ import {
   Settings, 
   X
 } from 'lucide-react';
-import gsap from 'gsap';
+import { motion } from 'motion/react';
 import type { NavItemKey } from './types';
 
 interface NavbarSidebarProps {
@@ -17,7 +17,6 @@ interface NavbarSidebarProps {
   activeItem?: NavItemKey;
   onSelectItem?: (item: NavItemKey) => void;
 }
-
 
 interface NavItemDef {
   key: NavItemKey;
@@ -41,9 +40,7 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const navRef = useRef<HTMLElement>(null);
-  const indicatorRef = useRef<HTMLDivElement>(null);
-  const hasInitialized = useRef(false);
+
   // Map route pathname to NavItemKey
   const getActiveKey = (): NavItemKey => {
     const path = location.pathname;
@@ -56,45 +53,6 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
   };
 
   const activeKey = getActiveKey();
-
-  // Animasi bergeser smooth (sliding indicator) pada sidebar saat berpindah page
-  useEffect(() => {
-    if (navRef.current && indicatorRef.current) {
-      const activeBtn = navRef.current.querySelector<HTMLElement>('[data-active="true"]');
-      if (activeBtn) {
-        const targetTop = activeBtn.offsetTop;
-        const targetHeight = activeBtn.offsetHeight;
-
-        if (!hasInitialized.current) {
-          gsap.set(indicatorRef.current, {
-            top: targetTop,
-            height: targetHeight,
-            opacity: 1,
-          });
-          hasInitialized.current = true;
-        } else {
-          // Balok background meluncur & bergeser smooth secara elastis
-          gsap.to(indicatorRef.current, {
-            top: targetTop,
-            height: targetHeight,
-            opacity: 1,
-            duration: 0.32,
-            ease: 'power3.out',
-          });
-
-          // Animasi micro-interaction pada icon yang baru aktif
-          const icon = activeBtn.querySelector('.nav-icon');
-          if (icon) {
-            gsap.fromTo(
-              icon,
-              { scale: 0.75, rotate: -8 },
-              { scale: 1, rotate: 0, duration: 0.35, ease: 'back.out(2)', clearProps: 'transform' }
-            );
-          }
-        }
-      }
-    }
-  }, [activeKey]);
 
   const handleNavClick = (item: NavItemDef) => {
     if (onSelectItem) onSelectItem(item.key);
@@ -145,46 +103,47 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
           </button>
         </div>
 
-        {/* Menu Items dengan Animasi Bergeser Smooth (Sliding Indicator) */}
-        <nav ref={navRef} className="relative flex-1 overflow-y-auto p-4 space-y-1.5 text-sm font-medium">
-          {/* Background Indicator yang Bergeser Mulus Mengikuti Menu Aktif */}
-          <div
-            ref={indicatorRef}
-            className="absolute left-4 right-4 bg-[#0070BA] rounded-lg shadow-xs pointer-events-none z-0"
-            style={{ top: 0, height: 0, opacity: 0 }}
-            aria-hidden="true"
-          />
-
+        {/* Menu Items dengan Animasi Bergeser Smooth Menggunakan Motion layoutId */}
+        <nav className="relative flex-1 overflow-y-auto p-4 space-y-1.5 text-sm font-medium">
           {NAV_ITEMS.map((item) => {
             const isActive = activeKey === item.key;
             const Icon = item.icon;
 
             return (
-              <button
+              <motion.button
                 key={item.key}
                 type="button"
-                data-active={isActive ? 'true' : 'false'}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => handleNavClick(item)}
-                className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-left transition-colors duration-200 relative z-10 group cursor-pointer active:scale-[0.98] ${
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-left transition-colors duration-150 relative z-10 group cursor-pointer ${
                   isActive
                     ? 'text-white font-semibold'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                 }`}
               >
+                {/* Active Sliding Indicator (Motion Spring Physics) */}
+                {isActive && (
+                  <motion.div
+                    layoutId="active-sidebar-pill"
+                    className="absolute inset-0 bg-[#0070BA] rounded-lg shadow-xs pointer-events-none"
+                    transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  />
+                )}
+
                 <div
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors duration-200 ${
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors duration-150 relative z-10 ${
                     isActive
                       ? 'bg-white/20 text-white'
                       : 'bg-transparent text-slate-500 group-hover:text-slate-800 group-hover:bg-slate-200/50'
                   }`}
                 >
-                  <Icon className="w-4 h-4 nav-icon" />
+                  <Icon className="w-4 h-4" />
                 </div>
-                <span className="truncate">{item.label}</span>
+                <span className="truncate relative z-10">{item.label}</span>
                 {isActive && (
-                  <span className="w-1.5 h-4 bg-white/90 rounded-full ml-auto shrink-0 shadow-2xs animate-in fade-in zoom-in-75 duration-200" />
+                  <span className="w-1.5 h-4 bg-white/90 rounded-full ml-auto shrink-0 shadow-2xs relative z-10" />
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </nav>
