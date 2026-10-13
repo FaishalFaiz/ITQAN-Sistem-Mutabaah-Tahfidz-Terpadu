@@ -186,3 +186,25 @@
   }
 }
 
+/* GPU-Accelerated Micro-Animations (Zero JS Heap & 0 RAF Tick Overhead) */
+@keyframes itqanFloatGpu {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.animate-float-gpu {
+  animation: itqanFloatGpu 2.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Off-screen Section Memory Optimization: skips DOM layout/paint until near viewport */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 650px;
+}
+
+

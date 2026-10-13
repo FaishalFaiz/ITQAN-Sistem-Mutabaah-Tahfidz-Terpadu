@@ -38,12 +38,19 @@ const NotFoundPage = lazy(() =>
 const OnboardingHalaqahPage = lazy(() =>
   import('./pages/halaqah/OnboardingHalaqahPage').then((m) => ({ default: m.OnboardingHalaqahPage }))
 );
+const LandingPage = lazy(() =>
+  import('./pages/landing/LandingPage').then((m) => ({ default: m.LandingPage }))
+);
 
-function PageLoadingFallback() {
+function PageLoadingFallback({ fullScreen = true }: { fullScreen?: boolean }) {
   return (
-    <div className="w-full py-16 flex flex-col items-center justify-center">
-      <div className="w-6 h-6 border-2 border-[#0070BA] border-t-transparent rounded-full animate-spin" />
-      <span className="text-xs text-slate-400 mt-2.5 font-medium">Memuat halaman...</span>
+    <div
+      className={`${
+        fullScreen ? 'fixed inset-0 z-50 bg-[#F8FAFC]' : 'min-h-[60vh] w-full'
+      } flex flex-col items-center justify-center p-4 text-center`}
+    >
+      <div className="w-8 h-8 border-2 border-[#0070BA] border-t-transparent rounded-full animate-spin" />
+      <span className="text-xs text-slate-500 mt-3 font-medium">Memuat halaman...</span>
     </div>
   );
 }
@@ -179,11 +186,13 @@ function App() {
   const activeHalaqah = storageService.getActiveHalaqah();
   const halaqahName = activeHalaqah?.name || 'Halaqoh Abu Bakar Ash-Shiddiq';
 
-  // Filter santri sesuai halaqoh aktif yang sedang diampu (wajib 1 halaqoh aktif)
-  const currentHalaqahSantriList = santriList.filter((s) => {
-    const sHalaqah = s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq';
-    return sHalaqah.toLowerCase() === halaqahName.toLowerCase();
-  });
+  // Filter santri sesuai halaqoh aktif yang sedang diampu (dimemoize untuk cegah alokasi array berulang)
+  const currentHalaqahSantriList = useMemo(() => {
+    return santriList.filter((s) => {
+      const sHalaqah = s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq';
+      return sHalaqah.toLowerCase() === halaqahName.toLowerCase();
+    });
+  }, [santriList, halaqahName]);
 
   const getHeaderTitle = () => {
     const p = location.pathname;
@@ -200,21 +209,33 @@ function App() {
     return 'ITQAN';
   };
 
-  // Recalculate dynamic stats from halaqoh aktif santriList
-  const tercapaiCount = currentHalaqahSantriList.filter((s) => s.status === 'tercapai').length;
-  const tidakTercapaiCount = currentHalaqahSantriList.filter((s) => s.status === 'tidak_tercapai').length;
-  const belumSetorCount = currentHalaqahSantriList.filter((s) => s.status === 'belum_setor').length;
+  // Recalculate dynamic stats from halaqoh aktif santriList (dimemoize)
+  const tercapaiCount = useMemo(
+    () => currentHalaqahSantriList.filter((s) => s.status === 'tercapai').length,
+    [currentHalaqahSantriList]
+  );
+  const tidakTercapaiCount = useMemo(
+    () => currentHalaqahSantriList.filter((s) => s.status === 'tidak_tercapai').length,
+    [currentHalaqahSantriList]
+  );
+  const belumSetorCount = useMemo(
+    () => currentHalaqahSantriList.filter((s) => s.status === 'belum_setor').length,
+    [currentHalaqahSantriList]
+  );
 
   const todayKey = getTodayDateKey();
-  const pendingDailyReportsCount = currentHalaqahSantriList.filter(
-    (s) => s.lastDailyReportSentDate !== todayKey && s.parentPhone && s.parentPhone.trim().length > 5
-  ).length;
+  const pendingDailyReportsCount = useMemo(() => {
+    return currentHalaqahSantriList.filter(
+      (s) => s.lastDailyReportSentDate !== todayKey && s.parentPhone && s.parentPhone.trim().length > 5
+    ).length;
+  }, [currentHalaqahSantriList, todayKey]);
 
   // Animasi Halus & Dinamis Saat Perpindahan Page / Route
   const mainContentRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (mainContentRef.current) {
+      gsap.killTweensOf(mainContentRef.current);
       const ctx = gsap.context(() => {
         // 1. Animasi transisi container utama: extend & mengecil secara smooth
         gsap.fromTo(
@@ -275,6 +296,8 @@ function App() {
       title = 'Pengaturan Akun | ITQAN';
     } else if (p === '/pilih-halaqoh') {
       title = 'Pilih atau Buat Halaqoh | ITQAN';
+    } else if (p === '/landing') {
+      title = 'ITQAN — Sistem Mutabaah Tahfidz Terpadu';
     } else if (p === '/login') {
       title = 'Masuk Portal Muhaffizh | ITQAN';
     } else if (p === '/signup') {
@@ -282,6 +305,15 @@ function App() {
     }
     document.title = title;
   }, [location.pathname, halaqahName, santriList]);
+
+  // Landing Page Route
+  if (location.pathname === '/landing') {
+    return (
+      <Suspense fallback={<PageLoadingFallback />}>
+        <LandingPage />
+      </Suspense>
+    );
+  }
 
   // Auth routes (render standalone full page)
   if (location.pathname === '/login' || location.pathname === '/signup') {
@@ -323,8 +355,15 @@ function App() {
     );
   }
 
-  // Jika belum login dan tidak ada sesi tersimpan di localStorage, alihkan ke /login
+  // Jika belum login dan tidak ada sesi tersimpan di localStorage
   if (isAuthenticated === false && !authService.getStoredUser()) {
+    if (location.pathname === '/') {
+      return (
+        <Suspense fallback={<PageLoadingFallback />}>
+          <LandingPage />
+        </Suspense>
+      );
+    }
     return <Navigate to="/login" replace />;
   }
 
@@ -413,7 +452,7 @@ function App() {
 
         {/* Dynamic Route View dengan Animasi Halus & Lazy Suspense */}
         <main ref={mainContentRef} className="flex-1 p-3 sm:p-6 lg:p-8 space-y-4 max-w-7xl w-full mx-auto">
-          <Suspense fallback={<PageLoadingFallback />}>
+          <Suspense fallback={<PageLoadingFallback fullScreen={false} />}>
             <Routes>
               {/* Beranda Dashboard */}
               <Route

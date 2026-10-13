@@ -190,8 +190,18 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Link Kembali ke Landing Page */}
+        <div className="mt-4 text-center">
+          <Link
+            to="/landing"
+            className="text-xs text-slate-500 hover:text-slate-800 transition-colors"
+          >
+            ← Kembali ke Halaman Utama
+          </Link>
+        </div>
+
         {/* Footer info */}
-        <p className="text-center text-[11px] text-slate-400 mt-6">
+        <p className="text-center text-[11px] text-slate-400 mt-5">
           &copy; {new Date().getFullYear()} ITQAN. Pesantren Tahfidz Terpadu.
         </p>
       </div>
