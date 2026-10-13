@@ -1,4 +1,4 @@
-import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings, HalaqahGroup } from '../components/dashboard/types';
+import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings, HalaqahGroup, HalaqahMember } from '../components/dashboard/types';
 import { 
   DEFAULT_WA_TEMPLATE_CONFIG, 
   DEFAULT_HALAQAH_SETTINGS,
@@ -567,6 +567,21 @@ export const storageService = {
           code = generateHalaqahCode(`HLQ-${String(idx + 1).padStart(2, '0')}`);
           needsSave = true;
         }
+
+        let members: HalaqahMember[] = item.members || [];
+        if (members.length === 0) {
+          const mainName = item.musyrifName || defaultMatch?.musyrifName || 'Pembimbing Halaqoh';
+          members = [
+            {
+              id: item.creatorId || defaultMatch?.creatorId || 'u_default',
+              name: mainName,
+              role: 'utama',
+              joinedAt: item.createdAt || defaultMatch?.createdAt || '2026-01-01T00:00:00Z',
+            },
+          ];
+          needsSave = true;
+        }
+
         return {
           ...item,
           code,
@@ -574,6 +589,7 @@ export const storageService = {
           musyrifName: item.musyrifName || defaultMatch?.musyrifName || 'Pembimbing Halaqoh',
           creatorId: item.creatorId || defaultMatch?.creatorId || 'system',
           memberIds: item.memberIds || defaultMatch?.memberIds || ['u_default'],
+          members,
           createdAt: item.createdAt || defaultMatch?.createdAt || '2026-01-01T00:00:00Z',
         };
       });
@@ -625,15 +641,23 @@ export const storageService = {
   getUserHalaqahList(): HalaqahGroup[] {
     const allRooms = this.getAllHalaqahRooms();
     const userIds = new Set(this.getUserHalaqahIds());
-    const scope = this.getActiveUserScope();
+    return allRooms.filter((r) => userIds.has(r.id));
+  },
 
-    const filtered = allRooms.filter((r) => 
-      userIds.has(r.id) || 
-      r.creatorId === scope || 
-      (r.memberIds && r.memberIds.includes(scope))
-    );
-
-    return filtered;
+  // Dapatkan daftar muhaffizh yang terdaftar di halaqoh tertentu
+  getHalaqahMembers(halaqahId: string): HalaqahMember[] {
+    const allRooms = this.getAllHalaqahRooms();
+    const room = allRooms.find((r) => r.id === halaqahId);
+    if (!room) return [];
+    if (room.members && room.members.length > 0) return room.members;
+    return [
+      {
+        id: room.creatorId || 'u_default',
+        name: room.musyrifName || 'Pembimbing Utama',
+        role: 'utama',
+        joinedAt: room.createdAt || '2026-01-01T00:00:00Z',
+      },
+    ];
   },
 
   // Kompatibilitas mundur: getHalaqahList mengembalikan room yang dapat diakses user
@@ -657,10 +681,12 @@ export const storageService = {
     const scope = this.getActiveUserScope();
     const rawUser = typeof window !== 'undefined' ? localStorage.getItem('itqan_current_musyrif') : null;
     let authorName = 'Pembimbing Halaqoh';
+    let authorEmail: string | undefined = undefined;
     if (rawUser) {
       try {
         const u = JSON.parse(rawUser);
         if (u?.fullName) authorName = u.fullName;
+        if (u?.email) authorEmail = u.email;
       } catch {
         /* ignore */
       }
@@ -668,14 +694,25 @@ export const storageService = {
 
     const newCode = group.code ? group.code.trim().toUpperCase() : generateHalaqahCode();
     const newId = `hlq-${Date.now()}`;
+    const mainMusyrif = group.musyrifName || authorName;
+
     const newRoom: HalaqahGroup = {
       ...group,
       id: newId,
       code: newCode,
       targetDailyLines: group.targetDailyLines || 15,
-      musyrifName: group.musyrifName || authorName,
+      musyrifName: mainMusyrif,
       creatorId: scope,
       memberIds: [scope],
+      members: [
+        {
+          id: scope,
+          name: mainMusyrif,
+          email: authorEmail,
+          role: 'utama',
+          joinedAt: new Date().toISOString(),
+        },
+      ],
       createdAt: new Date().toISOString(),
     };
 
@@ -729,8 +766,44 @@ export const storageService = {
     // Tambahkan user scope ke memberIds room
     if (!foundRoom.memberIds?.includes(scope)) {
       foundRoom.memberIds = [...(foundRoom.memberIds || []), scope];
-      this.saveAllHalaqahRooms(allRooms);
     }
+
+    // Tambahkan rincian profil musyrif ke daftar members room
+    const currentMembers: HalaqahMember[] = foundRoom.members && foundRoom.members.length > 0
+      ? [...foundRoom.members]
+      : [
+          {
+            id: foundRoom.creatorId || 'u_default',
+            name: foundRoom.musyrifName || 'Pembimbing Utama',
+            role: 'utama',
+            joinedAt: foundRoom.createdAt || '2026-01-01T00:00:00Z',
+          },
+        ];
+
+    if (!currentMembers.some((m) => m.id === scope)) {
+      const rawUser = typeof window !== 'undefined' ? localStorage.getItem('itqan_current_musyrif') : null;
+      let joinerName = 'Muhaffizh';
+      let joinerEmail: string | undefined = undefined;
+      if (rawUser) {
+        try {
+          const u = JSON.parse(rawUser);
+          if (u?.fullName) joinerName = u.fullName;
+          if (u?.email) joinerEmail = u.email;
+        } catch {
+          /* ignore */
+        }
+      }
+      currentMembers.push({
+        id: scope,
+        name: joinerName,
+        email: joinerEmail,
+        role: 'pendamping',
+        joinedAt: new Date().toISOString(),
+      });
+      foundRoom.members = currentMembers;
+    }
+
+    this.saveAllHalaqahRooms(allRooms);
 
     // Setel sebagai halaqoh aktif
     this.setActiveHalaqah(foundRoom.id);
@@ -739,16 +812,21 @@ export const storageService = {
     return { success: true, halaqah: foundRoom };
   },
 
-  // Keluar dari Room Halaqoh
-  leaveHalaqahRoom(halaqahId: string): { success: boolean; error?: string } {
+  // Keluar dari Room Halaqoh (User unassign diri dari halaqoh ini)
+  leaveHalaqahRoom(halaqahId: string): { success: boolean; remainingCount: number; error?: string } {
     const scope = this.getActiveUserScope();
     const userIds = this.getUserHalaqahIds().filter((id) => id !== halaqahId);
     this.saveUserHalaqahIds(userIds);
 
     const allRooms = this.getAllHalaqahRooms();
     const room = allRooms.find((r) => r.id === halaqahId);
-    if (room && room.memberIds) {
-      room.memberIds = room.memberIds.filter((m) => m !== scope);
+    if (room) {
+      if (room.memberIds) {
+        room.memberIds = room.memberIds.filter((m) => m !== scope);
+      }
+      if (room.members) {
+        room.members = room.members.filter((m) => m.id !== scope);
+      }
       this.saveAllHalaqahRooms(allRooms);
     }
 
@@ -763,7 +841,41 @@ export const storageService = {
     }
 
     emitChange('halaqah_left');
-    return { success: true };
+    return { success: true, remainingCount: userRooms.length };
+  },
+
+  // Hapus Ruang Halaqoh secara Permanen dari sistem
+  deleteHalaqahRoom(halaqahId: string): { success: boolean; remainingCount: number; error?: string } {
+    const allRooms = this.getAllHalaqahRooms();
+    const targetRoom = allRooms.find((r) => r.id === halaqahId);
+    const updatedRooms = allRooms.filter((r) => r.id !== halaqahId);
+    this.saveAllHalaqahRooms(updatedRooms);
+
+    // Hapus dari ID room user
+    const userIds = this.getUserHalaqahIds().filter((id) => id !== halaqahId);
+    this.saveUserHalaqahIds(userIds);
+
+    // Bersihkan santri yang terdaftar di halaqoh yang dihapus ini
+    if (targetRoom) {
+      const santriList = this.getSantriList();
+      const remainingSantri = santriList.filter(
+        (s) => s.halaqahId !== halaqahId && s.halaqahName?.toLowerCase() !== targetRoom.name.toLowerCase()
+      );
+      this.saveSantriList(remainingSantri);
+    }
+
+    // Alihkan active halaqah ke room lain jika room ini sedang aktif
+    const userRooms = this.getUserHalaqahList();
+    if (userRooms.length > 0) {
+      this.setActiveHalaqah(userRooms[0].id);
+    } else {
+      const settings = this.getHalaqahSettings();
+      settings.activeHalaqahId = undefined;
+      this.saveHalaqahSettings(settings);
+    }
+
+    emitChange('halaqah_deleted');
+    return { success: true, remainingCount: userRooms.length };
   },
 
   updateHalaqah(

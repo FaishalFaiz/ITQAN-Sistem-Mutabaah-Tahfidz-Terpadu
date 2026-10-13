@@ -47,6 +47,14 @@ export interface WATemplateConfig {
   templateHalaqahDigest: string;
 }
 
+export interface HalaqahMember {
+  id: string;
+  name: string;
+  email?: string;
+  role: 'utama' | 'pendamping';
+  joinedAt?: string;
+}
+
 export interface HalaqahGroup {
   id: string;
   code: string; // Unique Join Code (e.g. 'HLQ-ABU-01', 'HLQ-8K2N9P')
@@ -57,6 +65,7 @@ export interface HalaqahGroup {
   musyrifName?: string;
   creatorId?: string; // ID / scope musyrif pembuat room halaqoh
   memberIds?: string[]; // Daftar ID / scope musyrif yang bergabung
+  members?: HalaqahMember[]; // Daftar rincian muhaffizh yang masuk ke halaqoh ini
   createdAt?: string;
 }
 

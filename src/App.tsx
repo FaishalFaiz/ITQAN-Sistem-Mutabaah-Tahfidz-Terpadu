@@ -116,6 +116,7 @@ function App() {
   const [activeFilter, setActiveFilter] = useState<SetoranFilterType>('all');
 
   const [santriList, setSantriList] = useState<Santri[]>(() => storageService.getSantriList());
+  const [userRoomsCount, setUserRoomsCount] = useState<number>(() => storageService.getUserHalaqahList().length);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
     return Boolean(authService.getStoredUser());
   });
@@ -131,6 +132,7 @@ function App() {
         }
         if (isMounted) {
           setSantriList(storageService.getSantriList());
+          setUserRoomsCount(storageService.getUserHalaqahList().length);
         }
       }
     });
@@ -139,6 +141,7 @@ function App() {
       const stored = authService.getStoredUser();
       setIsAuthenticated(Boolean(stored));
       setSantriList(storageService.getSantriList());
+      setUserRoomsCount(storageService.getUserHalaqahList().length);
     };
     window.addEventListener(EVENT_DATA_CHANGED, handleStorageChange);
     return () => {
@@ -326,8 +329,7 @@ function App() {
   }
 
   // Jika akun musyrif belum bergabung atau membuat ruang halaqoh apapun, alihkan ke onboarding
-  const userRooms = storageService.getUserHalaqahList();
-  if (userRooms.length === 0) {
+  if (userRoomsCount === 0 || storageService.getUserHalaqahList().length === 0) {
     return <Navigate to="/pilih-halaqoh" replace />;
   }
 

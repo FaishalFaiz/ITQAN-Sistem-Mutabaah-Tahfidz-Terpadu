@@ -1,0 +1,17 @@
+{
+  "name": "ITQAN — Sistem Mutabaah Tahfidz Terpadu",
+  "short_name": "ITQAN",
+  "description": "Sistem Mutaba'ah & Evaluasi Tahfidz Terpadu untuk Muhaffizh, Halaqoh, dan Pelaporan Wali Santri.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0070BA",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
