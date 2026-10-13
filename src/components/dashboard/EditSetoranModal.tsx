@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Check, 
   Clock, 
@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { storageService } from '../../services/storageService';
 import { QURAN_SURAHS } from '../../data/quranData';
-import type { SetoranRecord, Santri } from './types';
+import type { SetoranRecord, Santri, SetoranType, SetoranGrade } from './types';
 import { toast } from '@/components/ui/sonner';
 
 interface EditSetoranModalProps {
@@ -34,31 +34,31 @@ export const EditSetoranModal: React.FC<EditSetoranModalProps> = ({
   santriName,
   onSuccess,
 }) => {
-  const [type, setType] = useState<'ziyadah' | 'murojaah'>('ziyadah');
-  const [surahName, setSurahName] = useState('');
-  const [juz, setJuz] = useState<number>(1);
-  const [pageStart, setPageStart] = useState<number>(1);
-  const [pageEnd, setPageEnd] = useState<number>(1);
-  const [lineStart, setLineStart] = useState<number>(1);
-  const [lineEnd, setLineEnd] = useState<number>(15);
-  const [totalLines, setTotalLines] = useState<number>(15);
-  const [grade, setGrade] = useState<'mumtaz' | 'jayyid' | 'iadah'>('mumtaz');
-  const [notes, setNotes] = useState('');
+  const [prevRecordId, setPrevRecordId] = useState(record?.id);
+  const [type, setType] = useState<SetoranType>(record?.type || 'ziyadah');
+  const [surahName, setSurahName] = useState(record?.surahName || '');
+  const [juz, setJuz] = useState<number>(record?.juz || 1);
+  const [pageStart, setPageStart] = useState<number>(record?.pageStart || 1);
+  const [pageEnd, setPageEnd] = useState<number>(record?.pageEnd || 1);
+  const [lineStart, setLineStart] = useState<number>(record?.lineStart || 1);
+  const [lineEnd, setLineEnd] = useState<number>(record?.lineEnd || 15);
+  const [totalLines, setTotalLines] = useState<number>(record?.totalLines || 15);
+  const [grade, setGrade] = useState<SetoranGrade>(record?.grade || 'mumtaz');
+  const [notes, setNotes] = useState(record?.notes || '');
 
-  useEffect(() => {
-    if (record) {
-      setType(record.type);
-      setSurahName(record.surahName);
-      setJuz(record.juz);
-      setPageStart(record.pageStart);
-      setPageEnd(record.pageEnd);
-      setLineStart(record.lineStart || 1);
-      setLineEnd(record.lineEnd || 15);
-      setTotalLines(record.totalLines);
-      setGrade(record.grade);
-      setNotes(record.notes || '');
-    }
-  }, [record]);
+  if (record && record.id !== prevRecordId) {
+    setPrevRecordId(record.id);
+    setType(record.type);
+    setSurahName(record.surahName);
+    setJuz(record.juz);
+    setPageStart(record.pageStart);
+    setPageEnd(record.pageEnd);
+    setLineStart(record.lineStart || 1);
+    setLineEnd(record.lineEnd || 15);
+    setTotalLines(record.totalLines);
+    setGrade(record.grade);
+    setNotes(record.notes || '');
+  }
 
   if (!record) return null;
 

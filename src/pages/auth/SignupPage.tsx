@@ -24,13 +24,15 @@ export const SignupPage: React.FC = () => {
   useEffect(() => {
     const trimmed = email.trim();
     if (!trimmed || !trimmed.includes('@') || trimmed.length < 5) {
-      setEmailValidation(null);
-      setIsValidatingEmail(false);
-      return;
+      const resetTimer = setTimeout(() => {
+        setEmailValidation(null);
+        setIsValidatingEmail(false);
+      }, 0);
+      return () => clearTimeout(resetTimer);
     }
 
-    setIsValidatingEmail(true);
     const timer = setTimeout(async () => {
+      setIsValidatingEmail(true);
       try {
         const res = await emailValidationService.validateEmail(trimmed);
         setEmailValidation(res);

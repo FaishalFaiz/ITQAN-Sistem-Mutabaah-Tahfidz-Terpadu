@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Target, Check } from 'lucide-react';
 import type { Santri } from './types';
 import { storageService } from '../../services/storageService';
@@ -26,19 +26,19 @@ export const EditTargetModal: React.FC<EditTargetModalProps> = ({
   santri,
   onSaved,
 }) => {
-  const [dailyTargetLines, setDailyTargetLines] = useState<number>(15);
-  const [totalLinesTarget, setTotalLinesTarget] = useState<number>(9060);
-  const [totalLinesMemorized, setTotalLinesMemorized] = useState<number>(0);
-  const [juzAchieved, setJuzAchieved] = useState<string>('0 Juz');
+  const [prevSantriId, setPrevSantriId] = useState(santri?.id);
+  const [dailyTargetLines, setDailyTargetLines] = useState<number>(santri?.dailyTargetLines || 15);
+  const [totalLinesTarget, setTotalLinesTarget] = useState<number>(santri?.totalLinesTarget || 9060);
+  const [totalLinesMemorized, setTotalLinesMemorized] = useState<number>(santri?.totalLinesMemorized || 0);
+  const [juzAchieved, setJuzAchieved] = useState<string>(formatJuz(santri?.juzAchieved || '0 Juz'));
 
-  useEffect(() => {
-    if (santri) {
-      setDailyTargetLines(santri.dailyTargetLines || 15);
-      setTotalLinesTarget(santri.totalLinesTarget || 9060);
-      setTotalLinesMemorized(santri.totalLinesMemorized || 0);
-      setJuzAchieved(formatJuz(santri.juzAchieved || '0 Juz'));
-    }
-  }, [santri]);
+  if (santri && santri.id !== prevSantriId) {
+    setPrevSantriId(santri.id);
+    setDailyTargetLines(santri.dailyTargetLines || 15);
+    setTotalLinesTarget(santri.totalLinesTarget || 9060);
+    setTotalLinesMemorized(santri.totalLinesMemorized || 0);
+    setJuzAchieved(formatJuz(santri.juzAchieved || '0 Juz'));
+  }
 
   if (!santri) return null;
 

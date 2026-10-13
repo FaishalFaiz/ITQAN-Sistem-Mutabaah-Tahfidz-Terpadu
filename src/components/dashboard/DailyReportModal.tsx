@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   CheckCircle2, 
   Clock, 
@@ -50,13 +50,14 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
     text: string;
   } | null>(null);
 
-  // Reset state when dialog opens
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setStatusMessage(null);
       setSelectedPreviewSantri(null);
     }
-  }, [isOpen]);
+  }
 
   const sentCount = santriList.filter((s) => s.lastDailyReportSentDate === today).length;
   const pendingCount = santriList.filter(

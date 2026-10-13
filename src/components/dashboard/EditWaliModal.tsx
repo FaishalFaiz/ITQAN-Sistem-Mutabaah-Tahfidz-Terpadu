@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { UserCheck, Phone, Check } from 'lucide-react';
 import type { Santri } from './types';
 import { storageService } from '../../services/storageService';
@@ -27,22 +27,23 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
   santri,
   onSuccess,
 }) => {
-  const [parentName, setParentName] = useState('');
-  const [parentPhone, setParentPhone] = useState('');
-  const [selectedHalaqah, setSelectedHalaqah] = useState('');
-  const [halaqahList, setHalaqahList] = useState<string[]>([]);
+  const [prevSantriId, setPrevSantriId] = useState(santri?.id);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [parentName, setParentName] = useState(santri?.parentName || '');
+  const [parentPhone, setParentPhone] = useState(santri?.parentPhone || '');
+  const [selectedHalaqah, setSelectedHalaqah] = useState(santri?.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
+  const [halaqahList, setHalaqahList] = useState<string[]>(() => storageService.getHalaqahList().map((h) => h.name));
   const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    if (santri) {
-      setParentName(santri.parentName || '');
-      setParentPhone(santri.parentPhone || '');
-      setSelectedHalaqah(santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
-      const list = storageService.getHalaqahList().map((h) => h.name);
-      setHalaqahList(list);
-      setErrorMsg('');
-    }
-  }, [santri, isOpen]);
+  if (santri && (santri.id !== prevSantriId || isOpen !== prevIsOpen)) {
+    setPrevSantriId(santri.id);
+    setPrevIsOpen(isOpen);
+    setParentName(santri.parentName || '');
+    setParentPhone(santri.parentPhone || '');
+    setSelectedHalaqah(santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
+    setHalaqahList(storageService.getHalaqahList().map((h) => h.name));
+    setErrorMsg('');
+  }
 
   if (!santri) return null;
 

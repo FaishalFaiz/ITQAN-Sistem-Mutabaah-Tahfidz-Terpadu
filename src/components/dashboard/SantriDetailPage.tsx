@@ -82,12 +82,14 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   // Pindah Halaqoh & Hapus Santri Modal State
   const [isMoveHalaqahModalOpen, setIsMoveHalaqahModalOpen] = useState(false);
   const [isDeleteSantriModalOpen, setIsDeleteSantriModalOpen] = useState(false);
+  const [prevSantriId, setPrevSantriId] = useState(santri.id);
   const [selectedTargetHalaqah, setSelectedTargetHalaqah] = useState(santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
 
-  useEffect(() => {
+  if (santri.id !== prevSantriId) {
+    setPrevSantriId(santri.id);
     setCurrentSantri(santri);
     setSelectedTargetHalaqah(santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
-  }, [santri]);
+  }
 
   const handleConfirmMoveHalaqah = () => {
     if (!selectedTargetHalaqah) return;

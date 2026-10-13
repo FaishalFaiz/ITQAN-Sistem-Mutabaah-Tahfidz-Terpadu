@@ -1,3 +1,8 @@
+export type SantriStatus = 'tercapai' | 'tidak_tercapai' | 'belum_setor';
+export type SetoranType = 'ziyadah' | 'murojaah';
+export type SetoranGrade = 'mumtaz' | 'jayyid' | 'iadah';
+export type SetoranFilterType = 'all' | 'sudah_setor' | 'belum_setor' | 'tercapai' | 'tidak_tercapai';
+
 export interface Santri {
   id: string;
   name: string;
@@ -9,7 +14,7 @@ export interface Santri {
   dailyTargetLines: number;
   totalLinesMemorized: number;
   totalLinesTarget: number;
-  status: 'tercapai' | 'tidak_tercapai' | 'belum_setor';
+  status: SantriStatus;
   lastSurah: string;
   avatarInitials: string;
   halaqahName?: string;
@@ -23,7 +28,7 @@ export interface SetoranRecord {
   santriId: string;
   santriName: string;
   nis: string;
-  type: 'ziyadah' | 'murojaah';
+  type: SetoranType;
   juz: number;
   surahName: string;
   pageStart: number;
@@ -31,7 +36,7 @@ export interface SetoranRecord {
   lineStart: number;
   lineEnd: number;
   totalLines: number;
-  grade: 'mumtaz' | 'jayyid' | 'iadah';
+  grade: SetoranGrade;
   musyrif: string;
   createdAt: string; // ISO string
   formattedDate: string; // "30 Sep 2026, 07:15 WIB"
@@ -80,6 +85,7 @@ export type NavItemKey =
   | 'beranda' 
   | 'laporan' 
   | 'santri' 
-  | 'halaqah'
+  | 'halaqah' 
   | 'pengaturan';
+
 

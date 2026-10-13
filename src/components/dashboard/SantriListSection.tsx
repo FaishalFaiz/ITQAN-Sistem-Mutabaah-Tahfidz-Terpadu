@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Search, UserPlus } from 'lucide-react';
-import type { Santri } from './types';
+import type { Santri, SetoranFilterType } from './types';
 import { SantriCard } from './SantriCard';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
-export type SetoranFilterType = 'all' | 'sudah_setor' | 'belum_setor' | 'tercapai' | 'tidak_tercapai';
+export type { SetoranFilterType };
 
 interface SantriListSectionProps {
   santriList: Santri[];

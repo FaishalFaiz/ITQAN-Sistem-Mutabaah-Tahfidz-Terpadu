@@ -85,7 +85,7 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
   return createPortal(
     <div 
       onClick={onClose}
-      className="print-modal-backdrop fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150 cursor-pointer"
+      className="print-modal-backdrop fixed inset-0 z-[100] bg-slate-900/50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150 cursor-pointer"
     >
       <style>{`
         @media print {

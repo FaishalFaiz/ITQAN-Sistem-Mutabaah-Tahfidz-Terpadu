@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { UserPlus } from 'lucide-react';
 import type { Santri, HalaqahGroup } from './types';
 import { storageService } from '../../services/storageService';
@@ -34,10 +34,16 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
   const [juzAchieved, setJuzAchieved] = useState('');
   const [dailyTargetLines, setDailyTargetLines] = useState(15);
   const [lastSurah, setLastSurah] = useState('');
-  const [halaqahList, setHalaqahList] = useState<HalaqahGroup[]>([]);
-  const [selectedHalaqahName, setSelectedHalaqahName] = useState('');
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [halaqahList, setHalaqahList] = useState<HalaqahGroup[]>(() => storageService.getHalaqahList());
+  const [selectedHalaqahName, setSelectedHalaqahName] = useState(() => {
+    const active = storageService.getActiveHalaqah();
+    const groups = storageService.getHalaqahList();
+    return active?.name || (groups[0]?.name ?? 'Halaqoh Utama');
+  });
 
-  useEffect(() => {
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       const groups = storageService.getHalaqahList();
       const active = storageService.getActiveHalaqah();
@@ -45,7 +51,7 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
       setSelectedHalaqahName(active?.name || (groups[0]?.name ?? 'Halaqoh Utama'));
       setDailyTargetLines(active?.targetDailyLines || 15);
     }
-  }, [isOpen]);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

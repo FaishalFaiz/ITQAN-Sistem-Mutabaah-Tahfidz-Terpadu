@@ -64,11 +64,12 @@ export const HalaqahManagementPage: React.FC = () => {
   const [isJoining, setIsJoining] = useState(false);
 
   // Form Edit Active Room Parameters
-  const [editName, setEditName] = useState('');
-  const [editTarget, setEditTarget] = useState<number>(15);
-  const [editMusyrif, setEditMusyrif] = useState('');
-  const [editRoomLoc, setEditRoomLoc] = useState('');
-  const [editDesc, setEditDesc] = useState('');
+  const [prevRoomId, setPrevRoomId] = useState(activeRoom?.id);
+  const [editName, setEditName] = useState(activeRoom?.name || '');
+  const [editTarget, setEditTarget] = useState<number>(activeRoom?.targetDailyLines || 15);
+  const [editMusyrif, setEditMusyrif] = useState(activeRoom?.musyrifName || '');
+  const [editRoomLoc, setEditRoomLoc] = useState(activeRoom?.room || '');
+  const [editDesc, setEditDesc] = useState(activeRoom?.description || '');
   const [syncSantri, setSyncSantri] = useState(true);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
@@ -100,15 +101,14 @@ export const HalaqahManagementPage: React.FC = () => {
   }, []);
 
   // Update edit form when activeRoom changes
-  useEffect(() => {
-    if (activeRoom) {
-      setEditName(activeRoom.name || '');
-      setEditTarget(activeRoom.targetDailyLines || 15);
-      setEditMusyrif(activeRoom.musyrifName || '');
-      setEditRoomLoc(activeRoom.room || '');
-      setEditDesc(activeRoom.description || '');
-    }
-  }, [activeRoom]);
+  if (activeRoom && activeRoom.id !== prevRoomId) {
+    setPrevRoomId(activeRoom.id);
+    setEditName(activeRoom.name || '');
+    setEditTarget(activeRoom.targetDailyLines || 15);
+    setEditMusyrif(activeRoom.musyrifName || '');
+    setEditRoomLoc(activeRoom.room || '');
+    setEditDesc(activeRoom.description || '');
+  }
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
