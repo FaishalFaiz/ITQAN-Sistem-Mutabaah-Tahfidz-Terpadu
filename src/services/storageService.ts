@@ -1,4 +1,4 @@
-import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings, HalaqahGroup, HalaqahMember } from '../components/dashboard/types';
+import type { Santri, SantriStatus, SetoranRecord, WATemplateConfig, HalaqahSettings, HalaqahGroup, HalaqahMember } from '../components/dashboard/types';
 import { 
   DEFAULT_WA_TEMPLATE_CONFIG, 
   DEFAULT_HALAQAH_SETTINGS,
@@ -35,6 +35,17 @@ export function getTodayDateKey(date = new Date()): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export function isSameDay(dateStrOrObj?: string | Date | null, targetDate = new Date()): boolean {
+  if (!dateStrOrObj) return false;
+  try {
+    const d = typeof dateStrOrObj === 'string' ? new Date(dateStrOrObj) : dateStrOrObj;
+    if (isNaN(d.getTime())) return false;
+    return getTodayDateKey(d) === getTodayDateKey(targetDate);
+  } catch {
+    return false;
+  }
 }
 
 export function emitChange(detail?: string) {
@@ -162,20 +173,50 @@ export const storageService = {
         );
       }
 
+      // Hitung metrik hari ini secara dinamis berdasarkan catatan setoran hari ini (otomatis 0 jika tanggal baru)
+      const allRecords = this.getSetoranRecords();
+      const todayRecords = allRecords.filter((r) => isSameDay(r.createdAt));
+
+      const todayLinesMap = new Map<string, number>();
+      for (const r of todayRecords) {
+        const sid = r.santriId;
+        const suuid = ensureUUID(r.santriId);
+        const curr = todayLinesMap.get(sid) || todayLinesMap.get(suuid) || 0;
+        todayLinesMap.set(sid, curr + (r.totalLines || 0));
+        todayLinesMap.set(suuid, curr + (r.totalLines || 0));
+      }
+
       // Normalisasi format juzAchieved dan pastikan halaqahName terisi serta ter-resolve (cegah UUID mentah)
       let hasFix = false;
       const normalized = list.map((s) => {
         const resolvedName = resolveHalaqahName(s.halaqahName || s.halaqahId);
         const resolvedId = s.halaqahId ? ensureUUID(s.halaqahId) : resolveHalaqahUUID(resolvedName);
-        if (s.halaqahName !== resolvedName || s.halaqahId !== resolvedId) {
+        const sUUID = ensureUUID(s.id);
+        const linesToday = todayLinesMap.get(s.id) ?? todayLinesMap.get(sUUID) ?? 0;
+        const target = s.dailyTargetLines || 15;
+
+        let status: SantriStatus = 'belum_setor';
+        if (linesToday > 0) {
+          status = linesToday >= target ? 'tercapai' : 'tidak_tercapai';
+        }
+
+        if (
+          s.halaqahName !== resolvedName ||
+          s.halaqahId !== resolvedId ||
+          s.linesCompletedToday !== linesToday ||
+          s.status !== status
+        ) {
           hasFix = true;
         }
+
         return {
           ...s,
-          id: ensureUUID(s.id),
+          id: sUUID,
           halaqahName: resolvedName,
           halaqahId: resolvedId,
           juzAchieved: formatJuz(s.juzAchieved),
+          linesCompletedToday: linesToday,
+          status,
         };
       });
 
@@ -331,19 +372,16 @@ export const storageService = {
   },
 
   getTodaySetoranForSantri(santriId: string): SetoranRecord[] {
-    const today = getTodayDateKey();
     const records = this.getSetoranRecords();
+    const targetId = ensureUUID(santriId);
     return records.filter(
-      (r) => r.santriId === santriId && r.createdAt?.startsWith(today)
+      (r) => (r.santriId === santriId || ensureUUID(r.santriId) === targetId) && isSameDay(r.createdAt)
     );
   },
 
   getAllTodaySetoran(): SetoranRecord[] {
-    const today = getTodayDateKey();
     const records = this.getSetoranRecords();
-    return records.filter(
-      (r) => r.createdAt?.startsWith(today)
-    );
+    return records.filter((r) => isSameDay(r.createdAt));
   },
 
   addSetoranRecord(
@@ -376,22 +414,29 @@ export const storageService = {
     const updatedRecords = [record, ...records];
     localStorage.setItem(key, JSON.stringify(updatedRecords));
 
-    // 2. Update status & metrik santri
+    // 2. Hitung metrik santri berdasarkan seluruh riwayat yang terupdate
+    const targetSantriId = ensureUUID(input.santriId);
+    const santriRecords = updatedRecords.filter(
+      (r) => r.santriId === input.santriId || ensureUUID(r.santriId) === targetSantriId
+    );
+
+    const todayRecords = santriRecords.filter((r) => isSameDay(r.createdAt));
+    const linesToday = todayRecords.reduce((sum, r) => sum + (r.totalLines || 0), 0);
+    const totalLinesMemorized = santriRecords.reduce((sum, r) => sum + (r.totalLines || 0), 0);
+
     const santriList = this.getSantriList();
     let updatedSantriTarget: Santri | null = null;
 
     const updatedList = santriList.map((s) => {
-      if (s.id !== input.santriId) return s;
+      if (s.id !== input.santriId && ensureUUID(s.id) !== targetSantriId) return s;
 
-      const newLinesToday = (s.linesCompletedToday || 0) + input.totalLines;
-      const newTotalMemorized = (s.totalLinesMemorized || 0) + input.totalLines;
-      const isTercapai = newLinesToday >= s.dailyTargetLines;
-      const calculatedJuz = formatJuz(newTotalMemorized / 300);
+      const isTercapai = linesToday >= s.dailyTargetLines;
+      const calculatedJuz = formatJuz(totalLinesMemorized / 300);
 
       updatedSantriTarget = {
         ...s,
-        linesCompletedToday: newLinesToday,
-        totalLinesMemorized: newTotalMemorized,
+        linesCompletedToday: linesToday,
+        totalLinesMemorized: totalLinesMemorized,
         juzAchieved: calculatedJuz,
         status: isTercapai ? 'tercapai' : 'tidak_tercapai',
         lastSurah: input.surahName,
@@ -415,14 +460,14 @@ export const storageService = {
   },
 
   recalculateSantriMetrics(santriId: string): Santri | null {
-    const today = getTodayDateKey();
     const allRecords = this.getSetoranRecords();
-    const santriRecords = allRecords.filter((r) => r.santriId === santriId);
+    const targetId = ensureUUID(santriId);
+    const santriRecords = allRecords.filter((r) => r.santriId === santriId || ensureUUID(r.santriId) === targetId);
     
     // Urutkan dari yang terbaru
     santriRecords.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
-    const todayRecords = santriRecords.filter((r) => r.createdAt?.startsWith(today));
+    const todayRecords = santriRecords.filter((r) => isSameDay(r.createdAt));
     const linesToday = todayRecords.reduce((sum, r) => sum + (r.totalLines || 0), 0);
     const totalLinesMemorized = santriRecords.reduce((sum, r) => sum + (r.totalLines || 0), 0);
     const lastSurah = santriRecords.length > 0 ? santriRecords[0].surahName : '-';
@@ -431,7 +476,7 @@ export const storageService = {
     let updatedSantri: Santri | null = null;
 
     const updatedList = santriList.map((s) => {
-      if (s.id !== santriId) return s;
+      if (s.id !== santriId && ensureUUID(s.id) !== targetId) return s;
 
       const isTercapai = linesToday >= s.dailyTargetLines;
       const calculatedJuz = formatJuz(totalLinesMemorized / 300);

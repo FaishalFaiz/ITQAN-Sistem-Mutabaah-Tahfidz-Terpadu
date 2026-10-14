@@ -111,7 +111,7 @@ export const whatsappService = {
       year: 'numeric',
     });
 
-    const linesToday = todayRecords.reduce((acc, r) => acc + r.totalLines, 0) || santri.linesCompletedToday;
+    const linesToday = todayRecords.reduce((acc, r) => acc + r.totalLines, 0);
     const estPagesToday = (linesToday / 15).toFixed(1);
 
     // Format rincian sesi harian

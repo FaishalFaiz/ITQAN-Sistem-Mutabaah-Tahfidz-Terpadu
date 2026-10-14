@@ -2,10 +2,10 @@ import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { Menu, Calendar, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
+import { storageService, EVENT_DATA_CHANGED, getTodayDateKey, emitChange } from './services/storageService';
 import { syncService, resolveHalaqahName, ensureUUID } from './services/syncService';
 import { getSantriSlug, findSantriByParam } from './lib/utils';
-import type { Santri } from './components/dashboard/types';
+import type { Santri, HalaqahGroup } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
 import { SantriListSection, type SetoranFilterType } from './components/dashboard/SantriListSection';
 import { TodayProgressCard } from './components/dashboard/TodayProgressCard';
@@ -126,6 +126,7 @@ function App() {
 
   const [santriList, setSantriList] = useState<Santri[]>(() => storageService.getSantriList());
   const [userRoomsCount, setUserRoomsCount] = useState<number>(() => storageService.getUserHalaqahList().length);
+  const [activeHalaqah, setActiveHalaqah] = useState<HalaqahGroup | null>(() => storageService.getActiveHalaqah());
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
     return Boolean(authService.getStoredUser());
   });
@@ -142,6 +143,7 @@ function App() {
         if (isMounted) {
           setSantriList(storageService.getSantriList());
           setUserRoomsCount(storageService.getUserHalaqahList().length);
+          setActiveHalaqah(storageService.getActiveHalaqah());
         }
       }
     });
@@ -151,6 +153,7 @@ function App() {
       setIsAuthenticated(Boolean(stored));
       setSantriList(storageService.getSantriList());
       setUserRoomsCount(storageService.getUserHalaqahList().length);
+      setActiveHalaqah(storageService.getActiveHalaqah());
     };
     window.addEventListener(EVENT_DATA_CHANGED, handleStorageChange);
     return () => {
@@ -158,6 +161,31 @@ function App() {
       window.removeEventListener(EVENT_DATA_CHANGED, handleStorageChange);
     };
   }, [location.pathname]);
+
+  // Deteksi otomatis saat tanggal berganti (tengah malam atau kembali fokus ke tab) agar target harian ter-reset
+  useEffect(() => {
+    let lastDate = getTodayDateKey();
+
+    const handleDateRoll = () => {
+      const currentDate = getTodayDateKey();
+      if (currentDate !== lastDate) {
+        lastDate = currentDate;
+        setSantriList(storageService.getSantriList());
+        setActiveHalaqah(storageService.getActiveHalaqah());
+        emitChange('date_changed_rollover');
+      }
+    };
+
+    const timer = setInterval(handleDateRoll, 30000);
+    window.addEventListener('focus', handleDateRoll);
+    document.addEventListener('visibilitychange', handleDateRoll);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', handleDateRoll);
+      document.removeEventListener('visibilitychange', handleDateRoll);
+    };
+  }, []);
 
 
   const handleOpenSetor = (santri: Santri) => {
@@ -185,7 +213,6 @@ function App() {
   };
 
   // Active Halaqah State
-  const activeHalaqah = storageService.getActiveHalaqah();
   const halaqahName = activeHalaqah?.name || '';
 
   // Filter santri sesuai halaqoh aktif yang sedang diampu (dimemoize untuk cegah alokasi array berulang)

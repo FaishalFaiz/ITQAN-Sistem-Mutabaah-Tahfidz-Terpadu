@@ -25,7 +25,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import type { Santri, SetoranRecord } from './types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from '../../services/storageService';
+import { storageService, EVENT_DATA_CHANGED, getTodayDateKey, isSameDay } from '../../services/storageService';
 import { resolveHalaqahUUID, resolveHalaqahName } from '../../services/syncService';
 import { whatsappService } from '../../services/whatsappService';
 import { EditWaliModal } from './EditWaliModal';
@@ -205,8 +205,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
 
       const now = new Date();
       if (dateFilter === 'hari_ini') {
-        const todayKey = getTodayDateKey();
-        return r.createdAt?.startsWith(todayKey);
+        return isSameDay(r.createdAt);
       }
       if (dateFilter === 'pekan_ini') {
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).getTime();

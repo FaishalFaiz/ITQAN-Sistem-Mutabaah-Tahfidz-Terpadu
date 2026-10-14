@@ -203,7 +203,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
               const isSentToday = santri.lastDailyReportSentDate === today;
               const hasPhone = Boolean(santri.parentPhone && santri.parentPhone.trim().length > 5);
               const todayRecords = storageService.getTodaySetoranForSantri(santri.id);
-              const linesToday = todayRecords.reduce((acc, r) => acc + r.totalLines, 0) || santri.linesCompletedToday;
+              const linesToday = todayRecords.reduce((acc, r) => acc + r.totalLines, 0);
 
               return (
                 <div

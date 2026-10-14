@@ -61,7 +61,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   // Halaqoh Filter: Default mengikuti halaqoh yang aktif diampu oleh guru
   const halaqahList = useMemo(() => storageService.getHalaqahList(), []);
   const [selectedHalaqoh, setSelectedHalaqoh] = useState<string>(() => {
-    return storageService.getActiveHalaqah()?.id || 'halaqah-abu-bakar';
+    return storageService.getActiveHalaqah()?.id || halaqahList[0]?.id || 'all';
   });
 
   // Search & Filter in Santri Table

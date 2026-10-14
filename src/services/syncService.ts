@@ -536,7 +536,7 @@ export const syncService = {
       // 2. SINKRONKAN HALAQAH TERLEBIH DAHULU (Pondasi Foreign Key)
       await this.purgeDefaultHalaqahFromCloud();
 
-      let { data: rawCloudHalaqah } = await supabase
+      const { data: rawCloudHalaqah } = await supabase
         .from('halaqah')
         .select('*')
         .order('created_at', { ascending: true });
@@ -565,7 +565,7 @@ export const syncService = {
         );
       }
 
-      let mappedRooms = cloudHalaqah.map(mapRowToHalaqah);
+      const mappedRooms = cloudHalaqah.map(mapRowToHalaqah);
       for (const lr of localRooms) {
         if (!mappedRooms.some((m) => m.id === lr.id || ensureUUID(m.id) === ensureUUID(lr.id))) {
           mappedRooms.push(lr);
@@ -692,6 +692,15 @@ export const syncService = {
           }
         }
         storageService.saveSetoranList(mappedSetoran);
+      }
+
+      // Refresh metrik harian santri berdasarkan riwayat setoran hari ini (otomatis reset jika hari baru)
+      const refreshedSantri = storageService.getSantriList();
+      for (const s of refreshedSantri) {
+        const cloudMatch = (cloudSantri || []).find((cs) => cs.id === s.id || ensureUUID(cs.id) === ensureUUID(s.id));
+        if (cloudMatch && (cloudMatch.lines_completed_today !== s.linesCompletedToday || cloudMatch.status !== s.status)) {
+          this.pushSantri(s);
+        }
       }
 
       emitChange('cloud_synced_to_local');
