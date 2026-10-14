@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   CheckCircle2, 
   Clock, 
@@ -15,6 +15,7 @@ import {
 import type { Santri } from './types';
 import { storageService, getTodayDateKey } from '../../services/storageService';
 import { whatsappService } from '../../services/whatsappService';
+import { isSantriInHalaqah } from '../../services/syncService';
 import { EditWaliModal } from './EditWaliModal';
 import {
   Dialog,
@@ -41,6 +42,14 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
 }) => {
   const today = getTodayDateKey();
   const settings = storageService.getHalaqahSettings();
+  const activeHalaqah = storageService.getActiveHalaqah();
+
+  // Defense-in-depth: pastikan hanya santri dari halaqoh aktif yang dimuat
+  const currentSantriList = useMemo(() => {
+    if (!activeHalaqah) return santriList;
+    const allRooms = storageService.getAllHalaqahRooms();
+    return santriList.filter((s) => isSantriInHalaqah(s, activeHalaqah, allRooms));
+  }, [santriList, activeHalaqah]);
 
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'sent'>('all');
   const [selectedPreviewSantri, setSelectedPreviewSantri] = useState<Santri | null>(null);
@@ -59,13 +68,13 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
     }
   }
 
-  const sentCount = santriList.filter((s) => s.lastDailyReportSentDate === today).length;
-  const pendingCount = santriList.filter(
+  const sentCount = currentSantriList.filter((s) => s.lastDailyReportSentDate === today).length;
+  const pendingCount = currentSantriList.filter(
     (s) => s.lastDailyReportSentDate !== today && s.parentPhone && s.parentPhone.trim().length > 5
   ).length;
-  const noPhoneCount = santriList.filter((s) => !s.parentPhone || s.parentPhone.trim().length <= 5).length;
+  const noPhoneCount = currentSantriList.filter((s) => !s.parentPhone || s.parentPhone.trim().length <= 5).length;
 
-  const filteredList = santriList.filter((s) => {
+  const filteredList = currentSantriList.filter((s) => {
     const isSent = s.lastDailyReportSentDate === today;
     if (filterTab === 'pending') return !isSent;
     if (filterTab === 'sent') return isSent;
@@ -110,7 +119,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                 </DialogTitle>
               </div>
               <DialogDescription className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                <span>{settings.halaqahName}</span>
+                <span>{activeHalaqah?.name || settings.halaqahName}</span>
                 <span>•</span>
                 <span>Muhaffizh: {settings.musyrifName}</span>
                 <span>•</span>
@@ -161,7 +170,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Semua ({santriList.length})
+              Semua ({currentSantriList.length})
             </button>
             <button
               onClick={() => setFilterTab('pending')}
@@ -401,7 +410,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
             <span>•</span>
             <span>Belum: <strong className="text-amber-600 font-semibold">{pendingCount}</strong></span>
             <span>•</span>
-            <span>Total: <strong>{santriList.length} Santri</strong></span>
+            <span>Total: <strong>{currentSantriList.length} Santri</strong></span>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { storageService, EVENT_DATA_CHANGED } from '@/services/storageService';
+import { isSantriInHalaqah } from '@/services/syncService';
 import type { SetoranRecord } from './types';
 
 interface BarDataPoint {
@@ -28,8 +29,21 @@ export const TrendChart: React.FC = () => {
     return () => window.removeEventListener(EVENT_DATA_CHANGED, handleUpdate);
   }, []);
 
-  const totalSantri = santriList.length || 1;
-  const targetHarianHalaqoh = santriList.reduce((sum, s) => sum + (s.dailyTargetLines || 20), 0) || (totalSantri * 20);
+  const activeHalaqah = storageService.getActiveHalaqah();
+  const halaqahSantriList = useMemo(() => {
+    if (!activeHalaqah) return santriList;
+    const allRooms = storageService.getAllHalaqahRooms();
+    return santriList.filter((s) => isSantriInHalaqah(s, activeHalaqah, allRooms));
+  }, [santriList, activeHalaqah]);
+
+  const halaqahRecords = useMemo(() => {
+    if (!activeHalaqah) return records;
+    const validIds = new Set(halaqahSantriList.map((s) => s.id));
+    return records.filter((r) => validIds.has(r.santriId));
+  }, [records, halaqahSantriList, activeHalaqah]);
+
+  const totalSantri = halaqahSantriList.length || 1;
+  const targetHarianHalaqoh = halaqahSantriList.reduce((sum, s) => sum + (s.dailyTargetLines || 20), 0) || (totalSantri * 20);
 
   // Kalkulasi data riil 7 hari terakhir (Pekan Ini)
   const pekanData = useMemo<BarDataPoint[]>(() => {
@@ -48,7 +62,7 @@ export const TrendChart: React.FC = () => {
       let ziyadah = 0;
       let murojaah = 0;
 
-      records.forEach((r) => {
+      halaqahRecords.forEach((r) => {
         if (!r.createdAt) return;
         if (r.createdAt.slice(0, 10) === dateKey) {
           const lines = Number(r.totalLines) || 0;
@@ -70,7 +84,7 @@ export const TrendChart: React.FC = () => {
     }
 
     return points;
-  }, [records, targetHarianHalaqoh]);
+  }, [halaqahRecords, targetHarianHalaqoh]);
 
   // Kalkulasi data riil 4 pekan dalam bulan berjalan (Bulan Ini)
   const bulanData = useMemo<BarDataPoint[]>(() => {
@@ -94,7 +108,7 @@ export const TrendChart: React.FC = () => {
       let ziyadah = 0;
       let murojaah = 0;
 
-      records.forEach((r) => {
+      halaqahRecords.forEach((r) => {
         if (!r.createdAt) return;
         const d = new Date(r.createdAt);
         if (isNaN(d.getTime())) return;
@@ -120,7 +134,7 @@ export const TrendChart: React.FC = () => {
         date: `${w.start}–${w.end} ${monthName}`,
       };
     });
-  }, [records, targetHarianHalaqoh]);
+  }, [halaqahRecords, targetHarianHalaqoh]);
 
   const currentData = activeRange === 'pekan' ? pekanData : bulanData;
 

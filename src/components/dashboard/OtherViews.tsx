@@ -21,7 +21,7 @@ import { EditTargetModal } from './EditTargetModal';
 import { whatsappService } from '../../services/whatsappService';
 import { storageService } from '../../services/storageService';
 import { formatJuz } from '@/lib/utils';
-import { resolveHalaqahName } from '../../services/syncService';
+import { resolveHalaqahName, isSantriInHalaqah } from '../../services/syncService';
 import type { NavItemKey, Santri } from './types';
 import { HalaqahManagementPage } from './HalaqahManagementPage';
 
@@ -42,30 +42,24 @@ export const OtherView: React.FC<OtherViewProps> = ({
 }) => {
   const [santriSearch, setSantriSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'tercapai' | 'tidak_tercapai' | 'belum_setor'>('all');
-  const [halaqahFilter, setHalaqahFilter] = useState<string>('all');
+  // Ambil daftar halaqoh yang boleh diakses akun musyrif ini
+  const myHalaqahs = storageService.getUserHalaqahList();
+  const activeHalaqah = storageService.getActiveHalaqah();
+  const [halaqahFilter, setHalaqahFilter] = useState<string>(() => activeHalaqah?.name || 'all');
   const [editingWaliSantri, setEditingWaliSantri] = useState<Santri | null>(null);
   const [editingTargetSantri, setEditingTargetSantri] = useState<Santri | null>(null);
   const [santriSubTab, setSantriSubTab] = useState<'kontak' | 'target'>('kontak');
 
-
-
-  // Ambil daftar halaqoh yang boleh diakses akun musyrif ini
-  const myHalaqahs = storageService.getUserHalaqahList();
-  const myHalaqahNames = new Set(myHalaqahs.map((h) => h.name.toLowerCase()));
-  const myHalaqahIds = new Set(myHalaqahs.map((h) => h.id));
-
   // Filter santri: HANYA santri di halaqoh yang diikuti oleh musyrif ini
-  const accessibleSantri = santriList.filter((s) => {
-    if (s.halaqahId && myHalaqahIds.has(s.halaqahId)) return true;
-    if (s.halaqahName && myHalaqahNames.has(s.halaqahName.toLowerCase())) return true;
-    return false;
-  });
+  const accessibleSantri = santriList.filter((s) =>
+    myHalaqahs.some((h) => isSantriInHalaqah(s, h, myHalaqahs))
+  );
 
   const halaqahSantri = halaqahFilter === 'all'
     ? accessibleSantri
     : accessibleSantri.filter((s) => {
-        const sH = (s.halaqahName || '').toLowerCase();
-        return sH === halaqahFilter.toLowerCase() || s.halaqahId === halaqahFilter;
+        const targetRoom = myHalaqahs.find((h) => h.name === halaqahFilter || h.id === halaqahFilter);
+        return targetRoom ? isSantriInHalaqah(s, targetRoom, myHalaqahs) : false;
       });
 
   const countTercapai = halaqahSantri.filter((s) => s.status === 'tercapai').length;

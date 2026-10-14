@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 're
 import { Menu, Calendar, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey, emitChange } from './services/storageService';
-import { syncService, resolveHalaqahName, ensureUUID } from './services/syncService';
+import { syncService, isSantriInHalaqah } from './services/syncService';
 import { getSantriSlug, findSantriByParam } from './lib/utils';
 import type { Santri, HalaqahGroup } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
@@ -125,8 +125,8 @@ function App() {
   const [activeFilter, setActiveFilter] = useState<SetoranFilterType>('all');
 
   const [santriList, setSantriList] = useState<Santri[]>(() => storageService.getSantriList());
-  const [userRoomsCount, setUserRoomsCount] = useState<number>(() => storageService.getUserHalaqahList().length);
   const [activeHalaqah, setActiveHalaqah] = useState<HalaqahGroup | null>(() => storageService.getActiveHalaqah());
+  const [isInitialSyncDone, setIsInitialSyncDone] = useState<boolean>(() => storageService.getUserHalaqahList().length > 0);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
     return Boolean(authService.getStoredUser());
   });
@@ -142,8 +142,8 @@ function App() {
         }
         if (isMounted) {
           setSantriList(storageService.getSantriList());
-          setUserRoomsCount(storageService.getUserHalaqahList().length);
           setActiveHalaqah(storageService.getActiveHalaqah());
+          setIsInitialSyncDone(true);
         }
       }
     });
@@ -152,8 +152,11 @@ function App() {
       const stored = authService.getStoredUser();
       setIsAuthenticated(Boolean(stored));
       setSantriList(storageService.getSantriList());
-      setUserRoomsCount(storageService.getUserHalaqahList().length);
+      const rooms = storageService.getUserHalaqahList();
       setActiveHalaqah(storageService.getActiveHalaqah());
+      if (rooms.length > 0) {
+        setIsInitialSyncDone(true);
+      }
     };
     window.addEventListener(EVENT_DATA_CHANGED, handleStorageChange);
     return () => {
@@ -219,17 +222,7 @@ function App() {
   const currentHalaqahSantriList = useMemo(() => {
     if (!activeHalaqah) return [];
     const allRooms = storageService.getAllHalaqahRooms();
-    const activeUUID = ensureUUID(activeHalaqah.id);
-    const activeCleanName = (activeHalaqah.name || '').trim().toLowerCase();
-
-    return santriList.filter((s) => {
-      if (s.halaqahId) {
-        if (s.halaqahId === activeHalaqah.id) return true;
-        if (ensureUUID(s.halaqahId) === activeUUID) return true;
-      }
-      const sHalaqah = resolveHalaqahName(s.halaqahName || s.halaqahId, allRooms);
-      return Boolean(sHalaqah && sHalaqah.trim().toLowerCase() === activeCleanName);
-    });
+    return santriList.filter((s) => isSantriInHalaqah(s, activeHalaqah, allRooms));
   }, [santriList, activeHalaqah]);
 
   const getHeaderTitle = () => {
@@ -277,7 +270,9 @@ function App() {
   useEffect(() => {
     const p = location.pathname;
     let title = 'ITQAN — Sistem Mutabaah Tahfidz Terpadu';
-    if (p === '/' || p === '/beranda') {
+    if (p === '/' || p === '/landing') {
+      title = 'ITQAN — Sistem Mutabaah Tahfidz Terpadu';
+    } else if (p === '/beranda') {
       title = `Beranda • ${halaqahName} | ITQAN`;
     } else if (p.startsWith('/santri/')) {
       const param = p.split('/')[2];
@@ -293,8 +288,6 @@ function App() {
       title = 'Pengaturan Akun | ITQAN';
     } else if (p === '/pilih-halaqoh') {
       title = 'Pilih atau Buat Halaqoh | ITQAN';
-    } else if (p === '/landing') {
-      title = 'ITQAN — Sistem Mutabaah Tahfidz Terpadu';
     } else if (p === '/login') {
       title = 'Masuk Portal Muhaffizh | ITQAN';
     } else if (p === '/signup') {
@@ -316,23 +309,16 @@ function App() {
   if (location.pathname === '/login' || location.pathname === '/signup') {
     if (isAuthenticated === true || Boolean(authService.getStoredUser())) {
       const userRooms = storageService.getUserHalaqahList();
-      if (userRooms.length === 0) {
+      if (userRooms.length > 0) {
+        return <Navigate to="/beranda" replace />;
+      }
+      if (isInitialSyncDone) {
         return <Navigate to="/pilih-halaqoh" replace />;
       }
-      return <Navigate to="/beranda" replace />;
     }
     return (
       <Suspense fallback={<PageLoadingFallback />}>
         {location.pathname === '/login' ? <LoginPage /> : <SignupPage />}
-      </Suspense>
-    );
-  }
-
-  // Onboarding route: pemilihan halaqoh saat akun baru belum memiliki ruangan
-  if (location.pathname === '/pilih-halaqoh') {
-    return (
-      <Suspense fallback={<PageLoadingFallback />}>
-        <OnboardingHalaqahPage />
       </Suspense>
     );
   }
@@ -357,8 +343,21 @@ function App() {
     return <Navigate to="/login" replace />;
   }
 
-  // Jika akun musyrif belum bergabung atau membuat ruang halaqoh apapun, alihkan ke onboarding
-  if (userRoomsCount === 0 || storageService.getUserHalaqahList().length === 0) {
+  // Onboarding route: pemilihan / pembuatan halaqoh untuk akun musyrif yang login
+  if (location.pathname === '/pilih-halaqoh') {
+    return (
+      <Suspense fallback={<PageLoadingFallback />}>
+        <OnboardingHalaqahPage />
+      </Suspense>
+    );
+  }
+
+  // Jika akun musyrif belum bergabung atau membuat ruang halaqoh apapun, alihkan ke onboarding (hanya jika sync awal sudah selesai)
+  const currentRooms = storageService.getUserHalaqahList();
+  if (currentRooms.length === 0) {
+    if (!isInitialSyncDone) {
+      return <PageLoadingFallback />;
+    }
     return <Navigate to="/pilih-halaqoh" replace />;
   }
 
@@ -592,7 +591,7 @@ function App() {
       <DailyReportModal
         isOpen={isDailyReportModalOpen}
         onClose={() => setIsDailyReportModalOpen(false)}
-        santriList={santriList}
+        santriList={currentHalaqahSantriList}
         onDataRefresh={() => setSantriList(storageService.getSantriList())}
       />
 

@@ -8,12 +8,14 @@ import {
   Check, 
   User, 
   LogOut,
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { storageService } from '../../services/storageService';
 import { authService } from '../../services/authService';
+import { seedPreviewData } from '../../services/seedService';
 import type { WATemplateConfig } from './types';
 
 export const PengaturanView: React.FC = () => {
@@ -24,6 +26,21 @@ export const PengaturanView: React.FC = () => {
   const [waTemplates, setWaTemplates] = useState<WATemplateConfig>(storageService.getWATemplateConfig());
   const [templatesSaved, setTemplatesSaved] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  const handleSeedPreview = async () => {
+    setIsSeeding(true);
+    const res = await seedPreviewData();
+    setIsSeeding(false);
+    if (res.success) {
+      toast.success(res.message, {
+        description: 'Room "Halaqoh Preview (Al-Fath)" kini aktif dengan 20 santri dan catatan setoran.',
+      });
+      navigate('/beranda');
+    } else {
+      toast.error(res.message);
+    }
+  };
 
 
 
@@ -213,7 +230,32 @@ export const PengaturanView: React.FC = () => {
         </form>
       </div>
 
-      {/* 3. SECTION: Manajemen Database & Bersihkan Data */}
+      {/* 3. SECTION: Seeding Data Preview & Simulasi */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h4 className="font-bold text-sm text-slate-900">Data Preview / Simulasi</h4>
+            <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+              20 Santri
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Muat ruang "Halaqoh Preview (Al-Fath)" (Kode: HLQ-PREV20) beserta 20 santri acak dan mutaba'ah setoran aktif.
+          </p>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          disabled={isSeeding}
+          onClick={handleSeedPreview}
+          className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs shrink-0 inline-flex items-center gap-1.5 cursor-pointer h-9 px-4 font-semibold shadow-xs"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>{isSeeding ? 'Memuat Data...' : 'Muat Halaqoh Preview'}</span>
+        </Button>
+      </div>
+
+      {/* 4. SECTION: Manajemen Database & Bersihkan Data */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h4 className="font-bold text-sm text-slate-900">Bersihkan Database</h4>

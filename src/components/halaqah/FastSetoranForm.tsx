@@ -12,6 +12,7 @@ import type { Santri } from '../dashboard/types';
 import type { WalsanModalData } from '../dashboard/SendWalsanModal';
 import { storageService } from '../../services/storageService';
 import { whatsappService } from '../../services/whatsappService';
+import { isSantriInHalaqah } from '../../services/syncService';
 import { toast } from '@/components/ui/sonner';
 import { QURAN_SURAHS, JUZ_TO_START_SURAH, type SurahItem } from '../../data/quranData';
 
@@ -28,11 +29,16 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
   onCancel,
   onSaveSetor,
 }) => {
-  const [allSantri] = useState<Santri[]>(() => storageService.getSantriList());
+  const [allSantri] = useState<Santri[]>(() => {
+    const list = storageService.getSantriList();
+    const activeHalaqah = storageService.getActiveHalaqah();
+    if (!activeHalaqah) return list;
+    const allRooms = storageService.getAllHalaqahRooms();
+    return list.filter((s) => isSantriInHalaqah(s, activeHalaqah, allRooms));
+  });
   const [selectedSantriId, setSelectedSantriId] = useState<string>(() => {
     if (initialSantri) return initialSantri.id;
-    const list = storageService.getSantriList();
-    return list.length > 0 ? list[0].id : '1';
+    return allSantri.length > 0 ? allSantri[0].id : '';
   });
 
   const activeSantri = initialSantri || allSantri.find((s) => s.id === selectedSantriId) || allSantri[0];

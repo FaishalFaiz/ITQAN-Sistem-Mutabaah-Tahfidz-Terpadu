@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -14,10 +14,9 @@ import {
   Menu,
   X,
   Check,
-  ImageIcon,
-  Award,
   Printer,
-  Copy
+  Copy,
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
@@ -78,8 +77,16 @@ const FAQ_ITEMS = [
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = 'ITQAN — Sistem Mutabaah Tahfidz Terpadu';
+  }, []);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
+
+  // Showcase 0: Interactive Talaqqi Setoran Tab State
+  const [talaqqiType, setTalaqqiType] = useState<'ziyadah' | 'murojaah'>('ziyadah');
 
   // Showcase 1: Interactive WhatsApp Message Simulator State
   const [waTab, setWaTab] = useState<'ziyadah' | 'murojaah' | 'harian'>('ziyadah');
@@ -155,10 +162,10 @@ export const LandingPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => scrollToSection('laporan-wa')}
+                onClick={() => scrollToSection('kelola-hafalan')}
                 className="hover:text-[#0070BA] transition-colors cursor-pointer"
               >
-                Laporan WhatsApp
+                Kelola Hafalan
               </button>
               <button
                 type="button"
@@ -166,6 +173,13 @@ export const LandingPage: React.FC = () => {
                 className="hover:text-[#0070BA] transition-colors cursor-pointer"
               >
                 Manajemen Halaqoh
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection('laporan-wa')}
+                className="hover:text-[#0070BA] transition-colors cursor-pointer"
+              >
+                Laporan WhatsApp
               </button>
               <button
                 type="button"
@@ -243,10 +257,10 @@ export const LandingPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => scrollToSection('laporan-wa')}
+                onClick={() => scrollToSection('kelola-hafalan')}
                 className="text-left py-2 hover:text-[#0070BA]"
               >
-                Laporan WhatsApp
+                Kelola Hafalan
               </button>
               <button
                 type="button"
@@ -254,6 +268,13 @@ export const LandingPage: React.FC = () => {
                 className="text-left py-2 hover:text-[#0070BA]"
               >
                 Manajemen Halaqoh
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection('laporan-wa')}
+                className="text-left py-2 hover:text-[#0070BA]"
+              >
+                Laporan WhatsApp
               </button>
               <button
                 type="button"
@@ -371,101 +392,18 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: Hero Visual Container & Interactive Mockup (Layout Referensi Gambar 1) */}
+            {/* Right Column: Hero Visual Container (Murni Gambar) */}
             <div className="lg:col-span-5">
-              <div className="hero-visual-box relative mx-auto max-w-md lg:max-w-none">
-                {/* Window Bar Header Mockup */}
-                <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm relative overflow-hidden">
-                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-200/80 text-[10px] text-slate-400 font-mono">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                    </div>
-                    <span className="font-semibold text-slate-600">portal.itqan.id • Halaqoh Aktif</span>
-                    <span className="text-[9px] font-bold text-[#0070BA] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
-                      Live Preview
-                    </span>
-                  </div>
-
-                  {/* PLACEHOLDER GAMBAR HERO / INTERACTIVE LIVE MOCKUP */}
-                  <div 
-                    id="placeholder-hero-image"
-                    className="aspect-[4/3] rounded-xl border-2 border-dashed border-[#0070BA]/35 bg-gradient-to-br from-[#F8FAFC] to-[#EBF5FB]/60 p-4 sm:p-5 flex flex-col justify-between relative group overflow-hidden"
-                  >
-                    {/* Placeholder Badge Indicator */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white text-[#0070BA] font-bold text-[10px] tracking-wider uppercase border border-blue-200 shadow-2xs">
-                        <ImageIcon className="w-3 h-3 text-[#0070BA]" />
-                        <span>Slot Placeholder Gambar</span>
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        Rasio 4:3
-                      </span>
-                    </div>
-
-                    {/* Interactive Simulated Santri Card Inside Preview */}
-                    <div className="bg-white border border-slate-200 rounded-xl p-3 sm:p-3.5 shadow-2xs space-y-2.5 my-auto">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-9 h-9 rounded-xl bg-[#EBF5FB] border border-blue-200 text-[#0070BA] font-black text-xs flex items-center justify-center shrink-0">
-                            MF
-                          </div>
-                          <div className="min-w-0">
-                            <h5 className="font-bold text-xs text-slate-900 truncate">
-                              Muhammad Fatih Robbani
-                            </h5>
-                            <span className="text-[10px] text-slate-500 font-mono block">
-                              NIS: 20250101 • Juz 30
-                            </span>
-                          </div>
-                        </div>
-
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
-                          Mumtaz
-                        </span>
-                      </div>
-
-                      {/* Progress Bar Animated */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[10px] font-medium text-slate-600">
-                          <span>Target Harian</span>
-                          <span className="font-bold font-mono text-slate-800">15 / 15 Baris (100%)</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
-                          <div className="hero-progress-fill h-full rounded-full bg-emerald-600 transition-all duration-700" />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10px] text-slate-500">
-                        <span className="truncate">Setoran: Surah An-Naba' (1-15)</span>
-                        <span className="text-[#0070BA] font-semibold shrink-0">Baru Saja</span>
-                      </div>
-                    </div>
-
-                    {/* Bottom Helper Note inside Placeholder */}
-                    <div className="text-center pt-1">
-                      <p className="text-[10px] text-slate-500 leading-tight">
-                        Area gambar preview dasbor mutaba'ah santri.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Floating Micro-Card Tag (GPU-Accelerated Micro Animation) */}
-                  <div className="hero-float-card animate-float-gpu mt-3 bg-white border border-slate-200 rounded-xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xs text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-                        <Award className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="font-bold text-slate-900 block leading-tight">Target Mutqin Tercapai</span>
-                        <span className="text-[10px] text-slate-500">100% Setoran Hari Ini Terverifikasi</span>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
-                      Lengkap
-                    </span>
-                  </div>
+              <div className="relative mx-auto max-w-lg lg:max-w-none">
+                <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white">
+                  <img
+                    src="/hero-preview.webp"
+                    alt="Antarmuka Dasbor Mutaba'ah ITQAN"
+                    className="w-full h-auto object-cover object-top block"
+                    loading="eager"
+                    width={1229}
+                    height={758}
+                  />
                 </div>
               </div>
             </div>
@@ -610,7 +548,386 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. DEEP DIVE FEATURE 1: LAPORAN WHATSAPP DENGAN SIMULATOR INTERAKTIF (Layout Referensi Gambar 2 Atas) */}
+      {/* 5. DEEP DIVE FEATURE 1: PENGELOLAAN HAFALAN & SETORAN SANTRI (Fokus Talaqqi Ziyadah, Muroja'ah & Evaluasi) */}
+      <section id="kelola-hafalan" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] cv-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Left Content */}
+            <div className="lg:col-span-6 space-y-4 sm:space-y-5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0070BA] text-[11px] font-bold">
+                <BookOpen className="w-3.5 h-3.5 text-[#0070BA]" />
+                <span>Pusat Kendali Talaqqi</span>
+              </div>
+
+              <h2 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                Kelola Hafalan Santri Baris per Baris dengan Presisi Tinggi
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Poin utama ITQAN berawal dari kebutuhan nyata muhaffizh: mencatat setoran harian secara cepat, menjaga kualitas tajwid santri, serta memisahkan penambahan hafalan baru dengan pemantapan pengulangan mutqin.
+              </p>
+
+              <div className="space-y-3 pt-2">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-[#0070BA] flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="text-xs text-slate-700 font-medium leading-relaxed">
+                    <strong>Pencatatan Ziyadah &amp; Muroja'ah:</strong> Menjaga hafalan lama tetap mutqin sekaligus mempercepat target penambahan juz baru.
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-[#0070BA] flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="text-xs text-slate-700 font-medium leading-relaxed">
+                    <strong>Standar Nilai 3 Tingkat:</strong> Evaluasi objektif dengan kategori Mumtaz (sempurna), Jayyid (lancar), dan I'adah (remedial tajwid).
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-[#0070BA] flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="text-xs text-slate-700 font-medium leading-relaxed">
+                    <strong>Hitungan Otomatis 15 Baris:</strong> Rekomendasi tindakan instan begitu santri mencapai kuota standar halaman mushaf Madinah.
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3">
+                <Button
+                  type="button"
+                  onClick={() => navigate(isLoggedIn ? '/beranda' : '/signup')}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-10 px-5 rounded-xl bg-[#0070BA] hover:bg-[#005C9E] text-white font-bold text-xs shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+                >
+                  <span>Mulai Catat Setoran Santri</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Right Showcase: Clean Setoran Talaqqi Card */}
+            <div className="lg:col-span-6">
+              <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+                {/* Selector Tab: Ziyadah & Muroja'ah */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg text-[11px] font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setTalaqqiType('ziyadah')}
+                      className={`relative px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+                        talaqqiType === 'ziyadah'
+                          ? 'text-[#0070BA] font-bold'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {talaqqiType === 'ziyadah' && (
+                        <motion.div
+                          layoutId="active-talaqqi-tab"
+                          className="absolute inset-0 bg-white rounded-md shadow-2xs"
+                          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                        />
+                      )}
+                      <span className="relative z-10 flex items-center gap-1.5">
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>Ziyadah (Ayat Baru)</span>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTalaqqiType('murojaah')}
+                      className={`relative px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+                        talaqqiType === 'murojaah'
+                          ? 'text-amber-800 font-bold'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {talaqqiType === 'murojaah' && (
+                        <motion.div
+                          layoutId="active-talaqqi-tab"
+                          className="absolute inset-0 bg-white rounded-md shadow-2xs"
+                          transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                        />
+                      )}
+                      <span className="relative z-10 flex items-center gap-1.5">
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Muroja'ah (Pengulangan)</span>
+                      </span>
+                    </button>
+                  </div>
+
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider hidden sm:inline-block">
+                    Standar 15 Baris
+                  </span>
+                </div>
+
+                {/* Setoran Record Card Display */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={talaqqiType}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-3.5"
+                  >
+                    {/* Santri Meta Row */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-[#0070BA] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                          MF
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-xs text-slate-900 leading-tight">
+                            Muhammad Fatih Robbani
+                          </h4>
+                          <p className="text-[10px] text-slate-500">
+                            NIS: 20250101 • Target: 15 baris/hari
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 shrink-0">
+                        Santri Aktif
+                      </span>
+                    </div>
+
+                    {/* Setoran Info Grid */}
+                    <div className="grid grid-cols-2 gap-2.5 text-xs">
+                      <div className="p-3 rounded-xl border border-slate-200 bg-white space-y-1">
+                        <span className="text-[10px] text-slate-500 font-semibold block uppercase tracking-wider">
+                          Surah &amp; Halaman
+                        </span>
+                        <div className="font-bold text-slate-900">
+                          {talaqqiType === 'ziyadah' ? "An-Naba' (1–16)" : "Al-Mulk (1–14)"}
+                        </div>
+                        <span className="text-[10px] text-slate-500 block">
+                          {talaqqiType === 'ziyadah' ? "Juz 30 • Halaman 582" : "Juz 29 • Halaman 562"}
+                        </span>
+                      </div>
+
+                      <div className="p-3 rounded-xl border border-slate-200 bg-white space-y-1">
+                        <span className="text-[10px] text-slate-500 font-semibold block uppercase tracking-wider">
+                          Capaian &amp; Predikat
+                        </span>
+                        <div className="flex items-center gap-1.5 font-bold text-emerald-700">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>15 Baris • Mumtaz</span>
+                        </div>
+                        <span className="text-[10px] text-slate-500 block">
+                          {talaqqiType === 'ziyadah' ? "Target Harian 100%" : "Kualitas Mutqin Terjaga"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Evaluasi Catatan Ustadz */}
+                    <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs space-y-1">
+                      <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">
+                        Catatan Muhaffizh
+                      </span>
+                      <p className="text-slate-700 text-xs leading-relaxed italic">
+                        {talaqqiType === 'ziyadah'
+                          ? '"Makhraj huruf & mad thabi\'i sangat jelas, tajwid lancar tanpa keraguan."'
+                          : '"Kelancaran hafalan juz 29 sangat terjaga kuat dan siap ditasmi\'kan."'}
+                      </p>
+                    </div>
+
+                    {/* Status Rekomendasi Sesi Otomatis */}
+                    <div className={`p-2.5 rounded-xl border text-[11px] flex items-center gap-2 ${
+                      talaqqiType === 'ziyadah'
+                        ? 'border-blue-200 bg-blue-50/70 text-blue-900'
+                        : 'border-amber-200 bg-amber-50/70 text-amber-900'
+                    }`}>
+                      <span className="w-2 h-2 rounded-full shrink-0 bg-current" />
+                      <p className="leading-tight">
+                        <strong>Rekomendasi ITQAN:</strong>{' '}
+                        {talaqqiType === 'ziyadah'
+                          ? 'Target 15 baris terpenuhi. Lanjutkan penambahan ayat baru pada sesi halaqoh besok pagi.'
+                          : 'Pengulangan juz 29 mutqin. Jadwalkan rotasi halaman berikutnya untuk sesi sore ini.'}
+                      </p>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+
+                <div className="text-center pt-1 border-t border-slate-100">
+                  <span className="text-[10px] text-slate-400">
+                    Beralih tab di atas untuk melihat alur pencatatan Ziyadah dan Muroja'ah santri.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. DEEP DIVE FEATURE 2: MANAJEMEN HALAQOH DENGAN SWITCHER INTERAKTIF */}
+      <section id="halaqoh" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Left Interactive Room Switcher Placeholder */}
+            <div className="halaqah-left-col lg:col-span-6 order-2 lg:order-1">
+              <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+                {/* Room Selector Tab */}
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                  <div className="flex items-center gap-1 text-[11px] font-semibold">
+                    {HALAQAH_ROOMS.map((room, idx) => (
+                      <button
+                        key={room.code}
+                        type="button"
+                        onClick={() => setActiveRoomIndex(idx)}
+                        className={`relative px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                          activeRoomIndex === idx
+                            ? 'text-white font-bold'
+                            : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {activeRoomIndex === idx && (
+                          <motion.div
+                            layoutId="active-halaqah-tab-pill"
+                            className="absolute inset-0 bg-[#0070BA] rounded-md shadow-2xs"
+                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                          />
+                        )}
+                        <span className="relative z-10">{room.name.split(' ')[1]}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <span className="text-[10px] font-mono text-[#0070BA] bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-bold">
+                    Multi-Teacher Room
+                  </span>
+                </div>
+
+                {/* PLACEHOLDER GAMBAR FEATURE 2 DENGAN DATA HALAQOH DINAMIS */}
+                <div
+                  id="placeholder-feature-halaqah"
+                  className="rounded-xl border-2 border-dashed border-[#0070BA]/35 bg-white p-4 sm:p-5 space-y-3.5 relative overflow-hidden shadow-2xs"
+                >
+                  <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <span className="font-semibold bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                      Slot Gambar: Manajemen Halaqoh
+                    </span>
+                    <span>Status: Terdaftar Aktif</span>
+                  </div>
+
+                  {/* Room Card Preview Dinamis */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={currentRoom.code}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-900">{currentRoom.name}</h4>
+                          <p className="text-[11px] text-slate-500 mt-0.5">{currentRoom.focus}</p>
+                        </div>
+
+                        {/* Join Code Box */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopyCode(currentRoom.code)}
+                          className="p-1.5 px-2.5 bg-blue-50 border border-blue-200 rounded-lg text-[#0070BA] font-mono text-xs font-bold flex items-center gap-1.5 hover:bg-blue-100 transition-colors cursor-pointer shrink-0"
+                          title="Klik untuk salin kode join"
+                        >
+                          <span>{currentRoom.code}</span>
+                          {copiedCode === currentRoom.code ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+
+                      {/* Room Metadata Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Pembimbing Utama:</span>
+                          <span className="font-semibold text-slate-800">{currentRoom.musyrif}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px]">Guru Pendamping:</span>
+                          <span className="font-semibold text-slate-800">{currentRoom.pendamping}</span>
+                        </div>
+                        <div className="pt-1">
+                          <span className="text-slate-400 block text-[10px]">Lokasi Ruangan:</span>
+                          <span className="font-semibold text-slate-700">{currentRoom.room}</span>
+                        </div>
+                        <div className="pt-1">
+                          <span className="text-slate-400 block text-[10px]">Target Standar:</span>
+                          <span className="font-bold text-emerald-700">{currentRoom.target}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                <div className="text-center">
+                  <span className="text-[10px] text-slate-400">
+                    Klik nama halaqoh di atas untuk melihat bagaimana ustadz berpindah ruangan dan membagikan kode join.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Content */}
+            <div className="halaqah-right-col lg:col-span-6 order-1 lg:order-2 space-y-4 sm:space-y-5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0070BA] text-[11px] font-bold">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Struktur Kelas Terisolasi</span>
+              </div>
+
+              <h2 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                Fleksibilitas Mengelola Banyak Ruang Halaqoh
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Pondok pesantren memiliki beragam jenjang halaqoh. Sistem ITQAN memungkinkan setiap ruang memiliki nama, target kurikulum baris, dan kode unik tersendiri untuk mengundang guru pendamping tanpa saling mencampuri data santri.
+              </p>
+
+              <div className="space-y-2.5 pt-2">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-[#0070BA] flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="text-xs text-slate-700 font-medium leading-relaxed">
+                    <strong>Kode Akses Unik (HLQ-XXXX):</strong> Cukup bagikan 6-karakter kode ke ustadz pendamping agar dapat mengampu ruang yang sama.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-[#0070BA] flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="text-xs text-slate-700 font-medium leading-relaxed">
+                    <strong>Daftar Pengajar Terpantau:</strong> Tampilkan siapa saja pembimbing utama dan guru pendamping yang bertugas.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-[#0070BA] flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-3 h-3" />
+                  </div>
+                  <span className="text-xs text-slate-700 font-medium leading-relaxed">
+                    <strong>Keluar &amp; Hapus Mandiri:</strong> Pengelolaan halaqoh mandiri dengan pengalihan fallback otomatis jika seluruh ruang ditutup.
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-3">
+                <Button
+                  type="button"
+                  onClick={() => navigate(isLoggedIn ? '/halaqah' : '/signup')}
+                  className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-semibold h-10 px-4 rounded-xl cursor-pointer shadow-2xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span>Buka Manajemen Halaqoh</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. DEEP DIVE FEATURE 3: LAPORAN WHATSAPP DENGAN SIMULATOR INTERAKTIF */}
       <section id="laporan-wa" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] cv-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -837,174 +1154,8 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. DEEP DIVE FEATURE 2: MANAJEMEN HALAQOH DENGAN SWITCHER INTERAKTIF (Layout Referensi Gambar 2 Tengah) */}
-      <section id="halaqoh" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            {/* Left Interactive Room Switcher Placeholder */}
-            <div className="halaqah-left-col lg:col-span-6 order-2 lg:order-1">
-              <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
-                {/* Room Selector Tab */}
-                <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
-                  <div className="flex items-center gap-1 text-[11px] font-semibold">
-                    {HALAQAH_ROOMS.map((room, idx) => (
-                      <button
-                        key={room.code}
-                        type="button"
-                        onClick={() => setActiveRoomIndex(idx)}
-                        className={`relative px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                          activeRoomIndex === idx
-                            ? 'text-white font-bold'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
-                        }`}
-                      >
-                        {activeRoomIndex === idx && (
-                          <motion.div
-                            layoutId="active-halaqah-tab-pill"
-                            className="absolute inset-0 bg-[#0070BA] rounded-md shadow-2xs"
-                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                          />
-                        )}
-                        <span className="relative z-10">{room.name.split(' ')[1]}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  <span className="text-[10px] font-mono text-[#0070BA] bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-bold">
-                    Multi-Teacher Room
-                  </span>
-                </div>
-
-                {/* PLACEHOLDER GAMBAR FEATURE 2 DENGAN DATA HALAQOH DINAMIS */}
-                <div
-                  id="placeholder-feature-halaqah"
-                  className="rounded-xl border-2 border-dashed border-[#0070BA]/35 bg-white p-4 sm:p-5 space-y-3.5 relative overflow-hidden shadow-2xs"
-                >
-                  <div className="flex items-center justify-between text-[10px] text-slate-400">
-                    <span className="font-semibold bg-slate-100 px-2 py-0.5 rounded border border-slate-200 text-slate-700">
-                      Slot Gambar: Manajemen Halaqoh
-                    </span>
-                    <span>Status: Terdaftar Aktif</span>
-                  </div>
-
-                  {/* Room Card Preview Dinamis */}
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentRoom.code}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                      className="space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h4 className="font-bold text-sm text-slate-900">{currentRoom.name}</h4>
-                          <p className="text-[11px] text-slate-500 mt-0.5">{currentRoom.focus}</p>
-                        </div>
-
-                        {/* Join Code Box */}
-                        <button
-                          type="button"
-                          onClick={() => handleCopyCode(currentRoom.code)}
-                          className="p-1.5 px-2.5 bg-blue-50 border border-blue-200 rounded-lg text-[#0070BA] font-mono text-xs font-bold flex items-center gap-1.5 hover:bg-blue-100 transition-colors cursor-pointer shrink-0"
-                          title="Klik untuk salin kode join"
-                        >
-                          <span>{currentRoom.code}</span>
-                          {copiedCode === currentRoom.code ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-
-                      {/* Room Metadata Grid */}
-                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Pembimbing Utama:</span>
-                          <span className="font-semibold text-slate-800">{currentRoom.musyrif}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block text-[10px]">Guru Pendamping:</span>
-                          <span className="font-semibold text-slate-800">{currentRoom.pendamping}</span>
-                        </div>
-                        <div className="pt-1">
-                          <span className="text-slate-400 block text-[10px]">Lokasi Ruangan:</span>
-                          <span className="font-semibold text-slate-700">{currentRoom.room}</span>
-                        </div>
-                        <div className="pt-1">
-                          <span className="text-slate-400 block text-[10px]">Target Standar:</span>
-                          <span className="font-bold text-emerald-700">{currentRoom.target}</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-
-                <div className="text-center">
-                  <span className="text-[10px] text-slate-400">
-                    Klik nama halaqoh di atas untuk melihat bagaimana ustadz berpindah ruangan dan membagikan kode join.
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Content */}
-            <div className="halaqah-right-col lg:col-span-6 order-1 lg:order-2 space-y-4 sm:space-y-5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0070BA] text-[11px] font-bold">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Struktur Kelas Terisolasi</span>
-              </div>
-
-              <h2 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Fleksibilitas Mengelola Banyak Ruang Halaqoh
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Pondok pesantren memiliki beragam jenjang halaqoh. Sistem ITQAN memungkinkan setiap ruang memiliki nama, target kurikulum baris, dan kode unik tersendiri untuk mengundang guru pendamping tanpa saling mencampuri data santri.
-              </p>
-
-              <div className="space-y-2.5 pt-2">
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 text-[#0070BA] flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3 h-3" />
-                  </div>
-                  <span className="text-xs text-slate-700 font-medium leading-relaxed">
-                    <strong>Kode Akses Unik (HLQ-XXXX):</strong> Cukup bagikan 6-karakter kode ke ustadz pendamping agar dapat mengampu ruang yang sama.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 text-[#0070BA] flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3 h-3" />
-                  </div>
-                  <span className="text-xs text-slate-700 font-medium leading-relaxed">
-                    <strong>Daftar Pengajar Terpantau:</strong> Tampilkan siapa saja pembimbing utama dan guru pendamping yang bertugas.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 text-[#0070BA] flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3 h-3" />
-                  </div>
-                  <span className="text-xs text-slate-700 font-medium leading-relaxed">
-                    <strong>Keluar &amp; Hapus Mandiri:</strong> Pengelolaan halaqoh mandiri dengan pengalihan fallback otomatis jika seluruh ruang ditutup.
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-3">
-                <Button
-                  type="button"
-                  onClick={() => navigate(isLoggedIn ? '/halaqah' : '/signup')}
-                  className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-semibold h-10 px-4 rounded-xl cursor-pointer shadow-2xs transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <span>Buka Manajemen Halaqoh</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. ALUR KERJA / 3 LANGKAH MUDAH (Layout Referensi Gambar 2) */}
-      <section id="cara-kerja" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] cv-auto">
+      {/* 8. ALUR KERJA / 3 LANGKAH MUDAH */}
+      <section id="cara-kerja" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
           {/* Section Header */}
           <div className="workflow-header text-center max-w-2xl mx-auto space-y-2.5 sm:space-y-3">
@@ -1063,8 +1214,8 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 8. FAQ DENGAN TRANSISI AKORDEON HALUS */}
-      <section id="faq" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-white cv-auto">
+      {/* 9. FAQ DENGAN TRANSISI AKORDEON HALUS */}
+      <section id="faq" className="py-10 sm:py-20 lg:py-24 border-b border-slate-200 bg-[#F8FAFC] cv-auto">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10">
           <div className="faq-header text-center space-y-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[#0070BA] bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
@@ -1199,13 +1350,13 @@ export const LandingPage: React.FC = () => {
                   </button>
                 </li>
                 <li>
-                  <button type="button" onClick={() => scrollToSection('laporan-wa')} className="hover:text-white transition-colors cursor-pointer">
-                    Laporan WhatsApp
+                  <button type="button" onClick={() => scrollToSection('halaqoh')} className="hover:text-white transition-colors cursor-pointer">
+                    Manajemen Halaqoh
                   </button>
                 </li>
                 <li>
-                  <button type="button" onClick={() => scrollToSection('halaqoh')} className="hover:text-white transition-colors cursor-pointer">
-                    Manajemen Halaqoh
+                  <button type="button" onClick={() => scrollToSection('laporan-wa')} className="hover:text-white transition-colors cursor-pointer">
+                    Laporan WhatsApp
                   </button>
                 </li>
                 <li>

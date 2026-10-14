@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import type { Santri, SetoranRecord } from './types';
 import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
-import { syncService, ensureUUID } from '../../services/syncService';
+import { syncService, ensureUUID, isSantriInHalaqah } from '../../services/syncService';
 import { whatsappService } from '../../services/whatsappService';
 import {
   generateSantriReports,
@@ -79,19 +79,11 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   const matchesSantriHalaqah = useCallback((s: Santri, targetHalaqahIdOrName: string) => {
     if (targetHalaqahIdOrName === 'all') return true;
     const target = targetHalaqahIdOrName.toLowerCase();
-    if (s.halaqahId && s.halaqahId.toLowerCase() === target) return true;
-    const sHalaqah = (s.halaqahName || '').toLowerCase();
-
     const foundGroup = halaqahList.find((h) => h.id.toLowerCase() === target || h.name.toLowerCase() === target);
     if (foundGroup) {
-      return sHalaqah === foundGroup.name.toLowerCase() || sHalaqah.includes(foundGroup.name.toLowerCase());
+      return isSantriInHalaqah(s, foundGroup, halaqahList);
     }
-
-    return (
-      sHalaqah === target ||
-      sHalaqah.includes(target) ||
-      (s.halaqahId && s.halaqahId.toLowerCase() === target)
-    );
+    return false;
   }, [halaqahList]);
 
   // Reactive listener on storage changes (records / pergantian halaqoh aktif)
@@ -560,7 +552,7 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
                     Tren Setoran Mingguan (4 Pekan)
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Volume Ziyadah vs Muroja'ah terhadap target halaqoh
+                    Volume Ziyadah &amp; Muroja'ah terhadap target halaqoh
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-slate-600">

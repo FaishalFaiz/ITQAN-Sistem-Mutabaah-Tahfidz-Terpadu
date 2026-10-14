@@ -91,14 +91,6 @@ export function resolveHalaqahName(raw?: string | null, knownRooms?: HalaqahGrou
 
   // Jangan tampilkan halaqoh bawaan
   if (DEFAULT_HALAQAH_IDS.has(clean.toLowerCase()) || DEFAULT_HALAQAH_NAMES.has(clean.toLowerCase())) {
-    try {
-      const active = storageService?.getActiveHalaqah?.();
-      if (active?.name && !DEFAULT_HALAQAH_NAMES.has(active.name.toLowerCase())) {
-        return active.name;
-      }
-    } catch {
-      /* ignore */
-    }
     return '';
   }
 
@@ -139,16 +131,69 @@ export function resolveHalaqahName(raw?: string | null, knownRooms?: HalaqahGrou
   // 4. Jika string berupa UUID dan tidak cocok di daftar room manapun, cegah cetak UUID mentah ke UI
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (uuidRegex.test(clean)) {
-    try {
-      const active = storageService?.getActiveHalaqah?.();
-      if (active?.name && !DEFAULT_HALAQAH_NAMES.has(active.name.toLowerCase())) return active.name;
-    } catch {
-      /* ignore */
-    }
     return '';
   }
 
   return clean;
+}
+
+/**
+ * Strict check if a santri belongs to a specific halaqah group.
+ * Prevents cross-halaqah student leakage across all dashboard views and modals.
+ */
+export function isSantriInHalaqah(
+  santri: Santri,
+  halaqah: HalaqahGroup | null,
+  allRooms?: HalaqahGroup[]
+): boolean {
+  if (!santri || !halaqah) return false;
+
+  const halaqahId = halaqah.id;
+  const halaqahUUID = ensureUUID(halaqahId);
+  const halaqahName = (halaqah.name || '').trim().toLowerCase();
+  const rooms = allRooms || (typeof storageService?.getAllHalaqahRooms === 'function' ? storageService.getAllHalaqahRooms() : []);
+
+  // 1. Direct ID match
+  if (santri.halaqahId) {
+    if (santri.halaqahId === halaqahId) return true;
+    if (ensureUUID(santri.halaqahId) === halaqahUUID) return true;
+
+    // Reject if santri.halaqahId matches another known halaqah ID
+    const santriUUID = ensureUUID(santri.halaqahId);
+    const belongsToOtherKnownRoom = rooms.some(
+      (r) =>
+        (r.id === santri.halaqahId || ensureUUID(r.id) === santriUUID) &&
+        r.id !== halaqahId &&
+        ensureUUID(r.id) !== halaqahUUID
+    );
+    if (belongsToOtherKnownRoom) {
+      return false;
+    }
+  }
+
+  // 2. Direct Name match
+  if (santri.halaqahName) {
+    const santriCleanName = santri.halaqahName.trim().toLowerCase();
+    if (santriCleanName === halaqahName) return true;
+
+    // Reject if santri.halaqahName matches another known room's name
+    const matchesOtherRoomName = rooms.some(
+      (r) =>
+        r.name.trim().toLowerCase() === santriCleanName &&
+        r.name.trim().toLowerCase() !== halaqahName
+    );
+    if (matchesOtherRoomName) {
+      return false;
+    }
+  }
+
+  // 3. Fallback resolution via resolveHalaqahName
+  if (santri.halaqahId && !santri.halaqahName) {
+    const resolved = resolveHalaqahName(santri.halaqahId, rooms);
+    if (resolved && resolved.trim().toLowerCase() === halaqahName) return true;
+  }
+
+  return false;
 }
 
 export function resolveHalaqahId(nameOrId?: string | null, knownRooms?: HalaqahGroup[]): string {

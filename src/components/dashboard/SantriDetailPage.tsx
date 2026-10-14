@@ -164,8 +164,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     const latestZiyadah = ziyadahRecords[0];
 
-    let ziyadahTitle = '';
-    let ziyadahDesc = '';
+    let ziyadahTitle: string;
+    let ziyadahDesc: string;
 
     if (isTercapai) {
       ziyadahTitle = 'Lanjutkan Ayat Baru Besok Pagi';
@@ -212,8 +212,8 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     const murojaahRecords = sortedRecords.filter((r) => r.type === 'murojaah');
     const latestMurojaah = murojaahRecords[0];
 
-    let murojaahTitle = '';
-    let murojaahDesc = '';
+    let murojaahTitle: string;
+    let murojaahDesc: string;
     let murojaahBadge = "Muroja'ah";
     let murojaahBadgeClass = 'bg-amber-100 text-amber-800';
     let murojaahBorderClass = 'border-amber-100 bg-[#FFFDF7]';
@@ -308,6 +308,44 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     setDeletingRecord(null);
   };
 
+  const filteredRecords = useMemo(() => {
+    return records.filter((r) => {
+      // 1. Filter jenis setoran
+      if (setoranFilter !== 'all' && r.type !== setoranFilter) {
+        return false;
+      }
+
+      // 2. Filter rentang tanggal
+      if (dateFilter === 'semua') return true;
+
+      const recordTime = r.createdAt ? new Date(r.createdAt).getTime() : 0;
+      if (!recordTime) return true;
+
+      const now = new Date();
+      if (dateFilter === 'hari_ini') {
+        return isSameDay(r.createdAt);
+      }
+      if (dateFilter === 'pekan_ini') {
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).getTime();
+        return recordTime >= sevenDaysAgo && recordTime <= now.getTime();
+      }
+      if (dateFilter === 'bulan_ini') {
+        const recDate = new Date(recordTime);
+        return recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear();
+      }
+      if (dateFilter === 'custom') {
+        if (!customStartDate) return true;
+        const start = new Date(customStartDate);
+        start.setHours(0, 0, 0, 0);
+        const end = customEndDate ? new Date(customEndDate) : new Date(now);
+        end.setHours(23, 59, 59, 999);
+        return recordTime >= start.getTime() && recordTime <= end.getTime();
+      }
+
+      return true;
+    });
+  }, [records, setoranFilter, dateFilter, customStartDate, customEndDate]);
+
   const handleExportRecordsCSV = () => {
     if (filteredRecords.length === 0) {
       toast.error('Tidak ada catatan setoran untuk diunduh.');
@@ -356,44 +394,6 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     document.body.removeChild(link);
     toast.success('Log riwayat setoran berhasil diunduh (CSV)!');
   };
-
-  const filteredRecords = useMemo(() => {
-    return records.filter((r) => {
-      // 1. Filter jenis setoran
-      if (setoranFilter !== 'all' && r.type !== setoranFilter) {
-        return false;
-      }
-
-      // 2. Filter rentang tanggal
-      if (dateFilter === 'semua') return true;
-
-      const recordTime = r.createdAt ? new Date(r.createdAt).getTime() : 0;
-      if (!recordTime) return true;
-
-      const now = new Date();
-      if (dateFilter === 'hari_ini') {
-        return isSameDay(r.createdAt);
-      }
-      if (dateFilter === 'pekan_ini') {
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).getTime();
-        return recordTime >= sevenDaysAgo && recordTime <= now.getTime();
-      }
-      if (dateFilter === 'bulan_ini') {
-        const recDate = new Date(recordTime);
-        return recDate.getMonth() === now.getMonth() && recDate.getFullYear() === now.getFullYear();
-      }
-      if (dateFilter === 'custom') {
-        if (!customStartDate) return true;
-        const start = new Date(customStartDate);
-        start.setHours(0, 0, 0, 0);
-        const end = customEndDate ? new Date(customEndDate) : new Date(now);
-        end.setHours(23, 59, 59, 999);
-        return recordTime >= start.getTime() && recordTime <= end.getTime();
-      }
-
-      return true;
-    });
-  }, [records, setoranFilter, dateFilter, customStartDate, customEndDate]);
 
   const statusConfig = {
     tercapai: {

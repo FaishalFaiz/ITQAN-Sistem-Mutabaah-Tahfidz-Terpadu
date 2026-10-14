@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { emitChange } from './storageService';
+import { syncService } from './syncService';
 
 export interface MusyrifUser {
   id: string;
@@ -78,6 +79,14 @@ export const authService = {
           fullName: data.user.user_metadata?.full_name || email.split('@')[0],
         };
         localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(user));
+
+        // Sinkronkan data halaqoh dari cloud sebelum broadcast login agar state halaqoh sudah siap
+        try {
+          await syncService.syncAll();
+        } catch {
+          /* ignore sync error on login */
+        }
+
         emitChange('user_logged_in');
         return { success: true, user };
       }
