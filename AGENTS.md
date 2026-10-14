@@ -30,3 +30,7 @@
 ## 4. Verification & Testing Policy
 - **NO Browser Tool Execution**: NEVER run `browser_subagent` or open browser tools to self-verify UI.
 - **User Verification**: Always instruct the user to verify the result directly in their own browser at `http://localhost:5173/`.
+
+## 5. Persistent Communication & Engineering Modes (Always ON)
+- **Caveman Mode (Full)**: Ultra-terse output, cut fluff/filler/articles/pleasantries. Direct technical substance. No preamble before tool calls.
+- **Ponytail Mode (Full)**: YAGNI. Minimum code that works. Native/standard features first. Zero unrequested abstractions. Mark deliberate shortcuts: `// ponytail: [ceiling] -> [upgrade path]`.

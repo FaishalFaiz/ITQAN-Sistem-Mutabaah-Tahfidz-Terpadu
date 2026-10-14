@@ -85,12 +85,9 @@ export const PengaturanView: React.FC = () => {
               </p>
             </div>
           </div>
-          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md self-start sm:self-auto">
-            Sesi Terautentikasi
-          </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1 text-xs">
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 space-y-1">
             <span className="text-[11px] text-slate-400 font-medium block">Nama Lengkap</span>
             <span className="font-bold text-slate-900 text-sm block">
@@ -102,13 +99,6 @@ export const PengaturanView: React.FC = () => {
             <span className="text-[11px] text-slate-400 font-medium block">Alamat Email</span>
             <span className="font-semibold text-slate-800 text-xs block font-mono truncate" title={storedUser?.email}>
               {storedUser?.email || 'muhaffizh@itqan.sch.id'}
-            </span>
-          </div>
-
-          <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 space-y-1">
-            <span className="text-[11px] text-slate-400 font-medium block">Peran Sistem</span>
-            <span className="font-bold text-[#0070BA] text-xs block">
-              Muhaffizh / Guru Halaqoh
             </span>
           </div>
         </div>

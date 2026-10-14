@@ -21,6 +21,7 @@ import { EditTargetModal } from './EditTargetModal';
 import { whatsappService } from '../../services/whatsappService';
 import { storageService } from '../../services/storageService';
 import { formatJuz } from '@/lib/utils';
+import { resolveHalaqahName } from '../../services/syncService';
 import type { NavItemKey, Santri } from './types';
 import { HalaqahManagementPage } from './HalaqahManagementPage';
 
@@ -455,7 +456,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
                             {/* Halaqoh (Anti-Wrap Pill) */}
                             <td className="py-2.5 px-3 whitespace-nowrap">
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-slate-700 bg-slate-100 border border-slate-200/80 whitespace-nowrap">
-                                {santri.halaqahName?.replace('Halaqoh ', '') || 'Abu Bakar'}
+                                {resolveHalaqahName(santri.halaqahName || santri.halaqahId).replace('Halaqoh ', '')}
                               </span>
                             </td>
 
@@ -701,7 +702,7 @@ export const OtherView: React.FC<OtherViewProps> = ({
                       <PacingCard
                         santriName={s.name}
                         nis={s.nis}
-                        halaqahName={s.halaqahName}
+                        halaqahName={resolveHalaqahName(s.halaqahName || s.halaqahId)}
                         totalLinesMemorized={s.totalLinesMemorized || 0}
                         totalLinesTarget={s.totalLinesTarget || 9060}
                         daysRemaining={650}

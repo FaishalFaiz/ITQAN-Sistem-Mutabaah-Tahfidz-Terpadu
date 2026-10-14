@@ -3,6 +3,7 @@ import { UserPlus } from 'lucide-react';
 import type { Santri, HalaqahGroup } from './types';
 import { storageService } from '../../services/storageService';
 import { whatsappService } from '../../services/whatsappService';
+import { ensureUUID } from '../../services/syncService';
 import {
   Dialog,
   DialogContent,
@@ -68,7 +69,10 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
 
     const generatedId = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
-      : `santri-${Date.now()}`;
+      : ensureUUID(`santri-${Date.now()}`);
+
+    const activeHalaqahObj = halaqahList.find((h) => h.name === selectedHalaqahName) || halaqahList[0];
+    const halaqahId = activeHalaqahObj ? ensureUUID(activeHalaqahObj.id) : undefined;
 
     const newSantri: Santri = {
       id: generatedId,
@@ -84,7 +88,8 @@ export const AddSantriModal: React.FC<AddSantriModalProps> = ({
       lastSurah: lastSurah.trim() || 'Al-Fatihah 1-7',
       totalLinesMemorized: 15 * 15,
       totalLinesTarget: 9060,
-      halaqahName: selectedHalaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
+      halaqahName: selectedHalaqahName || activeHalaqahObj?.name || 'Halaqoh Utama',
+      halaqahId,
     };
 
     onAddSantri(newSantri);

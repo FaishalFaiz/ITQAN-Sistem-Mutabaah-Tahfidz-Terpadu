@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Santri } from './types';
+import type { WalsanModalData } from './SendWalsanModal';
 import { FastSetoranForm } from '../halaqah/FastSetoranForm';
 import {
   Dialog,
@@ -13,6 +14,7 @@ interface SantriModalProps {
   type: 'setor' | null;
   santri: Santri | null;
   onClose: () => void;
+  onSuccess?: (walsanData?: WalsanModalData) => void;
   onSaveSetor?: (santriId: string, linesAdded: number) => void;
 }
 
@@ -20,6 +22,7 @@ export const SantriModal: React.FC<SantriModalProps> = ({
   type,
   santri,
   onClose,
+  onSuccess,
   onSaveSetor,
 }) => {
   const [cachedSantri, setCachedSantri] = React.useState<Santri | null>(santri);
@@ -68,7 +71,10 @@ export const SantriModal: React.FC<SantriModalProps> = ({
         <div className="pt-2">
           <FastSetoranForm
             santri={displaySantri}
-            onSuccess={onClose}
+            onSuccess={(walsanData) => {
+              onClose();
+              if (onSuccess) onSuccess(walsanData);
+            }}
             onCancel={onClose}
             onSaveSetor={(lines) => onSaveSetor && onSaveSetor(displaySantri.id, lines)}
           />

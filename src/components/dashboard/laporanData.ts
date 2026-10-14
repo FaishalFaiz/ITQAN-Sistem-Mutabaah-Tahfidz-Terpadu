@@ -231,7 +231,7 @@ export const generateSantriReports = (
       linesCompletedToday: s.linesCompletedToday,
       status: s.status,
       lastSurah: s.lastSurah,
-      halaqahName: s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
+      halaqahName: s.halaqahName || 'Halaqoh Utama',
       ziyadahLinesPeriod,
       ziyadahPagesPeriod,
       murojaahLinesPeriod,

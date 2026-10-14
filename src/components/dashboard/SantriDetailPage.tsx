@@ -26,7 +26,7 @@ import type { Santri, SetoranRecord } from './types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from '../../services/storageService';
-import { resolveHalaqahUUID } from '../../services/syncService';
+import { resolveHalaqahUUID, resolveHalaqahName } from '../../services/syncService';
 import { whatsappService } from '../../services/whatsappService';
 import { EditWaliModal } from './EditWaliModal';
 import { EditTargetModal } from './EditTargetModal';
@@ -83,27 +83,30 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   const [isMoveHalaqahModalOpen, setIsMoveHalaqahModalOpen] = useState(false);
   const [isDeleteSantriModalOpen, setIsDeleteSantriModalOpen] = useState(false);
   const [prevSantriId, setPrevSantriId] = useState(santri.id);
-  const [selectedTargetHalaqah, setSelectedTargetHalaqah] = useState(santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
+  const [selectedTargetHalaqah, setSelectedTargetHalaqah] = useState(
+    () => resolveHalaqahName(santri.halaqahName || santri.halaqahId)
+  );
 
   if (santri.id !== prevSantriId) {
     setPrevSantriId(santri.id);
     setCurrentSantri(santri);
-    setSelectedTargetHalaqah(santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
+    setSelectedTargetHalaqah(resolveHalaqahName(santri.halaqahName || santri.halaqahId));
   }
 
   const handleConfirmMoveHalaqah = () => {
     if (!selectedTargetHalaqah) return;
-    const targetUUID = resolveHalaqahUUID(selectedTargetHalaqah);
+    const targetName = resolveHalaqahName(selectedTargetHalaqah);
+    const targetUUID = resolveHalaqahUUID(targetName);
     const updated: Santri = {
       ...currentSantri,
-      halaqahName: selectedTargetHalaqah,
+      halaqahName: targetName,
       halaqahId: targetUUID,
     };
     storageService.updateSantri(updated);
     setCurrentSantri(updated);
     setIsMoveHalaqahModalOpen(false);
     toast.success('Halaqoh santri berhasil dipindahkan', {
-      description: `${currentSantri.name} kini berada di ${selectedTargetHalaqah}.`,
+      description: `${currentSantri.name} kini berada di ${targetName}.`,
     });
   };
 
@@ -273,7 +276,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
             type="button"
             variant="outline"
             onClick={() => {
-              setSelectedTargetHalaqah(currentSantri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
+              setSelectedTargetHalaqah(resolveHalaqahName(currentSantri.halaqahName || currentSantri.halaqahId));
               setIsMoveHalaqahModalOpen(true);
             }}
             className="inline-flex items-center justify-center gap-1 text-xs font-semibold h-8.5 sm:h-9 px-2 sm:px-2.5 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer"
@@ -371,7 +374,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               </div>
 
               <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500">
-                <span>Halaqoh: <strong className="text-slate-700 font-semibold">{currentSantri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq'}</strong></span>
+                <span>Halaqoh: <strong className="text-slate-700 font-semibold">{resolveHalaqahName(currentSantri.halaqahName || currentSantri.halaqahId)}</strong></span>
                 <span className="text-slate-300">•</span>
                 <span>Wali: <strong className="text-slate-700 font-semibold">{currentSantri.parentName || 'Belum diisi'}</strong></span>
                 <span className="text-slate-300">•</span>
@@ -1224,7 +1227,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               </p>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-1">
                 <span className="text-slate-500 block">Halaqoh Saat Ini:</span>
-                <span className="font-bold text-[#0070BA] block">{currentSantri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq'}</span>
+                <span className="font-bold text-[#0070BA] block">{resolveHalaqahName(currentSantri.halaqahName || currentSantri.halaqahId)}</span>
               </div>
             </DialogDescription>
           </DialogHeader>

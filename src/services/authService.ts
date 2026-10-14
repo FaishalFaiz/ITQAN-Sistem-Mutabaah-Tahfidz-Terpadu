@@ -105,7 +105,6 @@ export const authService = {
         options: {
           data: {
             full_name: fullName.trim(),
-            role: 'musyrif',
           },
         },
       });

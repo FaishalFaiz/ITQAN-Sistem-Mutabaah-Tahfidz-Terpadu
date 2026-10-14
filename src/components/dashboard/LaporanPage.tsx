@@ -78,22 +78,9 @@ export const LaporanPage: React.FC<LaporanPageProps> = ({
   // Helper pencocokan santri ke halaqoh
   const matchesSantriHalaqah = useCallback((s: Santri, targetHalaqahIdOrName: string) => {
     if (targetHalaqahIdOrName === 'all') return true;
-    const sHalaqah = (s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq').toLowerCase();
     const target = targetHalaqahIdOrName.toLowerCase();
-
-    // ID presets
-    if (target === 'halaqah-abu-bakar' || target === 'hal-abu-bakar' || target === 'abu_bakar') {
-      return sHalaqah.includes('abu bakar');
-    }
-    if (target === 'halaqah-umar' || target === 'hal-umar' || target === 'umar') {
-      return sHalaqah.includes('umar');
-    }
-    if (target === 'halaqah-utsman' || target === 'hal-utsman' || target === 'utsman') {
-      return sHalaqah.includes('utsman');
-    }
-    if (target === 'halaqah-ali' || target === 'hal-ali' || target === 'ali') {
-      return sHalaqah.includes('ali');
-    }
+    if (s.halaqahId && s.halaqahId.toLowerCase() === target) return true;
+    const sHalaqah = (s.halaqahName || '').toLowerCase();
 
     const foundGroup = halaqahList.find((h) => h.id.toLowerCase() === target || h.name.toLowerCase() === target);
     if (foundGroup) {

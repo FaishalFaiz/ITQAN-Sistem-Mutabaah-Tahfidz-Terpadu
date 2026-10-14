@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 're
 import { Menu, Calendar, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { storageService, EVENT_DATA_CHANGED, getTodayDateKey } from './services/storageService';
-import { syncService } from './services/syncService';
+import { syncService, resolveHalaqahName, ensureUUID } from './services/syncService';
 import { getSantriSlug, findSantriByParam } from './lib/utils';
 import type { Santri } from './components/dashboard/types';
 import { StatCards } from './components/dashboard/StatCards';
@@ -12,6 +12,7 @@ import { TodayProgressCard } from './components/dashboard/TodayProgressCard';
 import { NavbarSidebar } from './components/dashboard/NavbarSidebar';
 import { HalaqahSwitcher } from './components/dashboard/HalaqahSwitcher';
 import { SantriModal } from './components/dashboard/SantriModal';
+import { SendWalsanModal, type WalsanModalData } from './components/dashboard/SendWalsanModal';
 import { AddSantriModal } from './components/dashboard/AddSantriModal';
 import { EditTargetModal } from './components/dashboard/EditTargetModal';
 import { DailyReportModal } from './components/dashboard/DailyReportModal';
@@ -109,6 +110,7 @@ function App() {
   // Modal state for Setor
   const [modalType, setModalType] = useState<'setor' | null>(null);
   const [selectedSantriForSetor, setSelectedSantriForSetor] = useState<Santri | null>(null);
+  const [walsanModalData, setWalsanModalData] = useState<WalsanModalData | null>(null);
 
   // Modal state for Add Santri
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -184,19 +186,28 @@ function App() {
 
   // Active Halaqah State
   const activeHalaqah = storageService.getActiveHalaqah();
-  const halaqahName = activeHalaqah?.name || 'Halaqoh Abu Bakar Ash-Shiddiq';
+  const halaqahName = activeHalaqah?.name || '';
 
   // Filter santri sesuai halaqoh aktif yang sedang diampu (dimemoize untuk cegah alokasi array berulang)
   const currentHalaqahSantriList = useMemo(() => {
+    if (!activeHalaqah) return santriList;
+    const allRooms = storageService.getAllHalaqahRooms();
+    const activeUUID = ensureUUID(activeHalaqah.id);
+    const activeCleanName = (activeHalaqah.name || '').trim().toLowerCase();
+
     return santriList.filter((s) => {
-      const sHalaqah = s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq';
-      return sHalaqah.toLowerCase() === halaqahName.toLowerCase();
+      if (s.halaqahId) {
+        if (s.halaqahId === activeHalaqah.id) return true;
+        if (ensureUUID(s.halaqahId) === activeUUID) return true;
+      }
+      const sHalaqah = resolveHalaqahName(s.halaqahName || s.halaqahId, allRooms);
+      return Boolean(sHalaqah && sHalaqah.trim().toLowerCase() === activeCleanName);
     });
-  }, [santriList, halaqahName]);
+  }, [santriList, activeHalaqah]);
 
   const getHeaderTitle = () => {
     const p = location.pathname;
-    if (p === '/' || p === '/beranda') return halaqahName;
+    if (p === '/' || p === '/beranda') return halaqahName || 'Beranda';
     if (p.startsWith('/santri/')) {
       const param = p.split('/')[2];
       const s = findSantriByParam(santriList, param);
@@ -527,7 +538,20 @@ function App() {
         type={modalType}
         santri={selectedSantriForSetor}
         onClose={handleCloseModal}
+        onSuccess={(data) => {
+          handleCloseModal();
+          if (data) {
+            setWalsanModalData(data);
+          }
+        }}
         onSaveSetor={handleSaveSetor}
+      />
+
+      {/* Modal Kirim Laporan WA ke Walsan */}
+      <SendWalsanModal
+        isOpen={Boolean(walsanModalData)}
+        data={walsanModalData}
+        onClose={() => setWalsanModalData(null)}
       />
 
       {/* Add Santri Modal */}

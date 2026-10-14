@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { UserCheck, Phone, Check } from 'lucide-react';
 import type { Santri } from './types';
 import { storageService } from '../../services/storageService';
+import { resolveHalaqahName, resolveHalaqahUUID } from '../../services/syncService';
 import { whatsappService } from '../../services/whatsappService';
 import {
   Dialog,
@@ -31,7 +32,7 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   const [parentName, setParentName] = useState(santri?.parentName || '');
   const [parentPhone, setParentPhone] = useState(santri?.parentPhone || '');
-  const [selectedHalaqah, setSelectedHalaqah] = useState(santri?.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
+  const [selectedHalaqah, setSelectedHalaqah] = useState(() => resolveHalaqahName(santri?.halaqahName || santri?.halaqahId));
   const [halaqahList, setHalaqahList] = useState<string[]>(() => storageService.getHalaqahList().map((h) => h.name));
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -40,7 +41,7 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
     setPrevIsOpen(isOpen);
     setParentName(santri.parentName || '');
     setParentPhone(santri.parentPhone || '');
-    setSelectedHalaqah(santri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq');
+    setSelectedHalaqah(resolveHalaqahName(santri.halaqahName || santri.halaqahId));
     setHalaqahList(storageService.getHalaqahList().map((h) => h.name));
     setErrorMsg('');
   }
@@ -56,11 +57,15 @@ export const EditWaliModal: React.FC<EditWaliModalProps> = ({
 
     const cleanPhone = parentPhone.trim() ? whatsappService.normalizePhoneNumber(parentPhone.trim()) : '';
 
+    const targetName = resolveHalaqahName(selectedHalaqah || santri.halaqahName || santri.halaqahId);
+    const targetId = resolveHalaqahUUID(targetName);
+
     const updatedSantri: Santri = {
       ...santri,
       parentName: parentName.trim(),
       parentPhone: cleanPhone,
-      halaqahName: selectedHalaqah || santri.halaqahName,
+      halaqahName: targetName,
+      halaqahId: targetId,
     };
 
     storageService.updateSantri(updatedSantri);

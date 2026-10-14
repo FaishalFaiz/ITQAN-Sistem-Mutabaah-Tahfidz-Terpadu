@@ -2,12 +2,9 @@ import type { Santri, SetoranRecord, WATemplateConfig, HalaqahSettings, HalaqahG
 import { 
   DEFAULT_WA_TEMPLATE_CONFIG, 
   DEFAULT_HALAQAH_SETTINGS,
-  DEFAULT_HALAQAH_LIST,
-  INITIAL_MOCK_SANTRI,
-  INITIAL_MOCK_SETORAN,
 } from '../components/dashboard/mockData';
 import { formatJuz } from '../lib/utils';
-import { syncService, ensureUUID } from './syncService';
+import { syncService, ensureUUID, resolveHalaqahName, resolveHalaqahUUID, DEFAULT_HALAQAH_IDS, DEFAULT_HALAQAH_NAMES } from './syncService';
 
 // Base keys
 const BASE_KEYS = {
@@ -120,54 +117,69 @@ export const storageService = {
         }
       }
 
-      // Ambil daftar ID santri yang sengaja dihapus oleh musyrif
-      let deletedIds = new Set<string>();
       try {
         const delKey = this.getScopedKey('itqan_deleted_santri_ids');
         const rawDel = localStorage.getItem(delKey);
         if (rawDel) {
           const arr: string[] = JSON.parse(rawDel);
-          deletedIds = new Set(arr);
+          const deletedIds = new Set(arr);
+          if (deletedIds.size > 0) {
+            list = list.filter((s) => !deletedIds.has(s.id) && !deletedIds.has(ensureUUID(s.id)));
+          }
         }
       } catch {
         /* ignore */
       }
 
-      // Bersihkan santri mock format lama jika masih tersimpan (s-ab-1, s-um-1, dll)
-      const hasLegacyMock = list.some((s) => s.id.startsWith('s-ab-') || s.id.startsWith('s-um-') || s.id.startsWith('s-ut-') || s.id.startsWith('s-al-'));
+      // Bersihkan santri mock format lama dan santri yang terikat pada halaqoh bawaan
+      const isDefaultHalaqah = (idOrName?: string | null) => {
+        if (!idOrName) return false;
+        const clean = idOrName.trim().toLowerCase();
+        return DEFAULT_HALAQAH_IDS.has(clean) || DEFAULT_HALAQAH_NAMES.has(clean);
+      };
+
+      const hasLegacyMock = list.some(
+        (s) =>
+          s.id.startsWith('s-ab-') ||
+          s.id.startsWith('s-um-') ||
+          s.id.startsWith('s-ut-') ||
+          s.id.startsWith('s-al-') ||
+          s.id.startsWith('b0000000-0000-4000-8000-') ||
+          isDefaultHalaqah(s.halaqahId) ||
+          isDefaultHalaqah(s.halaqahName)
+      );
+
       if (hasLegacyMock) {
-        list = list.filter((s) => !s.id.startsWith('s-ab-') && !s.id.startsWith('s-um-') && !s.id.startsWith('s-ut-') && !s.id.startsWith('s-al-'));
+        list = list.filter(
+          (s) =>
+            !s.id.startsWith('s-ab-') &&
+            !s.id.startsWith('s-um-') &&
+            !s.id.startsWith('s-ut-') &&
+            !s.id.startsWith('s-al-') &&
+            !s.id.startsWith('b0000000-0000-4000-8000-') &&
+            !isDefaultHalaqah(s.halaqahId) &&
+            !isDefaultHalaqah(s.halaqahName)
+        );
       }
 
-      // Pastikan mock santri selalu ada untuk setiap halaqoh jika belum pernah dihapus secara sengaja
-      const existingIds = new Set(list.map((s) => s.id));
-      const existingUUIDs = new Set(list.map((s) => ensureUUID(s.id)));
-      let addedMock = false;
-
-      for (const mock of INITIAL_MOCK_SANTRI) {
-        const uuid = ensureUUID(mock.id);
-        if (!deletedIds.has(mock.id) && !deletedIds.has(uuid)) {
-          if (!existingIds.has(mock.id) && !existingUUIDs.has(uuid)) {
-            list.push({
-              ...mock,
-              id: uuid,
-              halaqahName: mock.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
-              juzAchieved: formatJuz(mock.juzAchieved),
-            });
-            addedMock = true;
-          }
+      // Normalisasi format juzAchieved dan pastikan halaqahName terisi serta ter-resolve (cegah UUID mentah)
+      let hasFix = false;
+      const normalized = list.map((s) => {
+        const resolvedName = resolveHalaqahName(s.halaqahName || s.halaqahId);
+        const resolvedId = s.halaqahId ? ensureUUID(s.halaqahId) : resolveHalaqahUUID(resolvedName);
+        if (s.halaqahName !== resolvedName || s.halaqahId !== resolvedId) {
+          hasFix = true;
         }
-      }
+        return {
+          ...s,
+          id: ensureUUID(s.id),
+          halaqahName: resolvedName,
+          halaqahId: resolvedId,
+          juzAchieved: formatJuz(s.juzAchieved),
+        };
+      });
 
-      // Normalisasi format juzAchieved dan pastikan halaqahName terisi
-      const normalized = list.map((s) => ({
-        ...s,
-        id: ensureUUID(s.id),
-        halaqahName: s.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
-        juzAchieved: formatJuz(s.juzAchieved),
-      }));
-
-      if (addedMock || !data || data === '[]') {
+      if (hasLegacyMock || hasFix || !data || data === '[]') {
         localStorage.setItem(key, JSON.stringify(normalized));
       }
 
@@ -190,10 +202,13 @@ export const storageService = {
 
   addSantri(newSantri: Santri): Santri[] {
     const list = this.getSantriList();
+    const resolvedName = resolveHalaqahName(newSantri.halaqahName || newSantri.halaqahId);
+    const resolvedId = newSantri.halaqahId ? ensureUUID(newSantri.halaqahId) : resolveHalaqahUUID(resolvedName);
     const formatted: Santri = {
       ...newSantri,
       id: ensureUUID(newSantri.id),
-      halaqahName: newSantri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
+      halaqahName: resolvedName,
+      halaqahId: resolvedId,
       juzAchieved: formatJuz(newSantri.juzAchieved),
     };
     const updated = [formatted, ...list];
@@ -206,10 +221,13 @@ export const storageService = {
   updateSantri(updatedSantri: Santri): Santri[] {
     const list = this.getSantriList();
     const targetId = ensureUUID(updatedSantri.id);
+    const resolvedName = resolveHalaqahName(updatedSantri.halaqahName || updatedSantri.halaqahId);
+    const resolvedId = updatedSantri.halaqahId ? ensureUUID(updatedSantri.halaqahId) : resolveHalaqahUUID(resolvedName);
     const formatted: Santri = {
       ...updatedSantri,
       id: targetId,
-      halaqahName: updatedSantri.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq',
+      halaqahName: resolvedName,
+      halaqahId: resolvedId,
       juzAchieved: formatJuz(updatedSantri.juzAchieved),
     };
     const updated = list.map((s) => {
@@ -278,30 +296,26 @@ export const storageService = {
   getSetoranRecords(): SetoranRecord[] {
     try {
       const key = this.getScopedKey(BASE_KEYS.SETORAN);
-      let data = localStorage.getItem(key);
+      const data = localStorage.getItem(key);
       if (!data || data === '[]') {
-        const fallback = localStorage.getItem(`${BASE_KEYS.SETORAN}_u_default`);
-        if (fallback && fallback !== '[]') {
-          data = fallback;
-          localStorage.setItem(key, fallback);
-        }
-      }
-      if (!data || data === '[]') {
-        localStorage.setItem(key, JSON.stringify(INITIAL_MOCK_SETORAN));
-        return INITIAL_MOCK_SETORAN;
+        return [];
       }
       const records: SetoranRecord[] = JSON.parse(data);
       if (!records || records.length === 0) {
-        localStorage.setItem(key, JSON.stringify(INITIAL_MOCK_SETORAN));
-        return INITIAL_MOCK_SETORAN;
+        return [];
       }
-      return records.map((r) => ({
+      // Singkirkan setoran mock bawaan jika ada
+      const filtered = records.filter((r) => !r.id.startsWith('c0000000-0000-4000-8000-'));
+      if (filtered.length !== records.length) {
+        localStorage.setItem(key, JSON.stringify(filtered));
+      }
+      return filtered.map((r) => ({
         ...r,
         id: ensureUUID(r.id),
         santriId: ensureUUID(r.santriId),
       }));
     } catch {
-      return INITIAL_MOCK_SETORAN;
+      return [];
     }
   },
 
@@ -550,19 +564,24 @@ export const storageService = {
   getAllHalaqahRooms(): HalaqahGroup[] {
     try {
       const data = localStorage.getItem(BASE_KEYS.ALL_ROOMS);
-      if (!data) {
-        localStorage.setItem(BASE_KEYS.ALL_ROOMS, JSON.stringify(DEFAULT_HALAQAH_LIST));
-        return DEFAULT_HALAQAH_LIST;
+      if (!data || data === '[]') {
+        return [];
       }
       const list: HalaqahGroup[] = JSON.parse(data);
       let needsSave = false;
 
+      // Bersihkan seluruh halaqoh bawaan jika masih ada di storage
+      const isDefault = (r: HalaqahGroup) =>
+        DEFAULT_HALAQAH_IDS.has(r.id) || DEFAULT_HALAQAH_NAMES.has((r.name || '').trim().toLowerCase());
+
+      const filteredList = list.filter((r) => !isDefault(r));
+      if (filteredList.length !== list.length) {
+        needsSave = true;
+      }
+
       // Pastikan setiap room memiliki kode join unik dan member array
-      const normalized = list.map((item, idx) => {
-        const defaultMatch = DEFAULT_HALAQAH_LIST.find(
-          (d) => d.id === item.id || d.name.toLowerCase() === item.name.toLowerCase()
-        );
-        let code = item.code || defaultMatch?.code;
+      const normalized = filteredList.map((item, idx) => {
+        let code = item.code;
         if (!code) {
           code = generateHalaqahCode(`HLQ-${String(idx + 1).padStart(2, '0')}`);
           needsSave = true;
@@ -570,13 +589,13 @@ export const storageService = {
 
         let members: HalaqahMember[] = item.members || [];
         if (members.length === 0) {
-          const mainName = item.musyrifName || defaultMatch?.musyrifName || 'Pembimbing Halaqoh';
+          const mainName = item.musyrifName || 'Pembimbing Halaqoh';
           members = [
             {
-              id: item.creatorId || defaultMatch?.creatorId || 'u_default',
+              id: item.creatorId || 'u_default',
               name: mainName,
               role: 'utama',
-              joinedAt: item.createdAt || defaultMatch?.createdAt || '2026-01-01T00:00:00Z',
+              joinedAt: item.createdAt || new Date().toISOString(),
             },
           ];
           needsSave = true;
@@ -585,12 +604,12 @@ export const storageService = {
         return {
           ...item,
           code,
-          targetDailyLines: item.targetDailyLines || defaultMatch?.targetDailyLines || 15,
-          musyrifName: item.musyrifName || defaultMatch?.musyrifName || 'Pembimbing Halaqoh',
-          creatorId: item.creatorId || defaultMatch?.creatorId || 'system',
-          memberIds: item.memberIds || defaultMatch?.memberIds || ['u_default'],
+          targetDailyLines: item.targetDailyLines || 15,
+          musyrifName: item.musyrifName || 'Pembimbing Halaqoh',
+          creatorId: item.creatorId || 'system',
+          memberIds: item.memberIds || ['u_default'],
           members,
-          createdAt: item.createdAt || defaultMatch?.createdAt || '2026-01-01T00:00:00Z',
+          createdAt: item.createdAt || new Date().toISOString(),
         };
       });
 
@@ -600,7 +619,7 @@ export const storageService = {
 
       return normalized;
     } catch {
-      return DEFAULT_HALAQAH_LIST;
+      return [];
     }
   },
 
@@ -611,23 +630,20 @@ export const storageService = {
 
   // Ambil ID halaqoh yang diikuti / dimiliki oleh akun musyrif yang aktif saat ini
   getUserHalaqahIds(): string[] {
-    const scope = this.getActiveUserScope();
     const key = this.getScopedKey(BASE_KEYS.USER_ROOMS);
     try {
       const raw = localStorage.getItem(key);
       if (raw) {
-        return JSON.parse(raw);
+        const parsed: string[] = JSON.parse(raw);
+        const clean = parsed.filter((id) => !DEFAULT_HALAQAH_IDS.has(id));
+        if (clean.length !== parsed.length) {
+          localStorage.setItem(key, JSON.stringify(clean));
+        }
+        return clean;
       }
-      // Akun guest/demo default memiliki akses ke 4 halaqoh bawaan
-      if (scope === 'u_default' || scope === 'guest') {
-        const defaultIds = DEFAULT_HALAQAH_LIST.map((h) => h.id);
-        localStorage.setItem(key, JSON.stringify(defaultIds));
-        return defaultIds;
-      }
-      // Akun musyrif baru yang belum bergabung ke room apapun
       return [];
     } catch {
-      return scope === 'u_default' ? DEFAULT_HALAQAH_LIST.map((h) => h.id) : [];
+      return [];
     }
   },
 
@@ -641,7 +657,7 @@ export const storageService = {
   getUserHalaqahList(): HalaqahGroup[] {
     const allRooms = this.getAllHalaqahRooms();
     const userIds = new Set(this.getUserHalaqahIds());
-    return allRooms.filter((r) => userIds.has(r.id));
+    return allRooms.filter((r) => userIds.has(r.id) || userIds.has(ensureUUID(r.id)));
   },
 
   // Dapatkan daftar muhaffizh yang terdaftar di halaqoh tertentu
@@ -682,9 +698,11 @@ export const storageService = {
     const rawUser = typeof window !== 'undefined' ? localStorage.getItem('itqan_current_musyrif') : null;
     let authorName = 'Pembimbing Halaqoh';
     let authorEmail: string | undefined = undefined;
+    let rawUserId = scope.replace(/^u_/, '');
     if (rawUser) {
       try {
         const u = JSON.parse(rawUser);
+        if (u?.id) rawUserId = u.id;
         if (u?.fullName) authorName = u.fullName;
         if (u?.email) authorEmail = u.email;
       } catch {
@@ -693,7 +711,7 @@ export const storageService = {
     }
 
     const newCode = group.code ? group.code.trim().toUpperCase() : generateHalaqahCode();
-    const newId = `hlq-${Date.now()}`;
+    const newId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : ensureUUID(`hlq-${Date.now()}`);
     const mainMusyrif = group.musyrifName || authorName;
 
     const newRoom: HalaqahGroup = {
@@ -702,11 +720,11 @@ export const storageService = {
       code: newCode,
       targetDailyLines: group.targetDailyLines || 15,
       musyrifName: mainMusyrif,
-      creatorId: scope,
-      memberIds: [scope],
+      creatorId: rawUserId,
+      memberIds: [scope, rawUserId],
       members: [
         {
-          id: scope,
+          id: rawUserId,
           name: mainMusyrif,
           email: authorEmail,
           role: 'utama',
@@ -728,6 +746,9 @@ export const storageService = {
 
     // 3. Setel room baru ini sebagai halaqoh aktif
     this.setActiveHalaqah(newId);
+
+    // 4. Langsung dorong ke Supabase cloud
+    syncService.pushHalaqah(newRoom);
 
     emitChange('halaqah_created');
     return newRoom;
@@ -761,6 +782,19 @@ export const storageService = {
     // Tambahkan ke ID room user jika belum ada
     if (!userIds.includes(foundRoom.id)) {
       this.saveUserHalaqahIds([...userIds, foundRoom.id]);
+    }
+
+    // Rekam bahwa room ini dimasuki via kode join
+    try {
+      const joinedKey = this.getScopedKey('itqan_joined_halaqah_ids');
+      const raw = localStorage.getItem(joinedKey);
+      const joinedArr: string[] = raw ? JSON.parse(raw) : [];
+      if (!joinedArr.includes(foundRoom.id)) {
+        joinedArr.push(foundRoom.id);
+        localStorage.setItem(joinedKey, JSON.stringify(joinedArr));
+      }
+    } catch {
+      /* ignore */
     }
 
     // Tambahkan user scope ke memberIds room
@@ -855,6 +889,9 @@ export const storageService = {
     const userIds = this.getUserHalaqahIds().filter((id) => id !== halaqahId);
     this.saveUserHalaqahIds(userIds);
 
+    // Hapus dari Supabase cloud
+    syncService.deleteHalaqah(halaqahId);
+
     // Bersihkan santri yang terdaftar di halaqoh yang dihapus ini
     if (targetRoom) {
       const santriList = this.getSantriList();
@@ -897,6 +934,9 @@ export const storageService = {
 
     all[index] = updatedHalaqah;
     this.saveAllHalaqahRooms(all);
+
+    // Dorong perubahan ke Supabase cloud
+    syncService.pushHalaqah(updatedHalaqah);
 
     // Jika halaqoh yang diedit adalah halaqoh aktif saat ini, perbarui juga HalaqahSettings
     const active = this.getActiveHalaqah();
@@ -948,16 +988,28 @@ export const storageService = {
     if (userRooms.length === 0) return null;
 
     const settings = this.getHalaqahSettings();
-    if (settings.activeHalaqahId) {
-      const found = userRooms.find((h) => h.id === settings.activeHalaqahId);
+    if (settings.activeHalaqahId && !DEFAULT_HALAQAH_IDS.has(settings.activeHalaqahId)) {
+      const found = userRooms.find(
+        (h) => h.id === settings.activeHalaqahId || ensureUUID(h.id) === ensureUUID(settings.activeHalaqahId!)
+      );
       if (found) return found;
     }
     // Cocokkan berdasarkan nama halaqoh jika ada
-    if (settings.halaqahName) {
+    if (settings.halaqahName && !DEFAULT_HALAQAH_NAMES.has(settings.halaqahName.trim().toLowerCase())) {
       const foundByName = userRooms.find((h) => h.name.toLowerCase() === settings.halaqahName.toLowerCase());
-      if (foundByName) return foundByName;
+      if (foundByName) {
+        settings.activeHalaqahId = foundByName.id;
+        this.saveHalaqahSettings(settings);
+        return foundByName;
+      }
     }
-    return userRooms[0] || null;
+    const defaultRoom = userRooms[0];
+    if (defaultRoom) {
+      settings.activeHalaqahId = defaultRoom.id;
+      settings.halaqahName = defaultRoom.name;
+      this.saveHalaqahSettings(settings);
+    }
+    return defaultRoom || null;
   },
 
   setActiveHalaqah(halaqahId: string): void {

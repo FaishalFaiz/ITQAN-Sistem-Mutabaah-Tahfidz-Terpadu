@@ -1,5 +1,6 @@
 import type { Santri, SetoranRecord } from '../components/dashboard/types';
 import { storageService } from './storageService';
+import { resolveHalaqahName } from './syncService';
 import { formatJuz } from '../lib/utils';
 
 export const whatsappService = {
@@ -180,7 +181,7 @@ export const whatsappService = {
       statusPacing,
       catatanMusyrif,
       musyrif: settings.musyrifName || 'Muhaffizh Halaqoh',
-      halaqoh: santri.halaqahName || settings.halaqahName || 'Halaqoh Tahfidz',
+      halaqoh: resolveHalaqahName(santri.halaqahName || santri.halaqahId) || settings.halaqahName || 'Halaqoh Tahfidz',
     });
   },
 };

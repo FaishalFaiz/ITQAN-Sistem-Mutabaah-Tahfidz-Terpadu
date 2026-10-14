@@ -448,9 +448,6 @@ export const HalaqahManagementPage: React.FC = () => {
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">
                   {activeRoom.name}
                 </h3>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Sedang Aktif
-                </span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
                 {activeRoom.description || 'Kelompok halaqoh tahfidz reguler dan mutaba\'ah terpadu.'}
@@ -658,14 +655,9 @@ export const HalaqahManagementPage: React.FC = () => {
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm text-slate-900">
-                    Daftar Muhaffizh & Pengajar Halaqoh
-                  </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-50 text-[#0070BA] font-bold border border-blue-200">
-                    {activeMembers.length} Muhaffizh
-                  </span>
-                </div>
+                <h3 className="font-bold text-sm text-slate-900">
+                  Daftar Muhaffizh & Pengajar Halaqoh
+                </h3>
                 <p className="text-[11px] text-slate-500">
                   Daftar ustadz dan musyrif yang mengampu serta memiliki akses mutaba'ah di ruang <strong>{activeRoom.name}</strong>.
                 </p>
@@ -719,13 +711,11 @@ export const HalaqahManagementPage: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                        <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          <span>Aktif Mengampu</span>
-                        </span>
-                        {member.email && <span>• {member.email}</span>}
-                      </div>
+                      {member.email && (
+                        <p className="text-[11px] text-slate-500 truncate">
+                          {member.email}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -745,22 +735,7 @@ export const HalaqahManagementPage: React.FC = () => {
             })}
           </div>
 
-          {/* Invitation Hint */}
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-slate-600">
-            <div className="flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-[#0070BA] shrink-0" />
-              <span>
-                Ingin menambahkan muhaffizh pembimbing lain? Berikan kode join <strong className="font-mono text-[#0070BA]">{activeRoom.code}</strong> kepada ustadz bersangkutan.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleCopyCode(activeRoom.code)}
-              className="text-xs font-semibold text-[#0070BA] hover:underline shrink-0 text-left sm:text-right cursor-pointer"
-            >
-              Salin Kode Join
-            </button>
-          </div>
+
         </div>
       )}
 
@@ -781,9 +756,7 @@ export const HalaqahManagementPage: React.FC = () => {
                 </p>
               </div>
             </div>
-            <span className="text-[11px] font-mono font-semibold text-[#0070BA] bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md self-start sm:self-auto">
-              Kode: {activeRoom.code}
-            </span>
+
           </div>
 
           <form onSubmit={handleSaveActiveParameters} className="space-y-4">

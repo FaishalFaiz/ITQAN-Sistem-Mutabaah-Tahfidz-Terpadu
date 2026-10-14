@@ -136,11 +136,11 @@ export const LandingPage: React.FC = () => {
                   Tahfidz Terpadu
                 </span>
               </div>
-              <div className="h-5 sm:h-7 w-px bg-slate-300 mx-0.5 sm:mx-1 shrink-0" />
+              <div className="h-7 sm:h-9 w-px bg-slate-300 mx-0.5 sm:mx-1 shrink-0" />
               <img
                 src="/harisantri2026logo.webp"
                 alt="Logo Hari Santri 2026"
-                className="h-6 sm:h-8 w-auto object-contain shrink-0"
+                className="h-8 sm:h-10 w-auto object-contain shrink-0"
               />
             </div>
 

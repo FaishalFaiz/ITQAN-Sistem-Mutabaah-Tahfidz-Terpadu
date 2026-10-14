@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { FileText, Printer, X, Check, Clock, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { storageService } from '../../services/storageService';
+import { resolveHalaqahName } from '../../services/syncService';
 import { formatJuz } from '@/lib/utils';
 import type { Santri, SetoranRecord } from './types';
 import type { SantriReportItem } from './laporanData';
@@ -39,7 +40,7 @@ export const RaporPrintModal: React.FC<RaporPrintModalProps> = ({
 
   const halaqahSettings = storageService.getHalaqahSettings();
   const currentMusyrifName = halaqahSettings.musyrifName || 'Ust. H. Ahmad Dahlan, Al-Hafizh';
-  const currentHalaqahName = ('halaqahName' in santri && santri.halaqahName) || halaqahSettings.halaqahName || 'Halaqoh Abu Bakar Ash-Shiddiq';
+  const currentHalaqahName = resolveHalaqahName(('halaqahName' in santri && santri.halaqahName) || ('halaqahId' in santri && santri.halaqahId ? santri.halaqahId : '')) || halaqahSettings.halaqahName || 'Halaqoh Utama';
 
   // Normalisasi data statistik
   const totalRecords = records.length;

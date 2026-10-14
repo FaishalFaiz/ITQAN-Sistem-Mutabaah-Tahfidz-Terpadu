@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
-  CheckCircle2, 
-  Send, 
-  ExternalLink, 
   Check, 
   MessageSquare, 
   BookOpen, 
@@ -12,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 import type { Santri } from '../dashboard/types';
+import type { WalsanModalData } from '../dashboard/SendWalsanModal';
 import { storageService } from '../../services/storageService';
 import { whatsappService } from '../../services/whatsappService';
 import { toast } from '@/components/ui/sonner';
@@ -19,7 +17,7 @@ import { QURAN_SURAHS, JUZ_TO_START_SURAH, type SurahItem } from '../../data/qur
 
 interface FastSetoranFormProps {
   santri?: Santri | null;
-  onSuccess?: () => void;
+  onSuccess?: (walsanData?: WalsanModalData) => void;
   onCancel?: () => void;
   onSaveSetor?: (linesAdded: number) => void;
 }
@@ -58,11 +56,6 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
   const [notes, setNotes] = useState<string>('');
   const [sendWA, setSendWA] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [waFeedback, setWaFeedback] = useState<{
-    status: 'idle' | 'success' | 'failed' | 'fallback';
-    message: string;
-    fallbackUrl?: string;
-  }>({ status: 'idle', message: '' });
 
   // Close dropdown when clicked outside
   useEffect(() => {
@@ -133,10 +126,9 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeSantri) return;
+    if (!activeSantri || isSubmitting) return;
 
     setIsSubmitting(true);
-    setWaFeedback({ status: 'idle', message: '' });
 
     const formattedSurahRange = `${selectedSurah.name} : ${ayatStart}-${ayatEnd}`;
     const halaqahSettings = storageService.getHalaqahSettings();
@@ -154,7 +146,7 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
       lineStart: 1,
       lineEnd: manualLines,
       totalLines: manualLines,
-      grade: 'mumtaz', // Default mutqin/lancar karena disahkan muhaffizh
+      grade: 'mumtaz',
       musyrif: halaqahSettings.musyrifName || 'Muhaffizh Halaqoh',
       notes: notes.trim() || undefined,
       waStatus: 'not_sent',
@@ -164,82 +156,37 @@ export const FastSetoranForm: React.FC<FastSetoranFormProps> = ({
       onSaveSetor(manualLines);
     }
 
-    // 2. Jika opsi kirim WA dicentang dan santri memiliki no WA, siapkan link wa.me dan opsi salin
+    // 2. Jika opsi kirim WA dicentang dan santri memiliki no WA, teruskan data untuk modal kirim walsan
     if (sendWA && activeSantri.parentPhone) {
       const messageText = whatsappService.buildSetoranMessage(result.record, result.updatedSantri);
       const waLink = whatsappService.getDirectWALink(activeSantri.parentPhone, messageText);
       storageService.updateSetoranWAStatus(result.record.id, 'sent');
 
-      setWaFeedback({
-        status: 'fallback',
-        message: `Setoran berhasil dicatat! Siap dikirim ke wali (${activeSantri.parentPhone}):`,
-        fallbackUrl: waLink,
-      });
-
       toast.success(`Setoran ${activeSantri.name} tersimpan`, {
-        description: `${manualLines} baris (${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"}) • Teks WA siap dikirim`,
+        description: `${manualLines} baris (${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"})`,
       });
       setIsSubmitting(false);
+      if (onSuccess) {
+        onSuccess({
+          santri: result.updatedSantri,
+          record: result.record,
+          messageText,
+          waLink,
+        });
+      }
     } else {
-      setWaFeedback({
-        status: 'success',
-        message: `Setoran berhasil disimpan! (${manualLines} baris tercatat).`,
-      });
       toast.success(`Setoran ${activeSantri.name} tersimpan`, {
         description: `${manualLines} baris • ${type === 'ziyadah' ? 'Ziyadah' : "Muroja'ah"}`,
       });
-      setTimeout(() => {
-        setIsSubmitting(false);
-        if (onSuccess) onSuccess();
-      }, 800);
+      setIsSubmitting(false);
+      if (onSuccess) {
+        onSuccess();
+      }
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* Alert Status WA */}
-      {waFeedback.status === 'success' && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2.5">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span className="font-medium">{waFeedback.message}</span>
-        </div>
-      )}
-
-      {waFeedback.status === 'fallback' && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-950 rounded-xl text-xs space-y-2.5">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span className="font-bold">{waFeedback.message}</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 pt-0.5">
-            {waFeedback.fallbackUrl && (
-              <a
-                href={waFeedback.fallbackUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  setTimeout(() => {
-                    if (onSuccess) onSuccess();
-                  }, 800);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors shadow-xs"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>Buka WhatsApp</span>
-                <ExternalLink className="w-3 h-3 ml-0.5" />
-              </a>
-            )}
-            <button
-              type="button"
-              onClick={onSuccess}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
-            >
-              Selesai
-            </button>
-          </div>
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Santri Picker (jika tanpa santri spesifik) */}
         {!initialSantri && (

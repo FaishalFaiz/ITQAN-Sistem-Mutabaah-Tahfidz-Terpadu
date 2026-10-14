@@ -91,11 +91,11 @@ export const NavbarSidebar: React.FC<NavbarSidebarProps> = ({
               <span className="font-extrabold text-base text-slate-900 leading-tight block">ITQAN</span>
               <span className="text-[10px] text-slate-500 font-medium block">Tahfidz Terpadu</span>
             </div>
-            <div className="h-6 w-px bg-slate-200 mx-0.5 shrink-0" />
+            <div className="h-7 w-px bg-slate-200 mx-0.5 shrink-0" />
             <img
               src="/harisantri2026logo.webp"
               alt="Hari Santri 2026"
-              className="h-6 w-auto object-contain shrink-0"
+              className="h-8 w-auto object-contain shrink-0"
             />
           </div>
 
