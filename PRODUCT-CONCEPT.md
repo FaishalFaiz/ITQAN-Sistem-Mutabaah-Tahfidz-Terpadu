@@ -1,198 +1,178 @@
-# DOKUMEN KONSEP PRODUK (PRODUCT CONCEPT)
-# ITQAN: Sistem Mutaba'ah Tahfidz Terpadu
+# PORTOFOLIO KERANGKA KARYA & KONSEP PRODUK
+# ITQAN: Sistem Mutaba'ah Tahfidz Terpadu Berbasis Web
+
+**Diajukan untuk: Lomba Santrivision Tahun 2026**  
+**Penyelenggara: Direktorat Jenderal Pesantren, Kementerian Agama Republik Indonesia**
 
 ---
 
-## 1. Executive Summary
+### Lembar Identitas Karya & Kepesertaan
 
-**ITQAN** (الإتقان — *kesempurnaan dan kemantapan*) adalah platform mutaba'ah tahfidz terpadu generasi baru yang dirancang khusus untuk memodernisasi tata kelola pembelajaran dan penjagaan Al-Qur'an pada pesantren, madrasah, sekolah Islam terpadu, dan rumah tahfidz.
-
-Berbeda dari Sistem Informasi Manajemen Pesantren (SIMP) konvensional yang kaku, birokratis, dan sarat beban administratif, ITQAN lahir dari realitas lapangan di halaqoh Al-Qur'an: **waktu halaqoh sangat berharga, interaksi tatap muka (*talaqqi*) antara guru dan murid adalah inti keberkahan, dan teknologi harus hadir sebagai asisten hening yang mempermudah, bukan membebani.**
-
-ITQAN memadukan tiga keunggulan strategis:
-1. **Ultra-Fast Logging (< 15 Detik):** Antarmuka pencatatan satu tangan yang memungkinkan muhaffizh mencatat setoran santri tanpa memutus kontak mata dan fokus sima'an.
-2. **Pacing Engine Berbasis Baris (9.060 Baris / 30 Juz):** Mesin kalkulasi adaptif kurikulum 3 tahun yang memberikan rekomendasi target harian terukur secara matematis.
-3. **Transparansi Tanpa Hambatan ke Wali Santri:** Notifikasi progres harian WhatsApp otomatis yang ramah orang tua, menjembatani sinergi rumah dan asrama.
-
----
-
-## 2. Background & Problem Statement (Latar Belakang Masalah)
-
-### 2.1. Dilema Pencatatan Konvensional (Buku Kertas)
-Selama puluhan tahun, sistem evaluasi tahfidz bertumpu pada **buku saku mutaba'ah fisik**. Pendekatan manual ini menyimpan sejumlah kelemahan fatal:
-- **Kerentanan Fisik:** Buku mutaba'ah mudah basah, robek, tercecer di masjid, atau sengaja disembunyikan santri saat capaian hafalan tertinggal.
-- **Asimetri Informasi Ekstrem:** Orang tua di rumah hanya menerima kabar hafalan anak 6 bulan sekali saat buku rapor semesteran dibagikan. Fenomena *"kaget rapor"* sering terjadi ketika orang tua baru mengetahui hafalan anaknya defisit berbulan-bulan setelahnya.
-- **Hilangnya Jejak Data Historis:** Catatan kertas tidak dapat diagregasikan menjadi tren statistik. Lembaga tidak memiliki visibilitas atas grafik kelancaran santri, kecepatan muraja'ah, maupun tingkat lupa (*nisyan*).
-
-### 2.2. Kegagalan Solusi Digital Generasi Pertama (SIMP Konvensional)
-Ketika lembaga mencoba mendigitalkan mutaba'ah melalui software SIMP umum, muncul permasalahan baru:
-- **Over-Engineered & Terlalu Birokratis:** Aplikasi mewajibkan alur multi-role berbelit (guru input $\rightarrow$ koordinator verifikasi $\rightarrow$ kepala madrasah tanda tangan $\rightarrow$ admin broadcast). Ini melumpuhkan esensi halaqoh.
-- **Ketergantungan Internet yang Rapuh:** Banyak pesantren berlokasi di area minim sinyal stabil. Aplikasi berbasis web server tanpa kapabilitas *offline-first* sering mengalami hang, loading lama, dan kegagalan simpan saat jam halaqoh subuh/maghrib.
-- **Beban Kognitif Tinggi bagi Pengguna Awam (Gaptek):** Muhaffizh dipaksa mengisi puluhan dropdown (nilai makhraj, tajwid angka 0-100, jenis kesalahan, kode ayat rumit). Akibatnya, muhaffizh lebih sibuk menatap layar smartphone daripada mendengarkan lantunan ayat santri.
-- **Konfigurasi Gateway yang Membingungkan:** Banyak aplikasi tahfidz menyodorkan form teknis rumit (token Bearer, webhook URL, device ID, kode template regex `{var_1}`) yang tidak dipahami oleh guru agama, menyebabkan fitur notifikasi tidak pernah terpakai.
+| Komponen | Keterangan |
+| :--- | :--- |
+| **Judul Karya / Produk** | **ITQAN: Sistem Mutaba'ah Tahfidz Terpadu** |
+| **Kategori Lomba** | **Kode 03: Inovasi Digital & Teknologi Pesantren (Digital Innovation & Tech)** |
+| **Bentuk Luaran** | Sistem Informasi Manajemen Pesantren (SIMP) Terapan & Aplikasi Web Pencatatan Hafalan Al-Qur'an |
+| **Fokus Tematik Utama** | **Subtema 3:** Generatif AI, Kedaulatan Digital & Etika Teknologi *(Digitalisasi Hafalan Al-Qur'an, Kemandirian & Kedaulatan Data)* |
+| **Fokus Tematik Pendukung** | **Subtema 8:** Nilai-Nilai Kepesantrenan & Internalisasi Karakter *(Merawat Tradisi Talaqqi, Adab Guru-Santri, dan Keilmuan Sanad)* |
+| **Sasaran Pengguna** | Ustadz/Ustadzah (Muhaffizh), Santri, Wali Santri, dan Pimpinan Pondok Pesantren |
 
 ---
 
-## 3. Visi, Misi, & Nilai Inti
+## 1. Ringkasan Singkat (Executive Summary)
 
-### 3.1. Visi
-> *"Menjadi infrastruktur digital mutaba'ah tahfidz terdepan yang memuliakan interaksi talaqqi, memberdayakan muhaffizh, dan membangun jembatan ketenangan hati bagi orang tua santri di seluruh Nusantara."*
+**ITQAN** (dari kata *Al-Itqan* yang berarti mantap dan sempurna) adalah aplikasi web pencatatan hafalan Al-Qur'an yang dirancang khusus untuk pesantren, madrasah, dan rumah tahfidz. 
 
-### 3.2. Misi
-1. **Mengeliminasi Beban Administratif Guru:** Memangkas waktu pencatatan setoran dari rata-rata 2–3 menit per santri menjadi kurang dari 15 detik.
-2. **Menjaga Standar Mutqin (Kualitas Hafalan):** Mengintegrasikan evaluasi kelancaran talaqqi terukur (Mumtaz, Jayyid, I'adah) pada setiap sesi setoran.
-3. **Mewujudkan Pacing Target yang Realistis:** Menghindarkan santri dari kejenuhan atau keterlambatan target 30 juz melalui kalkulasi laju baris adaptif.
-4. **Membangun Ekosistem Empati Wali Santri:** Menyajikan laporan WhatsApp yang ringkas, menenangkan, informatif, dan bebas spam.
+Aplikasi ini lahir dari masalah nyata di lapangan: selama ini proses setoran hafalan sering terganggu karena guru sibuk menulis di buku kertas atau terbebani aplikasi yang terlalu rumit. Di sisi lain, orang tua di rumah sering merasa cemas karena baru mengetahui perkembangan hafalan anaknya setiap akhir semester.
 
-### 3.3. Nilai Inti (Core Values)
-- **Al-Itqan (Kualitas & Ketelitian):** Mengedepankan akurasi hafalan di atas sekadar kuantitas halaman.
-- **Ar-Rifq (Kemudahan & Keramahan):** Antarmuka yang tidak menuntut keahlian teknis tinggi (*zero-learning curve*).
-- **Al-Amanah (Integritas Data):** Keamanan, privasi, dan isolasi data santri per halaqoh yang terjamin.
-- **Asy-Syafafiyyah (Transparansi):** Keterbukaan informasi yang memupuk rasa saling percaya antara pondok dan rumah.
+ITQAN hadir sebagai solusi sederhana namun berdampak besar melalui **tiga keunggulan utama**:
+1. **Pencatatan Super Cepat (Kurang dari 15 Detik):** Guru bisa mencatat setoran dengan satu tangan di layar HP tanpa kehilangan fokus menyimak bacaan santri (*talaqqi*).
+2. **Hitungan Target 3 Tahun Berbasis Baris (9.060 Baris):** Menghitung laju hafalan secara adil per baris (bukan sekadar halaman) agar santri selesai 30 juz tepat waktu tanpa merasa tertekan.
+3. **Kabar Harian WhatsApp Otomatis:** Mengirim pesan ringkas dan santun ke orang tua santri setiap hari, langsung ke nomor WhatsApp tanpa perlu memasang aplikasi tambahan.
 
 ---
 
-## 4. Target Pengguna (User Persona) & Pemangku Kepentingan
+## 2. Latar Belakang & Masalah Nyata di Pesantren
 
-### 4.1. Persona Utama: Muhaffizh / Muhaffizhah (Guru Tahfidz Halaqoh)
-- **Karakteristik:**
-  - Usia: 20 – 45 tahun.
-  - Latar belakang: Hafizh/Hafizhah Al-Qur'an 30 Juz, alumni pesantren atau ma'had 'aly.
-  - Pola Kerja: Membimbing halaqoh 10–15 santri sebanyak 2–3 sesi per hari (Ba'da Subuh, Ba'da Ashar, Ba'da Maghrib).
-  - Hambatan Utama: Waktu talaqqi terbatas (hanya 60–90 menit per halaqoh), lelah jika harus mencatat di buku lalu menyalin ulang ke komputer kantor, sering tidak sempat merangkai kata untuk melapor ke orang tua.
-- **Kebutuhan Produk:**
-  - Aplikasi yang langsung siap pakai di ponsel cerdas dengan navigasi jempol satu tangan.
-  - Dropdown surah dan juz yang cepat dicari tanpa perlu mengingat nomor surah.
-  - Tombol simpan instan tanpa banyak kolom wajib yang tidak relevan.
+### 2.1. Masalah pada Buku Catatan Kertas
+Di banyak pondok pesantren, evaluasi hafalan masih menggunakan buku saku kertas. Cara ini menimbulkan tiga masalah besar:
+- **Mudah Rusak dan Hilang:** Buku mutaba'ah sering basah terkena air wudhu, sobek, tertinggal di masjid, atau terselip.
+- **Orang Tua "Kaget Rapor":** Orang tua hanya menerima kabar 6 bulan sekali saat pembagian rapor. Jika hafalan anak tertinggal, orang tua baru tahu berbulan-bulan kemudian.
+- **Riwayat Data Tidak Terbaca:** Pengurus pondok sulit melihat grafik kemajuan santri karena data tercecer di ratusan lembar buku fisik.
 
-### 4.2. Penerima Manfaat Utama: Wali Santri (Orang Tua di Rumah)
-- **Karakteristik:**
-  - Usia: 35 – 55 tahun.
-  - Kondisi: Tinggal terpisah dari anak (anak di asrama/pondok) atau orang tua bekerja.
-  - Hambatan Utama: Sering dilanda kecemasan (*anxiety*) mengenai progres hafalan anak, sungkan bertanya terus-menerus ke guru via chat pribadi, sering menerima pesan panjang yang rumit dibaca.
-- **Kebutuhan Produk:**
-  - Notifikasi WhatsApp yang ringkas, tiba di waktu yang teratur (1 kali sehari), mengabarkan capaian riil, status target, dan pesan hangat dari pembimbing.
-
-### 4.3. Pemangku Kepentingan: Pimpinan Pondok & Koordinator Tahfidz
-- **Kebutuhan:**
-  - Ketersediaan arsip digital riwayat hafalan santri yang rapi.
-  - Format cetak rapor resmi mutaba'ah yang representatif dan siap dibagikan pada akhir periode pendidikan.
-  - Standarisasi evaluasi kelancaran mutaba'ah yang seragam antar-halaqoh.
+### 2.2. Masalah pada Aplikasi Digital yang Ada Saat Ini
+Beberapa pesantren sudah mencoba beralih ke aplikasi digital, namun sering gagal digunakan karena:
+- **Terlalu Rumit (Over-Engineered):** Guru dipaksa mengisi terlalu banyak kolom dan menu yang membingungkan. Waktu yang seharusnya dipakai menyimak santri malah habis untuk mengetik di layar.
+- **Aplikasi Lambat & Berat:** Banyak aplikasi berbasis web konvensional memiliki alur kerja yang berat dan lambat saat digunakan di jam-jam padat halaqoh.
+- **Pengaturan Notifikasi yang Sulit:** Fitur pesan ke orang tua sering meminta pengaturan teknis rumit (seperti kode token, webhook, atau server khusus) yang tidak dipahami oleh guru di lapangan.
 
 ---
 
-## 5. Filosofi Pedagogi & Konsep Pembelajaran Tahfidz
+## 3. Landasan Nilai, Filosofi, & Relevansi Kebijakan
 
-ITQAN dibangun selaras dengan kaidah pedagogi tahfidz Al-Qur'an tradisi salaf yang dikombinasikan dengan metodologi modern:
+ITQAN dirancang bukan sekadar sebagai piranti lunak, melainkan berakar pada nilai kepesantrenan dan kebijakan nasional:
 
-### 5.1. Dikotomi Ziyadah vs Muroja'ah
-Sistem membedakan secara tegas dua aktivitas inti:
-- **Ziyadah (Penambahan Hafalan Baru):** Menuntut konsentrasi makhraj dan ketepatan mad. Ziyadah mendorong laju akumulasi menuju 30 juz.
-- **Muroja'ah (Penjagaan & Pengulangan Hafalan Lama):** Menjaga agar hafalan yang telah disetorkan tidak pudar (*hafalan Al-Qur'an lebih cepat lepas daripada unta yang terikat*). ITQAN memfasilitasi pencatatan kedua jenis ini dengan metrik baris yang adil.
+### 3.1. Penguatan Mandat UU Pesantren & Ditjen Pesantren
+Lahirnya **Peraturan Presiden Nomor 18 Tahun 2026** yang menetapkan Direktorat Jenderal Pesantren Kementerian Agama RI mempertegas pelaksanaan **Undang-Undang Nomor 18 Tahun 2019 tentang Pesantren**. ITQAN hadir sebagai wujud nyata inovasi berbasis data (*evidence-based*) dari akar rumput untuk memodernisasi tata kelola pembelajaran Al-Qur'an di pesantren tanpa mencabut akar tradisinya.
 
-### 5.2. Metrik Baris Riil (*Line Granularity*): 9.060 Baris
-Kebanyakan aplikasi menghitung hafalan berdasarkan "halaman" atau "ayat". Keduanya memiliki cacat fundamental:
-- Satu halaman Al-Qur'an Pojok (Mushaf Madinah) terdiri dari tepat **15 baris**.
-- Namun kemampuan santri menyetor sering kali bertahap: 3 baris, 5 baris, setengah halaman (7-8 baris), atau 1 halaman penuh (15 baris).
-- Ayat Al-Qur'an memiliki panjang yang sangat bervariasi (misal: QS. Al-Baqarah ayat 282 sepanjang 1 halaman penuh, sedangkan QS. Ar-Rahman terdiri dari ayat-ayat pendek 1 baris).
-- **Pendekatan ITQAN:** Menjadikan **satuan baris** sebagai denominasi fundamental ($30\text{ Juz} \times 20\text{ Halaman} \times 15\text{ Baris} = 9.060\text{ Baris total}$). Ini memberikan keadilan matematis bagi santri pemula maupun santri tingkat lanjut.
+### 3.2. Menjaga Tradisi Talaqqi dan Sanad (*Digital Religion*)
+Mengacu pada teori *Digital Religion* (Heidi Campbell, 2012), pemanfaatan teknologi di lingkungan keagamaan tidak boleh merusak otoritas keilmuan dan hubungan guru-murid. ITQAN memegang prinsip bahwa teknologi hanyalah alat bantu hening. Interaksi tatap muka langsung (*talaqqi*), perbaikan tajwid, dan transmisi adab dari ustadz ke santri tetap menjadi jantung utama pendidikan tahfidz.
 
-### 5.3. Mesin Pacing Adaptif (Kurikulum 3 Tahun)
-Kurikulum tahfidz standar menargetkan santri menyelesaikan 30 juz dalam tempo 3 tahun (36 bulan / 6 semester).
-- ITQAN menghitung secara otomatis:
-  $$\text{Target Harian Adaptif} = \frac{\text{Total Baris Target (9.060)} - \text{Total Baris Telah Dimutqinkan}}{\text{Sisa Hari Kalender Hingga Kelulusan}}$$
-- Jika seorang santri sempat sakit atau izin selama 2 pekan, sistem tidak memberikan vonis gagal, melainkan secara halus menyesuaikan target harian berikutnya dari 15 baris menjadi 17–18 baris agar target khatam tetap tercapai tepat waktu.
-
-### 5.4. Standarisasi Evaluasi Kelancaran Talaqqi
-Untuk mengukur kemutqinan hafalan pada setiap sesi, ITQAN menerapkan tiga predikat mutu objektif:
-- **Mumtaz (Lancar Sekali):** Santri menyetor dengan tartil sempurna tanpa keraguan atau salah harakat.
-- **Jayyid (Cukup Lancar):** Santri lancar dengan 1–2 kali jeda mengingat mandiri tanpa perlu dibacakan ayat lanjutan.
-- **I'adah (Perlu Diulang):** Santri memerlukan bantuan muhaffizh atau salah waqaf/harakat berulang, sehingga ditandai untuk pengulangan muroja'ah ba'da maghrib.
-Pendekatan ini menyajikan status hafalan yang transparan dan dapat dipertanggungjawabkan bagi santri maupun wali.
+### 3.3. Menghadirkan Kepedulian Lembaga (*Institutional Ethics of Care*)
+Mengacu pada pendekatan *Institutional Ethics of Care* (Joan Tronto, 1993), sebuah lembaga pendidikan yang baik harus mampu memberikan rasa aman dan ketenangan bagi seluruh warganya. ITQAN mewujudkan hal ini dengan:
+- Menghilangkan kecemasan orang tua melalui kabar harian yang jujur dan santun.
+- Mengurangi beban kerja guru agar tidak stres dengan urusan administrasi.
+- Menjaga kenyamanan mental santri melalui pembagian target hafalan yang wajar dan manusiawi.
 
 ---
 
-## 6. Arsitektur Pengalaman Pengguna (UX Principles)
+## 4. Sasaran Pengguna (User Persona)
 
-Desain ITQAN berpegang teguh pada manifesto **Balanced Clean & Clear UI**:
-
-```
-+-----------------------------------------------------------------+
-|                       ITQAN UX MANIFESTO                       |
-+-----------------------------------------------------------------+
-| 1. Efisiensi Satu Tangan      -> Input selesai < 15 detik       |
-| 2. Zero-Clutter                -> Tidak ada dekorasi palsu      |
-| 3. High-Contrast Legibility   -> Solid Blue, Emerald, Crimson   |
-| 4. Offline-First Resilience   -> Tetap jalan tanpa koneksi      |
-| 5. Empathetic Automation       -> WA ramah orang tua, anti-spam |
-+-----------------------------------------------------------------+
-```
-
-1. **Anti-Clutter Policy:**
-   - Dilarang keras menambahkan badge hiasan yang tidak fungsional (misal: "Online Tersinkron", stempel decorative, grafik 3D yang memakan layar).
-   - Setiap elemen di layar wajib memiliki satu dari dua fungsi: **memberikan informasi status** atau **memicu aksi pencatatan**.
-2. **Keterbacaan Lapangan (High Legibility):**
-   - Halaqoh sering berlangsung di serambi masjid dengan pencahayaan tinggi atau ruangan temaram ba'da subuh.
-   - ITQAN menggunakan kontras tajam palet Slate (`#0F172A`) di atas latar putih bersih dengan aksen Biru Institusi (`#0070BA`), status hijau sukses (`#047857`), dan merah perhatian (`#B91C1C`).
-3. **Pemberdayaan Guru Gaptek:**
-   - Fitur teknis yang berpotensi membingungkan disembunyikan di balik kap mesin (*zero config*).
-   - Pengaturan WhatsApp hanya menyisakan dua saklar logis: *Batasi 1 Pesan/Hari* dan *Auto-Send Saat Input*. Guru tidak perlu berurusan dengan kode webhook atau tabel database.
+1. **Ustadz / Ustadzah Pembimbing Halaqoh (Muhaffizh):**
+   - *Kondisi:* Membimbing 10–15 santri setiap subuh, ashar, dan maghrib. Waktu halaqoh sangat terbatas (60–90 menit).
+   - *Kebutuhan:* Aplikasi yang langsung jalan di HP, mudah ditekan dengan jempol, dan selesai catat dalam hitungan detik.
+2. **Wali Santri (Orang Tua):**
+   - *Kondisi:* Tinggal jauh dari anak, rindu dan cemas dengan perkembangan hafalan anak di asrama.
+   - *Kebutuhan:* Laporan ringkas yang masuk ke WhatsApp pribadi tanpa perlu repot mengunduh aplikasi baru.
+3. **Santri Penghafal Al-Qur'an:**
+   - *Kondisi:* Menghafal Al-Qur'an dengan target tertentu dalam kurun waktu pendidikan.
+   - *Kebutuhan:* Target harian yang adil, jelas, dan tidak membuat patah semangat ketika sempat tertinggal karena sakit atau izin.
+4. **Pimpinan Pondok & Koordinator Tahfidz:**
+   - *Kondisi:* Membutuhkan laporan perkembangan menyeluruh untuk rapat evaluasi dan akreditasi lembaga.
+   - *Kebutuhan:* Rekap hafalan otomatis, fitur cetak rapor siap bagi, dan data yang tersimpan rapi.
 
 ---
 
-## 7. Keunggulan Kompetitif (Value Proposition & Competitive Advantage)
+## 5. Inovasi Metode Pembelajaran Tahfidz di ITQAN
 
-| Parameter | Buku Catatan Fisik | SIMP Pesantren Umum | ITQAN |
+### 5.1. Keadilan Hitungan Berbasis Baris (9.060 Baris Riil)
+Banyak sistem menghitung hafalan hanya berdasarkan halaman atau juz. Padahal, santri sering menyetor sebagian (misalnya 3 baris, 5 baris, atau setengah halaman). Selain itu, panjang ayat Al-Qur'an berbeda-beda.
+- Satu halaman Mushaf Standar Madinah terdiri dari tepat **15 baris**.
+- Total 30 Juz setara dengan **9.060 baris**.
+- ITQAN mencatat capaian hingga tingkat baris. Ini memberi keadilan bagi santri pemula yang berjuang baris demi baris maupun santri yang sudah lancar juz demi juz.
+
+### 5.2. Mesin Penentu Laju Hafalan (Pacing Engine 3 Tahun)
+Kurikulum tahfidz umumnya menargetkan 30 juz selesai dalam waktu 3 tahun (36 bulan).
+- ITQAN membagi sisa baris yang belum disetor dengan sisa hari kalender yang tersedia secara otomatis.
+- Jika santri sempat sakit atau izin selama 1–2 pekan, sistem tidak mencap santri "gagal", melainkan menyesuaikan target harian berikutnya secara halus (misal dari 15 baris menjadi 17 baris per hari) agar kelulusan tetap tepat waktu.
+
+### 5.3. Standar Kualitas Hafalan (Mumtaz, Jayyid, I'adah)
+ITQAN memisahkan dengan jelas antara hafalan baru (*Ziyadah*) dan pengulangan hafalan lama (*Muroja'ah*). Untuk menjaga kualitas hafalan (*mutqin*), setiap setoran dinilai dengan predikat yang mudah:
+- **Mumtaz (Sangat Lancar):** Lancar tanpa salah harakat atau waqaf.
+- **Jayyid (Cukup Lancar):** Ada sedikit jeda mengingat, namun mampu meneruskan sendiri.
+- **I'adah (Perlu Diulang):** Masih sering terbata-bata, perlu diulang pada sesi muroja'ah berikutnya.
+
+---
+
+## 6. Kesesuaian Kriteria Penilaian Santrivision (Kategori Inovasi Digital)
+
+Berdasarkan rubrik penilaian resmi Lomba Santrivision Tahun 2026 (Kode 03), berikut bukti keunggulan teknis dan praktis ITQAN:
+
+### 6.1. Fungsionalitas & Efektivitas Solusi (Bobot 35%)
+- **Tepat Sasaran:** Memangkas waktu pencatatan dari 2–3 menit per santri menjadi **kurang dari 15 detik**.
+- **Pencarian Cepat 114 Surah:** Ustadz cukup mengetik nama surah (misal: "Kahfi" atau "Mulk"), sistem langsung memilih surah, nomor juz, dan nomor ayat tanpa perlu menghafal nomor urut surah.
+- **Tombol Pintas Baris:** Tersedia tombol cepat (3 baris, 5 baris, 1/2 halaman, 1 halaman penuh) sehingga guru cukup menekan satu tombol.
+- **Kirim WhatsApp Sekali Klik:** Pesan terformat rapi dikirimkan langsung ke nomor orang tua dengan tombol WhatsApp instan.
+- **Cetak Rapor & Ekspor Data:** Tersedia modul cetak rapor semesteran siap cetak dan ekspor data dalam format tabel (CSV/Excel) untuk arsip pondok.
+
+### 6.2. Kenyamanan Pengguna (UX) & Desain Antarmuka (Bobot 25%)
+- **Prinsip Balanced Clean & Clear UI:** Tampilan bersih, rapi, dan bebas dari hiasan yang tidak perlu. Tidak ada animasi berat atau tombol yang membingungkan.
+- **Mudah Digunakan dengan Satu Tangan (Thumb-Friendly):** Semua tombol penting diletakkan di jangkauan jempol bawah, memudahkan guru memegang HP sambil memegang mushaf atau menyimak santri.
+- **Kontras Warna Jelas:** Menggunakan warna Biru Lembaga (`#0070BA`) yang dipadukan dengan teks gelap kontras tinggi. Layar tetap terbaca jelas di serambi masjid yang terang benderang maupun di ruangan asrama saat subuh.
+- **Mudah Dipahami Guru Awam Teknologi (Zero-Learning Curve):** Tidak ada istilah teknis rumit. Guru yang baru pertama kali membuka aplikasi bisa langsung memakainya dalam 1 menit tanpa pelatihan khusus.
+
+### 6.3. Arsitektur Sistem & Keamanan Data (Bobot 20%)
+- **Teknologi Modern & Ringan:** Dibangun menggunakan teknologi web terkini (*React, TypeScript, Tailwind CSS, dan Vite*), menghasilkan aplikasi yang sangat cepat dibuka bahkan dengan HP berspesifikasi sederhana.
+- **Penyimpanan Terpusat & Sinkronisasi Cepat:** Didukung basis data awan (*Supabase Cloud Database*) yang responsif, memastikan setiap data setoran tersimpan secara instan, aman, dan dapat diakses kapan saja.
+- **Perlindungan Privasi & Kedaulatan Data Santri:** Data santri, nomor telepon orang tua, dan rekam jejak hafalan diisolasi per akun halaqoh, terenkripsi, dan tidak dibagikan ke pihak luar.
+
+### 6.4. Potensi Keberlanjutan & Skalabilitas (Bobot 20%)
+- **Kelayakan Adopsi di Berbagai Skala Pesantren:** Cocok digunakan oleh rumah tahfidz kecil dengan 20 santri hingga pondok pesantren besar dengan ribuan santri, tanpa memerlukan biaya server mandiri yang mahal.
+- **Fleksibilitas Integrasi dengan Sistem Kemenag:** Format data hafalan, identitas santri, dan kelembagaan dirancang rapi sehingga siap dihubungkan (*API-ready*) ke sistem pangkalan data Kementerian Agama dan Ditjen Pesantren (seperti EMIS atau pangkalan data tahfidz nasional).
+
+---
+
+## 7. Perbandingan Solusi: Mengapa ITQAN Lebih Unggul?
+
+| Aspek Penilaian | Buku Kertas Fisik | Aplikasi Pesantren Umum (SIMP) | ITQAN |
 | :--- | :--- | :--- | :--- |
-| **Kecepatan Input** | 1 - 2 Menit (Tulis tangan) | 2 - 4 Menit (Banyak klik & form) | **< 15 Detik (Searchable & 1 Klik)** |
-| **Penyimpanan Data** | Rentan hilang / basah | Di cloud server tertutup | **Lokal Terisolasi + Supabase Cloud Sync** |
-| **Metrik Ketepatan** | Lembar / Halaman | Halaman / Nilai Angka | **Line Granularity (9.060 Baris Riil)** |
-| **Laporan Wali** | Semesteran (Buku Rapor) | Harus download aplikasi orang tua | **Direct WhatsApp Otomatis (Tanpa install app)** |
-| **Kurva Belajar** | Rendah | Sangat Tinggi (Perlu training khusus) | **Nol (Intuitif sejak menit pertama)** |
-| **Ketergantungan Internet** | Nol | Mutlak (Offline = Rusak) | **Offline-First (Data aman di browser lokal)** |
+| **Kecepatan Catat** | 1 – 2 Menit (Tulis tangan) | 2 – 4 Menit (Banyak formulir) | **< 15 Detik (Cepat & Praktis)** |
+| **Ketepatan Hitungan** | Halaman / Juz kasar | Halaman / Nilai angka 0-100 | **Tepat Baris (9.060 Baris)** |
+| **Kabar ke Orang Tua** | 6 Bulan Sekali (Buku rapor) | Orang tua harus pasang aplikasi | **Harian via WhatsApp Langsung** |
+| **Keandalan & Akses Data** | Rentan tercecer fisik | Server kaku & lambat | **Cloud Database Cepat & Real-Time** |
+| **Kemudahan Penggunaan** | Mudah namun merepotkan | Sulit (Butuh pelatihan lama) | **Sangat Mudah (Siap pakai seketika)** |
+| **Biaya & Pemeliharaan** | Beli buku cetak tiap tahun | Biaya langganan/server mahal | **Hemat, Ringan, & Mandiri** |
 
 ---
 
-## 8. Dampak yang Diharapkan (Expected Impact)
+## 8. Dampak Nyata bagi Ekosistem Pesantren
 
-### 8.1. Dampak bagi Guru (Muhaffizh)
-- **Penghematan Waktu Hingga 70%:** Waktu administratif berkurang drastis sehingga muhaffizh dapat mencurahkan 100% perhatian pada perbaikan tajwid, makhraj, dan tarbiyah santri.
-- **Bebas Stres Pelaporan:** Tidak ada lagi tumpukan pekerjaan menyalin buku mutaba'ah di akhir bulan atau menjelang pembagian rapor.
-
-### 8.2. Dampak bagi Santri
-- **Kesadaran Diri (*Self-Pacing Awareness*):** Santri mengetahui secara pasti status harian mereka (*Apakah hari ini target saya tercapai? Berapa baris lagi untuk mengejar keterlambatan?*).
-- **Semangat Berlomba dalam Kebaikan (*Fas-tabiqul Khairat*):** Transparansi data memotivasi santri untuk menjaga konsistensi ziyadah dan muroja'ah harian.
-
-### 8.3. Dampak bagi Orang Tua (Wali Santri)
-- **Ketenangan Batin (*Peace of Mind*):** Orang tua merasa dekat dengan perjuangan ananda di pondok melalui kabar harian WhatsApp yang ringkas dan santun.
-- **Kemitraan Pendidikan yang Kuat:** Orang tua dapat memberikan apresiasi tepat waktu ketika ananda mencapai target atau memberikan motivasi saat ananda sedang mengalami defisit hafalan.
-
-### 8.4. Dampak bagi Lembaga (Pesantren / Sekolah)
-- **Citra Profesional & Modern:** Lembaga dipandang memiliki manajemen pendidikan tahfidz yang akuntabel, transparan, dan melek teknologi.
-- **Dokumentasi Terpusat:** Lembaga memiliki arsip rekam jejak hafalan yang rapi saat akreditasi atau evaluasi tahunan.
+1. **Bagi Guru Tahfidz:** Menghemat waktu administrasi hingga 70%. Ustadz kembali fokus pada tugas utamanya: mendidik karakter santri dan membenahi bacaan Al-Qur'an.
+2. **Bagi Santri:** Meningkatkan semangat dan kesadaran diri (*self-awareness*). Santri tahu pasti berapa sisa baris yang harus dikejar tanpa merasa terbebani.
+3. **Bagi Orang Tua:** Menghadirkan ketenangan batin (*peace of mind*). Orang tua merasa dilibatkan dalam perjuangan sang buah hati menghafal Al-Qur'an.
+4. **Bagi Lembaga & Kemenag:** Meningkatkan citra profesional pesantren dan menyediakan data capaian tahfidz yang akurat, transparan, dan terstandarisasi.
 
 ---
 
-## 9. Rencana Pengembangan Strategis (Strategic Product Roadmap)
+## 9. Rencana Pengembangan (Roadmap)
 
-### Fase 1: Fondasi Halaqoh & Fast-Logging (Saat Ini — Rilis Produksi)
-- ✅ Portal Mandiri Muhaffizh (Supabase Auth).
-- ✅ Fast Setoran Form (< 15 detik, searchable combobox 114 surah, quick line buttons).
-- ✅ Pacing Engine 30 Juz 3 Tahun berbasis baris.
-- ✅ Evaluasi Kelancaran Talaqqi (Mumtaz, Jayyid, I'adah).
-- ✅ Notifikasi WhatsApp Harian cerdas & ramah pengguna.
-- ✅ Cetak Rapor Resmi & Ekspor CSV.
-
-### Fase 2: Analitik Lanjutan & Pemetaan Hafalan
-- 🔄 Visualisasi Mushaf Interaktif (peta warna halaman Al-Qur'an: Hijau = Mutqin, Kuning = Perlu Diulang, Abu-abu = Belum Disetor).
-- 🔄 Algoritma Pengingat Muroja'ah Pintar (*Spaced Repetition System*) berdasarkan surah yang paling lama tidak diulang santri.
-
-### Fase 3: Multi-Halaqoh & Integrasi Lembaga
-- 🔄 Konsolidasi multi-halaqoh untuk Mudir/Koordinator Tahfidz tanpa mengorbankan kesederhanaan portal muhaffizh.
-- 🔄 Layanan cadangan cloud otomatis berkala untuk pengarsipan lintas tahun ajaran.
+- **Fase 1 (Tahap Saat Ini — Siap Pakai & Teruji):**
+  - Portal mandiri ustadz dengan keamanan akun modern.
+  - Formulir setoran kilat (< 15 detik) dengan pencarian 114 surah.
+  - Perhitungan laju 30 juz berbasis baris dan evaluasi kelancaran (Mumtaz, Jayyid, I'adah).
+  - Notifikasi otomatis WhatsApp harian ramah orang tua.
+  - Format cetak rapor resmi dan ekspor data santri ke format tabel.
+- **Fase 2 (Pengembangan Lanjutan):**
+  - Tampilan visual Mushaf Interaktif (warna lembar Al-Qur'an menunjukkan tingkat kelancaran santri).
+  - Pengingat pengulangan cerdas (*Spaced Repetition*) untuk surah yang sudah lama tidak disetor.
+- **Fase 3 (Integrasi Nasional):**
+  - Integrasi dengan sistem pangkalan data santri Kementerian Agama RI / Ditjen Pesantren.
+  - Modul agregasi data antarcabang pesantren di seluruh Indonesia.
 
 ---
 
 ## 10. Penutup
 
-ITQAN hadir bukan sekadar sebagai piranti lunak, melainkan sebagai ikhtiar khidmah untuk memfasilitasi para penjaga Al-Qur'an. Dengan menempatkan muhaffizh sebagai pusat perancangan dan membuang segala kerumitan yang tidak esensial, ITQAN membuktikan bahwa teknologi dapat menyatu harmonis dengan tradisi talaqqi yang mulia.
+ITQAN dipersembahkan sebagai wujud khidmah santri untuk kemajuan pendidikan Islam di Nusantara. Melalui integrasi teknologi yang santun, sederhana, dan berakar pada tradisi, ITQAN membuktikan bahwa modernisasi digital di pesantren dapat berjalan beriringan dengan penjagaan kemurnian Al-Qur'an dan pemuliaan hubungan guru-murid. 
+
+Karya ini siap menjadi sumbangsih nyata dalam menyongsong babak baru tata kelola pesantren di bawah naungan Direktorat Jenderal Pesantren Kementerian Agama Republik Indonesia.

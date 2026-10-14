@@ -7,7 +7,7 @@
 
 - **Nama Produk**: ITQAN (Sistem Mutabaah Tahfidz Terpadu)
 - **Kategori Solusi**: Sistem Informasi Manajemen Pesantren (SIMP) Terapan
-- **Tujuan Utama**: Menggantikan buku catatan mutaba'ah manual berbahan kertas dengan platform web modern berbasis *offline-first*. Sistem memfasilitasi:
+- **Tujuan Utama**: Menggantikan buku catatan mutaba'ah manual berbahan kertas dengan platform web modern yang cepat, terpadu, dan andal. Sistem memfasilitasi:
   - Pencatatan setoran halaqoh cepat oleh muhaffizh (< 15 detik).
   - Pacing target harian adaptif menuju target 30 juz dalam 3 tahun.
   - Dasbor analitik capaian hafalan santri di halaqoh.
@@ -22,7 +22,7 @@
 - **Styling & Icons**: Tailwind CSS v3.4, Lucide React
 - **Font Utama**: Inter (`font-sans`)
 - **Backend & Database**: Supabase (PostgreSQL + Supabase Auth)
-- **Penyimpanan Klien (Offline-First)**: LocalStorage terisolasi per akun muhaffizh
+- **Penyimpanan & Sinkronisasi**: Cloud Database dengan persistensi sesi pengguna
 - **Ekspor Dokumen**: Cetak Rapor Mutaba'ah Resmi & Ekspor CSV
 - **Integrasi WhatsApp**: WhatsApp Service dengan notifikasi direct wa.me ramah wali santri
 
