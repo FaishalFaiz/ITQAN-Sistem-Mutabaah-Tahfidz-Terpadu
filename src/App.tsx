@@ -217,7 +217,7 @@ function App() {
 
   // Filter santri sesuai halaqoh aktif yang sedang diampu (dimemoize untuk cegah alokasi array berulang)
   const currentHalaqahSantriList = useMemo(() => {
-    if (!activeHalaqah) return santriList;
+    if (!activeHalaqah) return [];
     const allRooms = storageService.getAllHalaqahRooms();
     const activeUUID = ensureUUID(activeHalaqah.id);
     const activeCleanName = (activeHalaqah.name || '').trim().toLowerCase();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -11,13 +11,23 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { storageService } from '@/services/storageService';
+import { storageService, EVENT_DATA_CHANGED } from '@/services/storageService';
 import { authService } from '@/services/authService';
 
 export const OnboardingHalaqahPage: React.FC = () => {
   const navigate = useNavigate();
   const storedUser = authService.getStoredUser();
   const userName = storedUser?.fullName || 'Muhaffizh';
+
+  const [userRoomsCount, setUserRoomsCount] = useState<number>(() => storageService.getUserHalaqahList().length);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setUserRoomsCount(storageService.getUserHalaqahList().length);
+    };
+    window.addEventListener(EVENT_DATA_CHANGED, handleUpdate);
+    return () => window.removeEventListener(EVENT_DATA_CHANGED, handleUpdate);
+  }, []);
 
   // Mode: 'create' | 'join'
   const [selectedMode, setSelectedMode] = useState<'create' | 'join'>('create');
@@ -342,14 +352,14 @@ export const OnboardingHalaqahPage: React.FC = () => {
         </div>
 
         {/* Tombol Kembali ke Dasbor jika Akun sudah memiliki halaqoh tersimpan */}
-        {storageService.getUserHalaqahList().length > 0 && (
+        {userRoomsCount > 0 && (
           <div className="mt-4 text-center">
             <button
               type="button"
               onClick={() => navigate('/beranda')}
               className="text-xs text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
             >
-              ← Lewati &amp; Kembali ke Dasbor ({storageService.getUserHalaqahList().length} Halaqoh Aktif)
+              ← Lewati &amp; Kembali ke Dasbor ({userRoomsCount} Halaqoh Aktif)
             </button>
           </div>
         )}

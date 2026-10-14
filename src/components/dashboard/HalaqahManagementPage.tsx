@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Layers, 
   Plus, 
+  PlusCircle,
+  BookOpen,
   KeyRound, 
   Copy, 
   Check, 
@@ -322,36 +324,113 @@ export const HalaqahManagementPage: React.FC = () => {
 
         {/* Modal Buat Ruang */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="sm:max-w-md p-5 rounded-2xl border-slate-200">
+          <DialogContent className="sm:max-w-md w-[95vw] p-5 sm:p-6 rounded-2xl border-slate-200">
             <DialogHeader className="text-left space-y-1">
               <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Plus className="w-4 h-4 text-[#0070BA]" />
+                <PlusCircle className="w-4 h-4 text-[#0070BA]" />
                 <span>Buat Ruang Halaqoh Baru</span>
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500">
-                Sistem akan membuat ruang baru dan menghasilkan kode unik untuk halaqoh Anda.
+                Sistem akan otomatis menghasilkan kode akses unik untuk halaqoh Anda.
               </DialogDescription>
             </DialogHeader>
+
             <form onSubmit={handleCreateRoom} className="space-y-3.5 pt-2">
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Nama Halaqoh <span className="text-red-500">*</span>
+              {/* Input Nama Ruang */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-800">
+                  Nama Ruang Halaqoh <span className="text-red-500">*</span>
                 </label>
-                <Input
-                  type="text"
-                  required
-                  value={createName}
-                  onChange={(e) => setCreateName(e.target.value)}
-                  placeholder="Contoh: Halaqoh Al-Fatih"
-                  className="text-xs h-9"
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={createName}
+                    onChange={(e) => setCreateName(e.target.value)}
+                    placeholder="Contoh: Halaqoh Abu Bakar Ash-Shiddiq"
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Target & Lokasi Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-800">
+                    Target Harian
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Target className="w-3.5 h-3.5 text-[#0070BA]" />
+                    </div>
+                    <input
+                      type="number"
+                      min={1}
+                      max={150}
+                      required
+                      value={createTarget}
+                      onChange={(e) => setCreateTarget(parseInt(e.target.value) || 15)}
+                      className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-12 py-2 text-xs sm:text-sm font-bold font-mono text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">
+                      Baris
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-800">
+                    Ruang / Lokasi
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Layers className="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={createRoomLoc}
+                      onChange={(e) => setCreateRoomLoc(e.target.value)}
+                      placeholder="Masjid Lt. 2"
+                      className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Catatan / Deskripsi */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-800">
+                  Catatan Halaqoh <span className="text-slate-400 font-normal text-[11px]">(Opsional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={createDesc}
+                  onChange={(e) => setCreateDesc(e.target.value)}
+                  placeholder="Fokus talaqqi, target juz, atau petunjuk halaqoh..."
+                  className="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
                 />
               </div>
-              <DialogFooter className="pt-2 flex items-center justify-end gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateModalOpen(false)} className="text-xs h-9 border-slate-300">
+
+              <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="text-xs h-9 font-semibold text-slate-600 border-slate-300 cursor-pointer"
+                >
                   Batal
                 </Button>
-                <Button type="submit" size="sm" className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs h-9 px-4 font-semibold">
-                  Buat Ruang Halaqoh
+                <Button
+                  type="submit"
+                  disabled={!createName.trim()}
+                  className="text-xs h-9 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>Buat Ruang & Mulai Mengampu</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </DialogFooter>
             </form>
@@ -899,94 +978,113 @@ export const HalaqahManagementPage: React.FC = () => {
 
       {/* 7. MODAL: Buat Ruang Halaqoh Baru */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="sm:max-w-md p-5 rounded-2xl border-slate-200">
+        <DialogContent className="sm:max-w-md w-[95vw] p-5 sm:p-6 rounded-2xl border-slate-200">
           <DialogHeader className="text-left space-y-1">
             <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Plus className="w-4 h-4 text-[#0070BA]" />
+              <PlusCircle className="w-4 h-4 text-[#0070BA]" />
               <span>Buat Ruang Halaqoh Baru</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Sistem akan membuat ruang baru dan menghasilkan kode unik yang dapat Anda bagikan ke rekan musyrif.
+              Sistem akan otomatis menghasilkan kode akses unik untuk halaqoh Anda.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleCreateRoom} className="space-y-3.5 pt-2">
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-700">
-                Nama Halaqoh <span className="text-red-500">*</span>
+            {/* Input Nama Ruang */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-800">
+                Nama Ruang Halaqoh <span className="text-red-500">*</span>
               </label>
-              <Input
-                type="text"
-                required
-                value={createName}
-                onChange={(e) => setCreateName(e.target.value)}
-                placeholder="Contoh: Halaqoh Al-Fatih / Halaqoh Tahfidz 1"
-                className="text-xs h-9"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  placeholder="Contoh: Halaqoh Abu Bakar Ash-Shiddiq"
+                  className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Target Standar
+            {/* Target & Lokasi Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-800">
+                  Target Harian
                 </label>
                 <div className="relative">
-                  <Input
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Target className="w-3.5 h-3.5 text-[#0070BA]" />
+                  </div>
+                  <input
                     type="number"
                     min={1}
+                    max={150}
+                    required
                     value={createTarget}
                     onChange={(e) => setCreateTarget(parseInt(e.target.value) || 15)}
-                    className="text-xs h-9 pr-12 font-bold font-mono"
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-12 py-2 text-xs sm:text-sm font-bold font-mono text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">
                     Baris
                   </span>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-700">
-                  Ruangan / Lokasi
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-800">
+                  Ruang / Lokasi
                 </label>
-                <Input
-                  type="text"
-                  value={createRoomLoc}
-                  onChange={(e) => setCreateRoomLoc(e.target.value)}
-                  placeholder="Contoh: Masjid Lt. 2"
-                  className="text-xs h-9"
-                />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Layers className="w-3.5 h-3.5 text-slate-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={createRoomLoc}
+                    onChange={(e) => setCreateRoomLoc(e.target.value)}
+                    placeholder="Masjid Lt. 2"
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-700">
-                Deskripsi / Kurikulum
+            {/* Catatan / Deskripsi */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-800">
+                Catatan Halaqoh <span className="text-slate-400 font-normal text-[11px]">(Opsional)</span>
               </label>
               <textarea
                 rows={2}
                 value={createDesc}
                 onChange={(e) => setCreateDesc(e.target.value)}
-                placeholder="Target hafalan atau catatan halaqoh..."
-                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA]"
+                placeholder="Fokus talaqqi, target juz, atau petunjuk halaqoh..."
+                className="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
               />
             </div>
 
-            <DialogFooter className="pt-2 flex items-center justify-end gap-2">
+            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-slate-100">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-xs h-9 border-slate-300"
+                className="text-xs h-9 font-semibold text-slate-600 border-slate-300 cursor-pointer"
               >
                 Batal
               </Button>
               <Button
                 type="submit"
-                size="sm"
-                className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs h-9 px-4 font-semibold"
+                disabled={!createName.trim()}
+                className="text-xs h-9 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold cursor-pointer flex items-center gap-1.5"
               >
-                Buat Ruang Halaqoh
+                <span>Buat Ruang & Mulai Mengampu</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </DialogFooter>
           </form>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Check, Plus, BookOpen, Layers, KeyRound, Settings2 } from 'lucide-react';
+import { ChevronDown, Check, Plus, PlusCircle, BookOpen, Layers, KeyRound, Settings2, Target, ArrowRight } from 'lucide-react';
 import type { HalaqahGroup } from './types';
 import { storageService, EVENT_DATA_CHANGED } from '../../services/storageService';
 import {
@@ -34,7 +34,9 @@ export const HalaqahSwitcher: React.FC<HalaqahSwitcherProps> = ({
   // New Halaqah Form
   const [newHalaqahName, setNewHalaqahName] = useState('');
   const [newHalaqahRoom, setNewHalaqahRoom] = useState('');
+  const [newHalaqahTarget, setNewHalaqahTarget] = useState<number>(15);
   const [newHalaqahDesc, setNewHalaqahDesc] = useState('');
+  const [isCreatingHalaqah, setIsCreatingHalaqah] = useState(false);
 
   // Join Halaqah Form
   const [joinCodeInput, setJoinCodeInput] = useState('');
@@ -82,29 +84,38 @@ export const HalaqahSwitcher: React.FC<HalaqahSwitcherProps> = ({
   const handleCreateHalaqah = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newHalaqahName.trim()) {
-      toast.error('Nama halaqoh wajib diisi');
+      toast.error('Nama halaqoh wajib diisi.');
       return;
     }
 
-    const created = storageService.createHalaqahRoom({
-      name: newHalaqahName.trim(),
-      room: newHalaqahRoom.trim() || undefined,
-      description: newHalaqahDesc.trim() || undefined,
-    });
+    setIsCreatingHalaqah(true);
+    try {
+      const created = storageService.createHalaqahRoom({
+        name: newHalaqahName.trim(),
+        room: newHalaqahRoom.trim() || undefined,
+        targetDailyLines: newHalaqahTarget || 15,
+        description: newHalaqahDesc.trim() || undefined,
+      });
 
-    storageService.setActiveHalaqah(created.id);
-    setActiveHalaqah(created);
-    setHalaqahList(storageService.getUserHalaqahList());
-    setIsAddModalOpen(false);
-    setIsOpen(false);
-    setNewHalaqahName('');
-    setNewHalaqahRoom('');
-    setNewHalaqahDesc('');
+      storageService.setActiveHalaqah(created.id);
+      setActiveHalaqah(created);
+      setHalaqahList(storageService.getUserHalaqahList());
+      setIsAddModalOpen(false);
+      setIsOpen(false);
+      setNewHalaqahName('');
+      setNewHalaqahRoom('');
+      setNewHalaqahTarget(15);
+      setNewHalaqahDesc('');
 
-    toast.success(`Ruang halaqoh baru berhasil dibuat`, {
-      description: `Sekarang mengampu: ${created.name} (Kode: ${created.code})`,
-    });
-    onHalaqahChanged?.(created);
+      toast.success(`Ruang halaqoh "${created.name}" berhasil dibuat!`, {
+        description: `Kode Join: ${created.code}. Sekarang sedang diampu.`,
+      });
+      onHalaqahChanged?.(created);
+    } catch {
+      toast.error('Gagal membuat halaqoh. Silakan coba kembali.');
+    } finally {
+      setIsCreatingHalaqah(false);
+    }
   };
 
   const handleJoinByCode = (e: React.FormEvent) => {
@@ -292,73 +303,115 @@ export const HalaqahSwitcher: React.FC<HalaqahSwitcherProps> = ({
         )}
       </div>
 
-      {/* Modal Tambah Halaqoh Baru */}
+      {/* Modal Tambah Halaqoh Baru (Sama dengan Onboarding) */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-md w-[95vw] rounded-xl p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold text-slate-900">
-              Tambah Kelompok Halaqoh Baru
+        <DialogContent className="sm:max-w-md w-[95vw] p-5 sm:p-6 rounded-2xl border-slate-200">
+          <DialogHeader className="text-left space-y-1">
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <PlusCircle className="w-4 h-4 text-[#0070BA]" />
+              <span>Buat Ruang Halaqoh Baru</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Buat kelompok halaqoh baru. Sistem akan otomatis memberikan kode join unik.
+              Sistem akan otomatis menghasilkan kode akses unik untuk halaqoh Anda.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleCreateHalaqah} className="space-y-3.5 pt-2">
-            <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
-                Nama Halaqoh <span className="text-red-500">*</span>
+            {/* Input Nama Ruang */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-800">
+                Nama Ruang Halaqoh <span className="text-red-500">*</span>
               </label>
-              <Input
-                type="text"
-                required
-                value={newHalaqahName}
-                onChange={(e) => setNewHalaqahName(e.target.value)}
-                placeholder="Contoh: Halaqoh Zubair bin Awwam"
-                className="text-xs h-9.5 bg-white border-slate-300"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={newHalaqahName}
+                  onChange={(e) => setNewHalaqahName(e.target.value)}
+                  placeholder="Contoh: Halaqoh Abu Bakar Ash-Shiddiq"
+                  className="w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
-                Lokasi / Ruang Halaqoh (Opsional)
-              </label>
-              <Input
-                type="text"
-                value={newHalaqahRoom}
-                onChange={(e) => setNewHalaqahRoom(e.target.value)}
-                placeholder="Contoh: Masjid Lt. 2 / Ruang C-10"
-                className="text-xs h-9.5 bg-white border-slate-300"
-              />
+            {/* Target & Lokasi Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-800">
+                  Target Harian
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Target className="w-3.5 h-3.5 text-[#0070BA]" />
+                  </div>
+                  <input
+                    type="number"
+                    min={1}
+                    max={150}
+                    required
+                    value={newHalaqahTarget}
+                    onChange={(e) => setNewHalaqahTarget(parseInt(e.target.value) || 15)}
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-12 py-2 text-xs sm:text-sm font-bold font-mono text-slate-900 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none">
+                    Baris
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-800">
+                  Ruang / Lokasi
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Layers className="w-3.5 h-3.5 text-slate-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={newHalaqahRoom}
+                    onChange={(e) => setNewHalaqahRoom(e.target.value)}
+                    placeholder="Masjid Lt. 2"
+                    className="w-full rounded-lg border border-slate-300 bg-white pl-8 pr-3 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-800 mb-1">
-                Deskripsi / Keterangan (Opsional)
+            {/* Catatan / Deskripsi */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-800">
+                Catatan Halaqoh <span className="text-slate-400 font-normal text-[11px]">(Opsional)</span>
               </label>
-              <Input
-                type="text"
+              <textarea
+                rows={2}
                 value={newHalaqahDesc}
                 onChange={(e) => setNewHalaqahDesc(e.target.value)}
-                placeholder="Contoh: Tingkat Mutawassith (Juz 5-10)"
-                className="text-xs h-9.5 bg-white border-slate-300"
+                placeholder="Fokus talaqqi, target juz, atau petunjuk halaqoh..."
+                className="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] transition-colors"
               />
             </div>
 
-            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-slate-100">
+            <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-slate-100">
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => setIsAddModalOpen(false)}
-                className="text-xs h-9 font-semibold text-slate-600"
+                className="text-xs h-9 font-semibold text-slate-600 border-slate-300 cursor-pointer"
               >
                 Batal
               </Button>
               <Button
                 type="submit"
-                className="text-xs h-9 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold"
+                disabled={isCreatingHalaqah || !newHalaqahName.trim()}
+                className="text-xs h-9 bg-[#0070BA] hover:bg-[#005C9E] text-white font-semibold cursor-pointer flex items-center gap-1.5"
               >
-                Simpan &amp; Aktifkan
+                <span>{isCreatingHalaqah ? 'Membuat Ruang...' : 'Buat Ruang & Mulai Mengampu'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </DialogFooter>
           </form>

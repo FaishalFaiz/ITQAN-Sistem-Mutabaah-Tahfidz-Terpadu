@@ -451,6 +451,25 @@ export const syncService = {
   },
 
   /**
+   * Unassign / keluar halaqah di Supabase (set musyrif_id = null jika user aktif adalah pengampunya)
+   */
+  async leaveHalaqah(id: string): Promise<void> {
+    if (!isSupabaseConfigured) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const uuid = ensureUUID(id);
+      await supabase
+        .from('halaqah')
+        .update({ musyrif_id: null })
+        .eq('id', uuid)
+        .eq('musyrif_id', user.id);
+    } catch (err) {
+      console.error('Gagal update status leave halaqah di Supabase:', err);
+    }
+  },
+
+  /**
    * Simpan atau update santri ke Supabase
    */
   async pushSantri(santri: Santri): Promise<{ success: boolean; error?: string }> {
@@ -590,7 +609,21 @@ export const syncService = {
         /* ignore */
       }
 
+      const leftKey = storageService.getScopedKey('itqan_left_halaqah_ids');
+      let leftIds: Set<string> = new Set();
+      try {
+        const rawLeft = localStorage.getItem(leftKey);
+        if (rawLeft) leftIds = new Set(JSON.parse(rawLeft));
+      } catch {
+        /* ignore */
+      }
+
       const userHalaqahs = mappedRooms.filter((r) => {
+        // Jika user telah secara eksplisit keluar dari halaqoh ini, abaikan
+        if (leftIds.has(r.id) || leftIds.has(ensureUUID(r.id))) {
+          return false;
+        }
+
         const rawCreator = (r.creatorId || '').replace(/^u_/, '');
         const isOwner = rawCreator === currentUserId || 
                         r.creatorId === currentUserId || 
@@ -617,6 +650,16 @@ export const syncService = {
       // Pastikan active halaqah terpilih dengan benar dari daftar halaqah milik user
       const currentActive = storageService.getActiveHalaqah();
       if (!currentActive && userHalaqahs.length > 0) {
+        storageService.setActiveHalaqah(userHalaqahs[0].id);
+      } else if (userHalaqahs.length === 0) {
+        const settings = storageService.getHalaqahSettings();
+        settings.activeHalaqahId = undefined;
+        settings.halaqahName = '';
+        storageService.saveHalaqahSettings(settings);
+      } else if (
+        currentActive &&
+        !userHalaqahs.some((h) => h.id === currentActive.id || ensureUUID(h.id) === ensureUUID(currentActive.id))
+      ) {
         storageService.setActiveHalaqah(userHalaqahs[0].id);
       }
 

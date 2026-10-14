@@ -676,11 +676,22 @@ export const storageService = {
   // Ambil ID halaqoh yang diikuti / dimiliki oleh akun musyrif yang aktif saat ini
   getUserHalaqahIds(): string[] {
     const key = this.getScopedKey(BASE_KEYS.USER_ROOMS);
+    const leftKey = this.getScopedKey('itqan_left_halaqah_ids');
+    let leftIds = new Set<string>();
+    try {
+      const rawLeft = localStorage.getItem(leftKey);
+      if (rawLeft) leftIds = new Set(JSON.parse(rawLeft));
+    } catch {
+      /* ignore */
+    }
+
     try {
       const raw = localStorage.getItem(key);
       if (raw) {
         const parsed: string[] = JSON.parse(raw);
-        const clean = parsed.filter((id) => !DEFAULT_HALAQAH_IDS.has(id));
+        const clean = parsed.filter(
+          (id) => !DEFAULT_HALAQAH_IDS.has(id) && !leftIds.has(id) && !leftIds.has(ensureUUID(id))
+        );
         if (clean.length !== parsed.length) {
           localStorage.setItem(key, JSON.stringify(clean));
         }
@@ -702,7 +713,21 @@ export const storageService = {
   getUserHalaqahList(): HalaqahGroup[] {
     const allRooms = this.getAllHalaqahRooms();
     const userIds = new Set(this.getUserHalaqahIds());
-    return allRooms.filter((r) => userIds.has(r.id) || userIds.has(ensureUUID(r.id)));
+    const leftKey = this.getScopedKey('itqan_left_halaqah_ids');
+    let leftIds = new Set<string>();
+    try {
+      const rawLeft = localStorage.getItem(leftKey);
+      if (rawLeft) leftIds = new Set(JSON.parse(rawLeft));
+    } catch {
+      /* ignore */
+    }
+
+    return allRooms.filter(
+      (r) =>
+        !leftIds.has(r.id) &&
+        !leftIds.has(ensureUUID(r.id)) &&
+        (userIds.has(r.id) || userIds.has(ensureUUID(r.id)))
+    );
   },
 
   // Dapatkan daftar muhaffizh yang terdaftar di halaqoh tertentu
@@ -783,7 +808,20 @@ export const storageService = {
     const all = this.getAllHalaqahRooms();
     this.saveAllHalaqahRooms([...all, newRoom]);
 
-    // 2. Tambahkan ke daftar room milik user ini
+    // 2. Tambahkan ke daftar room milik user ini & pastikan bersih dari left halaqah
+    const targetUUID = ensureUUID(newId);
+    try {
+      const leftKey = this.getScopedKey('itqan_left_halaqah_ids');
+      const rawLeft = localStorage.getItem(leftKey);
+      if (rawLeft) {
+        const leftArr: string[] = JSON.parse(rawLeft);
+        const filtered = leftArr.filter((id) => id !== newId && ensureUUID(id) !== targetUUID);
+        localStorage.setItem(leftKey, JSON.stringify(filtered));
+      }
+    } catch {
+      /* ignore */
+    }
+
     const userIds = this.getUserHalaqahIds();
     if (!userIds.includes(newId)) {
       this.saveUserHalaqahIds([...userIds, newId]);
@@ -822,6 +860,21 @@ export const storageService = {
     }
 
     const scope = this.getActiveUserScope();
+    const targetUUID = ensureUUID(foundRoom.id);
+
+    // Bersihkan dari daftar left halaqah jika sebelumnya pernah keluar
+    try {
+      const leftKey = this.getScopedKey('itqan_left_halaqah_ids');
+      const rawLeft = localStorage.getItem(leftKey);
+      if (rawLeft) {
+        const leftArr: string[] = JSON.parse(rawLeft);
+        const filtered = leftArr.filter((id) => id !== foundRoom.id && ensureUUID(id) !== targetUUID);
+        localStorage.setItem(leftKey, JSON.stringify(filtered));
+      }
+    } catch {
+      /* ignore */
+    }
+
     const userIds = this.getUserHalaqahIds();
 
     // Tambahkan ke ID room user jika belum ada
@@ -894,28 +947,66 @@ export const storageService = {
   // Keluar dari Room Halaqoh (User unassign diri dari halaqoh ini)
   leaveHalaqahRoom(halaqahId: string): { success: boolean; remainingCount: number; error?: string } {
     const scope = this.getActiveUserScope();
-    const userIds = this.getUserHalaqahIds().filter((id) => id !== halaqahId);
+    const rawUserId = scope.replace(/^u_/, '');
+    const targetUUID = ensureUUID(halaqahId);
+
+    // 1. Rekam bahwa user ini secara eksplisit telah keluar dari halaqoh ini
+    try {
+      const leftKey = this.getScopedKey('itqan_left_halaqah_ids');
+      const raw = localStorage.getItem(leftKey);
+      const leftArr: string[] = raw ? JSON.parse(raw) : [];
+      if (!leftArr.includes(halaqahId)) leftArr.push(halaqahId);
+      if (!leftArr.includes(targetUUID)) leftArr.push(targetUUID);
+      localStorage.setItem(leftKey, JSON.stringify(leftArr));
+    } catch {
+      /* ignore */
+    }
+
+    // 2. Hapus dari riwayat kode join
+    try {
+      const joinedKey = this.getScopedKey('itqan_joined_halaqah_ids');
+      const rawJoined = localStorage.getItem(joinedKey);
+      if (rawJoined) {
+        const joinedArr: string[] = JSON.parse(rawJoined);
+        const filtered = joinedArr.filter((id) => id !== halaqahId && ensureUUID(id) !== targetUUID);
+        localStorage.setItem(joinedKey, JSON.stringify(filtered));
+      }
+    } catch {
+      /* ignore */
+    }
+
+    // 3. Hapus dari userHalaqahIds
+    const userIds = this.getUserHalaqahIds().filter((id) => id !== halaqahId && ensureUUID(id) !== targetUUID);
     this.saveUserHalaqahIds(userIds);
 
+    // 4. Update daftar members di allRooms
     const allRooms = this.getAllHalaqahRooms();
-    const room = allRooms.find((r) => r.id === halaqahId);
+    const room = allRooms.find((r) => r.id === halaqahId || ensureUUID(r.id) === targetUUID);
     if (room) {
       if (room.memberIds) {
-        room.memberIds = room.memberIds.filter((m) => m !== scope);
+        room.memberIds = room.memberIds.filter(
+          (m) => m !== scope && m !== rawUserId && m !== `u_${rawUserId}`
+        );
       }
       if (room.members) {
-        room.members = room.members.filter((m) => m.id !== scope);
+        room.members = room.members.filter(
+          (m) => m.id !== scope && m.id !== rawUserId && m.id !== `u_${rawUserId}`
+        );
       }
       this.saveAllHalaqahRooms(allRooms);
     }
 
-    // Alihkan active halaqah ke room lain jika room ini sedang aktif
+    // 5. Beri tahu cloud bahwa user keluar dari halaqoh ini
+    syncService.leaveHalaqah(halaqahId);
+
+    // 6. Alihkan active halaqah ke room lain jika room ini sedang aktif
     const userRooms = this.getUserHalaqahList();
     if (userRooms.length > 0) {
       this.setActiveHalaqah(userRooms[0].id);
     } else {
       const settings = this.getHalaqahSettings();
       settings.activeHalaqahId = undefined;
+      settings.halaqahName = '';
       this.saveHalaqahSettings(settings);
     }
 
@@ -925,13 +1016,38 @@ export const storageService = {
 
   // Hapus Ruang Halaqoh secara Permanen dari sistem
   deleteHalaqahRoom(halaqahId: string): { success: boolean; remainingCount: number; error?: string } {
+    const targetUUID = ensureUUID(halaqahId);
     const allRooms = this.getAllHalaqahRooms();
-    const targetRoom = allRooms.find((r) => r.id === halaqahId);
-    const updatedRooms = allRooms.filter((r) => r.id !== halaqahId);
+    const targetRoom = allRooms.find((r) => r.id === halaqahId || ensureUUID(r.id) === targetUUID);
+    const updatedRooms = allRooms.filter((r) => r.id !== halaqahId && ensureUUID(r.id) !== targetUUID);
     this.saveAllHalaqahRooms(updatedRooms);
 
+    // Hapus dari left dan joined keys jika ada
+    try {
+      const leftKey = this.getScopedKey('itqan_left_halaqah_ids');
+      const rawLeft = localStorage.getItem(leftKey);
+      if (rawLeft) {
+        const leftArr: string[] = JSON.parse(rawLeft);
+        localStorage.setItem(
+          leftKey,
+          JSON.stringify(leftArr.filter((id) => id !== halaqahId && ensureUUID(id) !== targetUUID))
+        );
+      }
+      const joinedKey = this.getScopedKey('itqan_joined_halaqah_ids');
+      const rawJoined = localStorage.getItem(joinedKey);
+      if (rawJoined) {
+        const joinedArr: string[] = JSON.parse(rawJoined);
+        localStorage.setItem(
+          joinedKey,
+          JSON.stringify(joinedArr.filter((id) => id !== halaqahId && ensureUUID(id) !== targetUUID))
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+
     // Hapus dari ID room user
-    const userIds = this.getUserHalaqahIds().filter((id) => id !== halaqahId);
+    const userIds = this.getUserHalaqahIds().filter((id) => id !== halaqahId && ensureUUID(id) !== targetUUID);
     this.saveUserHalaqahIds(userIds);
 
     // Hapus dari Supabase cloud
@@ -941,7 +1057,10 @@ export const storageService = {
     if (targetRoom) {
       const santriList = this.getSantriList();
       const remainingSantri = santriList.filter(
-        (s) => s.halaqahId !== halaqahId && s.halaqahName?.toLowerCase() !== targetRoom.name.toLowerCase()
+        (s) =>
+          s.halaqahId !== halaqahId &&
+          ensureUUID(s.halaqahId || '') !== targetUUID &&
+          s.halaqahName?.toLowerCase() !== targetRoom.name.toLowerCase()
       );
       this.saveSantriList(remainingSantri);
     }
@@ -953,6 +1072,7 @@ export const storageService = {
     } else {
       const settings = this.getHalaqahSettings();
       settings.activeHalaqahId = undefined;
+      settings.halaqahName = '';
       this.saveHalaqahSettings(settings);
     }
 
@@ -1030,7 +1150,15 @@ export const storageService = {
 
   getActiveHalaqah(): HalaqahGroup | null {
     const userRooms = this.getUserHalaqahList();
-    if (userRooms.length === 0) return null;
+    if (userRooms.length === 0) {
+      const settings = this.getHalaqahSettings();
+      if (settings.activeHalaqahId || settings.halaqahName) {
+        settings.activeHalaqahId = undefined;
+        settings.halaqahName = '';
+        this.saveHalaqahSettings(settings);
+      }
+      return null;
+    }
 
     const settings = this.getHalaqahSettings();
     if (settings.activeHalaqahId && !DEFAULT_HALAQAH_IDS.has(settings.activeHalaqahId)) {
