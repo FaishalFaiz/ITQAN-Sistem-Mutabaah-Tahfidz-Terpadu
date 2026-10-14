@@ -206,18 +206,26 @@ export const generateSantriReports = (
       )
     );
 
-    // Kehadiran berdasarkan hari aktif menyetor
+    // Kehadiran berdasarkan hari aktif menyetor santri dibanding total hari aktif halaqoh
     const distinctDates = new Set(
       santriSetoran
         .map((r) => r.createdAt?.slice(0, 10))
         .filter(Boolean)
     );
     const totalSessionsAttended = distinctDates.size;
-    const totalSessionsScheduled = Math.max(totalSessionsAttended, 26);
+    
+    // Hari aktif halaqoh dari seluruh setoran riil yang tercatat
+    const allHalaqahActiveDates = new Set(
+      setoranRecords
+        .map((r) => r.createdAt?.slice(0, 10))
+        .filter(Boolean)
+    );
+    const totalSessionsScheduled = Math.max(allHalaqahActiveDates.size, totalSessionsAttended, totalSessionsAttended > 0 ? 1 : 0);
     const attendancePercent =
       totalSessionsScheduled > 0
         ? Math.min(100, Math.round((totalSessionsAttended / totalSessionsScheduled) * 100))
-        : 100;
+        : (totalSessionsAttended > 0 ? 100 : 0);
+
 
     return {
       id: s.id,
@@ -354,7 +362,8 @@ export const getWeeklyTrendData = (
     { label: 'Pekan 4 (22–31)', start: 22, end: 31 },
   ];
 
-  const standardTargetPerWeek = Math.max(100, santriCount * 20 * 6); // target baris 6 hari talaqqi
+  const standardTargetPerWeek = Math.max(60, santriCount * 15 * 6); // standar 15 baris/hari x 6 hari talaqqi
+
 
   return weeks.map((w) => {
     let ziyadah = 0;

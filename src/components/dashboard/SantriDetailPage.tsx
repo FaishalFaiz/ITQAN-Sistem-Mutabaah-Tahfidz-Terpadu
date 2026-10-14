@@ -19,7 +19,8 @@ import {
   Calendar,
   ArrowRightLeft,
   UserX,
-  Target
+  Target,
+  FileSpreadsheet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Santri, SetoranRecord } from './types';
@@ -143,13 +144,130 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
   const totalPagesTarget = (totalTarget / 15).toFixed(0);
   const percentage = Math.min(100, Math.round((totalLines / totalTarget) * 100));
   const remainingLines = Math.max(0, totalTarget - totalLines);
-  const remainingDays = 650;
-  const requiredDailyLines = Math.ceil(remainingLines / remainingDays);
-
-
+  const dailyPace = currentSantri.dailyTargetLines || 15;
+  const remainingDays = dailyPace > 0 ? Math.ceil(remainingLines / dailyPace) : 0;
+  const requiredDailyLines = dailyPace;
 
   const today = getTodayDateKey();
   const isSentToday = currentSantri.lastDailyReportSentDate === today;
+
+  // Rekomendasi Tindakan Sesi 100% Riil & Otomatis berdasarkan status santri & riwayat setoran
+  const sessionRecommendations = useMemo(() => {
+    // 1. Ziyadah (Hafalan Baru)
+    const isTercapai = currentSantri.status === 'tercapai';
+    const linesToday = currentSantri.linesCompletedToday || 0;
+    const targetLines = currentSantri.dailyTargetLines || 15;
+    const deficit = Math.max(0, targetLines - linesToday);
+
+    const ziyadahRecords = records
+      .filter((r) => r.type === 'ziyadah')
+      .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    const latestZiyadah = ziyadahRecords[0];
+
+    let ziyadahTitle = '';
+    let ziyadahDesc = '';
+
+    if (isTercapai) {
+      ziyadahTitle = 'Lanjutkan Ayat Baru Besok Pagi';
+      if (latestZiyadah) {
+        const hal = latestZiyadah.pageStart === latestZiyadah.pageEnd 
+          ? `Hal. ${latestZiyadah.pageStart}` 
+          : `Hal. ${latestZiyadah.pageStart}–${latestZiyadah.pageEnd}`;
+        ziyadahDesc = `Target hari ini telah terpenuhi (${linesToday} baris). Kunci hafalan ${latestZiyadah.surahName} (${hal}) dengan tasmi' mandiri 2x.`;
+      } else {
+        const surah = currentSantri.lastSurah && currentSantri.lastSurah !== '-' ? currentSantri.lastSurah : 'hari ini';
+        ziyadahDesc = `Target hari ini telah terpenuhi (${linesToday} baris). Kunci hafalan ${surah} dengan tasmi' mandiri 2x.`;
+      }
+    } else if (linesToday > 0) {
+      ziyadahTitle = 'Tuntaskan Target Sesi Sore / Malam';
+      ziyadahDesc = `Tercatat ${linesToday} baris hari ini, masih defisit ${deficit} baris untuk mencapai target ${targetLines} baris. Berikan slot sesi tambahan.`;
+    } else {
+      ziyadahTitle = 'Setoran Ziyadah Harian';
+      if (latestZiyadah) {
+        if (latestZiyadah.grade === 'iadah') {
+          const hal = latestZiyadah.pageStart === latestZiyadah.pageEnd 
+            ? `Hal. ${latestZiyadah.pageStart}` 
+            : `Hal. ${latestZiyadah.pageStart}–${latestZiyadah.pageEnd}`;
+          ziyadahTitle = `Perbaiki ${latestZiyadah.surahName} (I'adah)`;
+          ziyadahDesc = `Setoran ziyadah terakhir dinilai I'adah (${hal}). Perbaiki tajwid dan makhraj sebelum menambah hafalan baru.`;
+        } else {
+          ziyadahDesc = `Lanjutkan hafalan baru setelah ${latestZiyadah.surahName} (Hal. ${latestZiyadah.pageEnd || 1}). Target hari ini: ${targetLines} baris.`;
+        }
+      } else if (currentSantri.lastSurah && currentSantri.lastSurah !== '-') {
+        ziyadahDesc = `Lanjutkan hafalan baru setelah Surah ${currentSantri.lastSurah}. Target hari ini: ${targetLines} baris.`;
+      } else {
+        ziyadahDesc = `Belum ada setoran hari ini. Mulai setoran ziyadah perdana santri dengan target ${targetLines} baris.`;
+      }
+    }
+
+    // 2. Muroja'ah (Pengulangan & Pemantapan Mutqin)
+    const sortedRecords = [...records].sort(
+      (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    );
+
+    // Prioritas 1: Cari setoran terakhir yang berpredikat I'adah
+    const recentIadahRecord = sortedRecords.find((r) => r.grade === 'iadah');
+
+    // Prioritas 2: Cari riwayat muroja'ah terbaru
+    const murojaahRecords = sortedRecords.filter((r) => r.type === 'murojaah');
+    const latestMurojaah = murojaahRecords[0];
+
+    let murojaahTitle = '';
+    let murojaahDesc = '';
+    let murojaahBadge = "Muroja'ah";
+    let murojaahBadgeClass = 'bg-amber-100 text-amber-800';
+    let murojaahBorderClass = 'border-amber-100 bg-[#FFFDF7]';
+
+    if (recentIadahRecord) {
+      const halText = recentIadahRecord.pageStart === recentIadahRecord.pageEnd
+        ? `Hal. ${recentIadahRecord.pageStart}`
+        : `Hal. ${recentIadahRecord.pageStart}–${recentIadahRecord.pageEnd}`;
+      murojaahTitle = `Ulangi Juz ${recentIadahRecord.juz}: ${recentIadahRecord.surahName} (${halText})`;
+      murojaahDesc = `Predikat I'adah pada setoran terakhir. Perlu disimak ulang untuk menjaga kelancaran dan hukum tajwid mutqin.`;
+      murojaahBadge = "I'adah (Ulangi)";
+      murojaahBadgeClass = 'bg-red-100 text-red-800';
+      murojaahBorderClass = 'border-red-100 bg-[#FEF9F9]';
+    } else if (latestMurojaah) {
+      const halText = latestMurojaah.pageStart === latestMurojaah.pageEnd
+        ? `Hal. ${latestMurojaah.pageStart}`
+        : `Hal. ${latestMurojaah.pageStart}–${latestMurojaah.pageEnd}`;
+      murojaahTitle = `Muroja'ah Juz ${latestMurojaah.juz}: ${latestMurojaah.surahName}`;
+      murojaahDesc = `Terakhir disimak pada ${halText} (${latestMurojaah.formattedDate || 'sebelumnya'}). Lanjutkan rotasi pengulangan halaman berikutnya.`;
+    } else if (ziyadahRecords.length > 0) {
+      const oldestZiyadah = ziyadahRecords[ziyadahRecords.length - 1];
+      const halText = oldestZiyadah.pageStart === oldestZiyadah.pageEnd
+        ? `Hal. ${oldestZiyadah.pageStart}`
+        : `Hal. ${oldestZiyadah.pageStart}–${oldestZiyadah.pageEnd}`;
+      murojaahTitle = `Muroja'ah Juz ${oldestZiyadah.juz}: ${oldestZiyadah.surahName} (${halText})`;
+      murojaahDesc = `Simak kembali hafalan awal yang telah disetor agar tidak pudar dan tetap mutqin.`;
+    } else {
+      const numJuz = parseFloat(String(currentSantri.juzAchieved).replace(/[^0-9.]/g, '')) || 0;
+      if (numJuz > 0 || (currentSantri.lastSurah && currentSantri.lastSurah !== '-')) {
+        const targetJuz = Math.max(1, Math.floor(numJuz)) || 30;
+        const surahName = currentSantri.lastSurah !== '-' ? currentSantri.lastSurah : `Juz ${targetJuz}`;
+        murojaahTitle = `Muroja'ah Juz ${targetJuz} (${surahName})`;
+        murojaahDesc = `Simak hafalan pada capaian Juz ${targetJuz} untuk memantapkan kualitas kelancaran santri.`;
+      } else {
+        murojaahTitle = `Talaqqi Awal Juz 30`;
+        murojaahDesc = `Belum ada riwayat setoran tersimpan. Awali dengan talaqqi makhraj huruf dan kelancaran surah pendek.`;
+      }
+    }
+
+    return {
+      ziyadah: {
+        title: ziyadahTitle,
+        desc: ziyadahDesc,
+        badge: 'Ziyadah',
+      },
+      murojaah: {
+        title: murojaahTitle,
+        desc: murojaahDesc,
+        badge: murojaahBadge,
+        badgeClass: murojaahBadgeClass,
+        borderClass: murojaahBorderClass,
+      },
+    };
+  }, [currentSantri, records]);
 
   // WhatsApp Digest Generator
   const waDigestMessage = useMemo(() => {
@@ -188,6 +306,55 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
     loadRecords();
     toast.success('Catatan setoran berhasil dihapus.');
     setDeletingRecord(null);
+  };
+
+  const handleExportRecordsCSV = () => {
+    if (filteredRecords.length === 0) {
+      toast.error('Tidak ada catatan setoran untuk diunduh.');
+      return;
+    }
+    const headers = [
+      'No',
+      'Tanggal',
+      'Waktu',
+      'Jenis Setoran',
+      'Surah',
+      'Juz',
+      'Halaman',
+      'Baris',
+      'Total Baris',
+      'Nilai / Mutqin',
+      'Catatan Muhaffizh',
+    ];
+    const rows = filteredRecords.map((r, idx) => [
+      idx + 1,
+      r.createdAt ? r.createdAt.slice(0, 10) : '',
+      r.formattedDate ? r.formattedDate.split(',')[1]?.trim() || '' : '',
+      r.type === 'ziyadah' ? 'Ziyadah (Baru)' : "Muroja'ah (Ulang)",
+      `"${r.surahName}"`,
+      r.juz,
+      r.pageStart === r.pageEnd ? r.pageStart : `${r.pageStart}-${r.pageEnd}`,
+      `${r.lineStart || 1}-${r.lineEnd || 15}`,
+      r.totalLines,
+      r.grade.toUpperCase(),
+      `"${(r.notes || '').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,\uFEFF' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute(
+      'download',
+      `Setoran_${currentSantri.name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Log riwayat setoran berhasil diunduh (CSV)!');
   };
 
   const filteredRecords = useMemo(() => {
@@ -561,15 +728,13 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 <div className="p-3 rounded-lg border border-blue-100 bg-[#F4F9FD] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
                   <div className="space-y-0.5 min-w-0">
                     <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-[#0070BA] px-1.5 py-0.5 rounded">
-                      Ziyadah
+                      {sessionRecommendations.ziyadah.badge}
                     </span>
                     <h4 className="font-bold text-xs text-slate-900">
-                      {currentSantri.status === 'tercapai' ? 'Lanjutkan Ayat Baru Besok Pagi' : 'Tuntaskan Target Sesi Sore'}
+                      {sessionRecommendations.ziyadah.title}
                     </h4>
                     <p className="text-[11px] text-slate-600">
-                      {currentSantri.status === 'tercapai'
-                        ? `Kunci hafalan ${currentSantri.lastSurah} dengan tasmi' mandiri 2x.`
-                        : `Defisit ${Math.max(0, currentSantri.dailyTargetLines - currentSantri.linesCompletedToday)} baris. Berikan slot sesi khusus.`}
+                      {sessionRecommendations.ziyadah.desc}
                     </p>
                   </div>
                   <Button
@@ -583,23 +748,23 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 </div>
 
                 {/* Muroja'ah Card */}
-                <div className="p-3 rounded-lg border border-amber-100 bg-[#FFFDF7] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+                <div className={`p-3 rounded-lg border ${sessionRecommendations.murojaah.borderClass} flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3`}>
                   <div className="space-y-0.5 min-w-0">
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
-                      Muroja'ah
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${sessionRecommendations.murojaah.badgeClass}`}>
+                      {sessionRecommendations.murojaah.badge}
                     </span>
                     <h4 className="font-bold text-xs text-slate-900">
-                      Ulangi Juz 29 (Hal. 562–564)
+                      {sessionRecommendations.murojaah.title}
                     </h4>
                     <p className="text-[11px] text-slate-600">
-                      Halaman ini perlu disimak ulang untuk menjaga kelancaran mutqin.
+                      {sessionRecommendations.murojaah.desc}
                     </p>
                   </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => onSetor(santri)}
+                    onClick={() => onSetor(currentSantri)}
                     className="w-full sm:w-auto text-xs font-semibold border-amber-200 text-amber-800 hover:bg-amber-50 shrink-0 h-8 px-3 rounded-lg cursor-pointer"
                   >
                     Simak
@@ -816,8 +981,23 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
               </div>
             )}
 
-            <div className="text-[11px] text-slate-500 font-medium">
-              Menampilkan <strong>{filteredRecords.length}</strong> dari <strong>{records.length}</strong> sesi
+            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-medium">
+              <span>
+                Menampilkan <strong>{filteredRecords.length}</strong> dari <strong>{records.length}</strong> sesi
+              </span>
+              {filteredRecords.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportRecordsCSV}
+                  className="h-7 px-2 text-[11px] font-semibold text-slate-700 hover:text-[#0070BA] border-slate-200 cursor-pointer"
+                  title="Unduh log setoran santri ini dalam format CSV"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 mr-1 text-[#0070BA]" />
+                  <span>Unduh CSV</span>
+                </Button>
+              )}
             </div>
           </div>
 
@@ -831,7 +1011,7 @@ export const SantriDetailPage: React.FC<SantriDetailPageProps> = ({
                 Santri belum memiliki catatan setoran pada filter yang dipilih.
               </p>
               <Button
-                onClick={() => onSetor(santri)}
+                onClick={() => onSetor(currentSantri)}
                 className="bg-[#0070BA] hover:bg-[#005C9E] text-white text-xs font-semibold h-9 px-4 rounded-lg shadow-xs cursor-pointer"
               >
                 Input Setoran Sekarang

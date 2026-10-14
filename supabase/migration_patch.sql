@@ -43,12 +43,8 @@ CREATE POLICY "Authenticated musyrif access santri" ON santri FOR ALL TO authent
 DROP POLICY IF EXISTS "Authenticated musyrif access setoran" ON setoran;
 CREATE POLICY "Authenticated musyrif access setoran" ON setoran FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- Izinkan anonim akses penuh untuk pengujian lancar
+-- Pastikan anon tidak memiliki akses langsung di environment produksi
 DROP POLICY IF EXISTS "Anon access halaqah" ON halaqah;
-CREATE POLICY "Anon access halaqah" ON halaqah FOR ALL TO anon USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Anon access santri" ON santri;
-CREATE POLICY "Anon access santri" ON santri FOR ALL TO anon USING (true) WITH CHECK (true);
-
 DROP POLICY IF EXISTS "Anon access setoran" ON setoran;
-CREATE POLICY "Anon access setoran" ON setoran FOR ALL TO anon USING (true) WITH CHECK (true);
+

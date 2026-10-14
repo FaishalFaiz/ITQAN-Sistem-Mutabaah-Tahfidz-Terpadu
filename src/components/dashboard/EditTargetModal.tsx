@@ -149,11 +149,7 @@ export const EditTargetModal: React.FC<EditTargetModalProps> = ({
                 min="0"
                 max={totalLinesTarget}
                 value={totalLinesMemorized}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setTotalLinesMemorized(val);
-                  setJuzAchieved(formatJuz(val / 300));
-                }}
+                onChange={(e) => setTotalLinesMemorized(Number(e.target.value))}
                 className="w-full text-xs px-3 h-9 rounded-lg border border-slate-300 bg-slate-100/75 shadow-2xs transition-all hover:bg-slate-100 hover:border-slate-400 focus:outline-none focus:bg-white focus:border-[#0070BA] focus:ring-2 focus:ring-[#0070BA]/20 font-semibold text-slate-800"
               />
               <p className="text-[10px] text-slate-400 mt-1">
@@ -163,9 +159,19 @@ export const EditTargetModal: React.FC<EditTargetModalProps> = ({
 
             {/* Input Label Capaian Juz */}
             <div>
-              <label className="block text-xs font-bold text-slate-800 mb-1">
-                Label Capaian Juz (Teks Tampilan)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-800">
+                  Label Capaian Juz (Teks Tampilan)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setJuzAchieved(formatJuz(totalLinesMemorized / 300))}
+                  className="text-[11px] font-semibold text-[#0070BA] hover:underline cursor-pointer"
+                  title="Hitung ulang label berdasarkan total baris"
+                >
+                  Sinkron Otomatis ({formatJuz(totalLinesMemorized / 300)})
+                </button>
+              </div>
               <input
                 type="text"
                 placeholder="Contoh: 5 Juz atau Juz 1 - 5"

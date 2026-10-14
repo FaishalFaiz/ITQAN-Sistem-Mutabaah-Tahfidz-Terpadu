@@ -142,36 +142,14 @@ export const storageService = {
         /* ignore */
       }
 
-      // Bersihkan santri mock format lama dan santri yang terikat pada halaqoh bawaan
-      const isDefaultHalaqah = (idOrName?: string | null) => {
-        if (!idOrName) return false;
-        const clean = idOrName.trim().toLowerCase();
-        return DEFAULT_HALAQAH_IDS.has(clean) || DEFAULT_HALAQAH_NAMES.has(clean);
-      };
+      // Singkirkan sisa santri bawaan/mock jika masih tersimpan di localstorage
+      list = list.filter((s) => {
+        if (!s || !s.id) return false;
+        const sH = (s.halaqahName || '').toLowerCase().trim();
+        const sId = (s.halaqahId || '').toLowerCase().trim();
+        return !DEFAULT_HALAQAH_IDS.has(sId) && !DEFAULT_HALAQAH_NAMES.has(sH) && !s.id.startsWith('b0000000-0000-4000-8000-');
+      });
 
-      const hasLegacyMock = list.some(
-        (s) =>
-          s.id.startsWith('s-ab-') ||
-          s.id.startsWith('s-um-') ||
-          s.id.startsWith('s-ut-') ||
-          s.id.startsWith('s-al-') ||
-          s.id.startsWith('b0000000-0000-4000-8000-') ||
-          isDefaultHalaqah(s.halaqahId) ||
-          isDefaultHalaqah(s.halaqahName)
-      );
-
-      if (hasLegacyMock) {
-        list = list.filter(
-          (s) =>
-            !s.id.startsWith('s-ab-') &&
-            !s.id.startsWith('s-um-') &&
-            !s.id.startsWith('s-ut-') &&
-            !s.id.startsWith('s-al-') &&
-            !s.id.startsWith('b0000000-0000-4000-8000-') &&
-            !isDefaultHalaqah(s.halaqahId) &&
-            !isDefaultHalaqah(s.halaqahName)
-        );
-      }
 
       // Hitung metrik hari ini secara dinamis berdasarkan catatan setoran hari ini (otomatis 0 jika tanggal baru)
       const allRecords = this.getSetoranRecords();
@@ -220,7 +198,7 @@ export const storageService = {
         };
       });
 
-      if (hasLegacyMock || hasFix || !data || data === '[]') {
+      if (hasFix || !data || data === '[]') {
         localStorage.setItem(key, JSON.stringify(normalized));
       }
 
@@ -368,7 +346,8 @@ export const storageService = {
 
   getSetoranBySantriId(santriId: string): SetoranRecord[] {
     const records = this.getSetoranRecords();
-    return records.filter((r) => r.santriId === santriId);
+    const targetId = ensureUUID(santriId);
+    return records.filter((r) => r.santriId === santriId || ensureUUID(r.santriId) === targetId);
   },
 
   getTodaySetoranForSantri(santriId: string): SetoranRecord[] {

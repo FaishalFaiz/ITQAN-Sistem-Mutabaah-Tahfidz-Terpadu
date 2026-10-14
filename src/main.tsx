@@ -13,3 +13,13 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 )
+
+// Registrasi PWA Service Worker untuk instalasi offline
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* ignore registration failure in dev or unsupported contexts */
+    });
+  });
+}
+
