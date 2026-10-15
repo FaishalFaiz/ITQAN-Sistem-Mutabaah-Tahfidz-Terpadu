@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /signup
+Disallow: /santri/
+Disallow: /laporan
+Disallow: /pengaturan
+Disallow: /halaqah
+Disallow: /pilih-halaqoh
+
+Sitemap: https://itqan.id/sitemap.xml
